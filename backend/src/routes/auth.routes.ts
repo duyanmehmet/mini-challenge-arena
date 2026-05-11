@@ -1,133 +1,113 @@
-import { Router } from 'express';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { v4 as uuid } from 'uuid';
-import { pool } from '../db';
-import { authLimiter } from '../middleware/rateLimit.middleware';
+﻿import { Router } from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
+import db from "../database";
+import { authLimiter } from "../middleware/rateLimit.middleware";
 
 const router = Router();
 
-router.post('/register', authLimiter, async (req, res) => {
-  const { username, email, password, avatarId } = req.body;
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: 'Tüm alanlar zorunlu.' });
-  }
-  if (username.length < 3 || username.length > 20) {
-    return res.status(400).json({ message: 'Kullanıcı adı 3-20 karakter olmalı.' });
-  }
-  try {
-    const exists = await pool.query(
-      'SELECT id FROM users WHERE email = $1 OR username = $2',
-      [email.toLowerCase(), username]
-    );
-    if (exists.rows.length > 0) {
-      return res.status(409).json({ message: 'E-posta veya kullanıcı adı zaten kullanılıyor.' });
-    }
-    const hash = await bcrypt.hash(password, 12);
-    const userId = uuid();
-    await pool.query(
-      `INSERT INTO users (id, username, email, password_hash, avatar_id)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [userId, username, email.toLowerCase(), hash, avatarId || 1]
-    );
+function signToken(userId: string) {
+  return jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: (process.env.JWT_EXPIRES_IN ?? "30d") as any });
+}
 
-    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-    const user = userRes.rows[0];
-
-
-    // Günlük görevleri oluştur
-    const { DailyTaskService } = await import('../services/DailyTaskService');
-    await DailyTaskService.ensureTasksForToday(user.id);
-
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, { expiresIn: (process.env.JWT_EXPIRES_IN ?? '30d') as any });
-    res.status(201).json({ user: mapUser(user), token });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Sunucu hatası.' });
-  }
-});
-
-router.post('/login', authLimiter, async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'E-posta ve şifre gerekli.' });
-  }
-  try {
-    const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
-      [email.toLowerCase()]
-    );
-    const user = result.rows[0];
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-      return res.status(401).json({ message: 'E-posta veya şifre hatalı.' });
-    }
-    // Streak ve Ödül Mantığı
-    const today = new Date().toISOString().split('T')[0];
-    let newStreak = user.streak_count || 0;
-    let coinsToAdd = 0;
-
-    if (user.last_login_date) {
-      const lastLoginDate = new Date(user.last_login_date).toISOString().split('T')[0];
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-      if (lastLoginDate === yesterdayStr) {
-        newStreak += 1;
-        coinsToAdd = 10 * Math.min(newStreak, 7); // Günlük bonus
-      } else if (lastLoginDate !== today) {
-        newStreak = 1;
-        coinsToAdd = 10;
-      }
-    } else {
-      newStreak = 1;
-      coinsToAdd = 10;
-    }
-
-    await pool.query(
-      'UPDATE users SET streak_count = $1, last_login_date = $2, last_login_at = CURRENT_TIMESTAMP, coins = coins + $3 WHERE id = $4',
-      [newStreak, today, coinsToAdd, user.id]
-    );
-    
-    // Güncel veriyi çek
-    const updatedUserRes = await pool.query('SELECT * FROM users WHERE id = $1', [user.id]);
-    const updatedUser = updatedUserRes.rows[0];
-
-    // Günlük görevleri kontrol et/oluştur
-    const { DailyTaskService } = await import('../services/DailyTaskService');
-    await DailyTaskService.ensureTasksForToday(user.id);
-
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, { expiresIn: (process.env.JWT_EXPIRES_IN ?? '30d') as any });
-    res.json({ user: mapUser(updatedUser), token });
-
-  } catch (err) {
-
-    console.error(err);
-    res.status(500).json({ message: 'Sunucu hatası.' });
-  }
-});
-
-router.post('/forgot-password', authLimiter, async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ message: 'E-posta gerekli.' });
-  // TODO: Nodemailer ile sıfırlama e-postası
-  res.json({ message: 'E-posta gönderildi (eğer hesap mevcutsa).' });
-});
-
-function mapUser(row: any) {
+function mapUser(u: any) {
   return {
-    id: row.id,
-    username: row.username,
-    email: row.email,
-    avatarId: row.avatar_id,
-    coins: row.coins,
-    xp: row.xp,
-    level: row.level,
-    currentLeague: row.current_league,
-    weeklyScore: row.weekly_score,
-    isPremium: row.is_premium,
+    id: u.id, username: u.username, email: u.email,
+    avatarId: u.avatar_id, coins: u.coins, xp: u.xp, level: u.level,
+    currentLeague: u.current_league, weeklyScore: u.weekly_score, isPremium: u.is_premium,
+    streakCount: u.streak_count ?? 0,
   };
 }
+
+// ── Kayıt ──
+router.post("/register", authLimiter, async (req, res) => {
+  const { username, email, password, avatarId = 1 } = req.body;
+  if (!username || !email || !password)
+    return res.status(400).json({ message: "Tüm alanlar zorunlu." });
+  if (username.length < 3 || username.length > 20)
+    return res.status(400).json({ message: "Kullanıcı adı 3-20 karakter olmalı." });
+
+  try {
+    const exists = await db("users").where("email", email.toLowerCase()).orWhere("username", username).first();
+    if (exists) return res.status(409).json({ message: "E-posta veya kullanıcı adı zaten kullanılıyor." });
+
+    const hash = await bcrypt.hash(password, 12);
+    const userId = uuidv4();
+    await db("users").insert({ id: userId, username, email: email.toLowerCase(), password_hash: hash, avatar_id: avatarId });
+
+    const user = await db("users").where("id", userId).first();
+
+    const { DailyTaskService } = await import("../services/DailyTaskService");
+    await DailyTaskService.ensureTasksForToday(userId);
+
+    // Hoş geldin e-postası (sessiz hata)
+    import("../services/email.service").then(({ emailService }) =>
+      emailService.sendWelcome(email, username).catch(() => {})
+    );
+
+    res.status(201).json({ user: mapUser(user), token: signToken(userId) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
+// ── Giriş ──
+router.post("/login", authLimiter, async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ message: "E-posta ve şifre gerekli." });
+
+  try {
+    const user = await db("users").where("email", email.toLowerCase()).first();
+    if (!user || !(await bcrypt.compare(password, user.password_hash)))
+      return res.status(401).json({ message: "E-posta veya şifre hatalı." });
+
+    // Streak güncelle
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    let streak = user.streak_count ?? 1;
+    if (user.last_played_date !== today) {
+      streak = user.last_played_date === yesterday ? streak + 1 : 1;
+    }
+    const coinsBonus = user.last_played_date !== today ? Math.min(streak, 7) * 10 : 0;
+
+    await db("users").where("id", user.id).update({
+      streak_count: streak, last_played_date: today,
+      last_login_at: db.fn.now(),
+      coins: db.raw("coins + ?", [coinsBonus]),
+    });
+
+    const { DailyTaskService } = await import("../services/DailyTaskService");
+    await DailyTaskService.ensureTasksForToday(user.id);
+
+    const updated = await db("users").where("id", user.id).first();
+    res.json({ user: mapUser(updated), token: signToken(user.id) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
+// ── Şifre sıfırlama ──
+router.post("/forgot-password", authLimiter, async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "E-posta gerekli." });
+
+  try {
+    const user = await db("users").where("email", email.toLowerCase()).first();
+    if (user) {
+      const resetToken = uuidv4();
+      // Token'ı kaydet (gerçek uygulamada ayrı tablo veya Redis)
+      await db("users").where("id", user.id).update({ reset_token: resetToken });
+      const { emailService } = await import("../services/email.service");
+      await emailService.sendPasswordReset(email, resetToken).catch(() => {});
+    }
+    // Kullanıcı var olsa da olmasa da aynı yanıt (güvenlik)
+    res.json({ message: "E-posta gönderildi (eğer hesap mevcutsa)." });
+  } catch {
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
 
 export default router;

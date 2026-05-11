@@ -1,10 +1,10 @@
-import knex from "knex";
+﻿import knex from "knex";
 import { Model } from "objection";
 import knexConfig from "../knexfile";
 
-const db = knex(knexConfig.development);
+const env = (process.env.NODE_ENV as keyof typeof knexConfig) ?? "development";
+const db = knex(knexConfig[env] ?? knexConfig.development);
 
-// Give the knex instance to objection.
 Model.knex(db);
 
 export default db;

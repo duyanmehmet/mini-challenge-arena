@@ -1,98 +1,95 @@
-import { Router } from 'express';
-import { pool } from '../db';
-import { authMiddleware, type AuthRequest } from '../middleware/auth.middleware';
+﻿import { Router } from "express";
+import db from "../database";
+import { authMiddleware, type AuthRequest } from "../middleware/auth.middleware";
+import { v4 as uuidv4 } from "uuid";
 
 const router = Router();
 
-// Arkadaş listesini getir
-router.get('/friends', authMiddleware, async (req: AuthRequest, res) => {
+// ── Arkadaş arama ──
+router.get("/search", authMiddleware, async (req: AuthRequest, res) => {
+  const q = req.query.q as string;
+  if (!q || q.length < 3) return res.status(400).json({ message: "En az 3 karakter girin." });
   try {
-    const userId = req.userId;
-    const result = await pool.query(
-      `SELECT u.id, u.username, u.avatar_id, u.weekly_score, u.current_league
-       FROM users u
-       JOIN friendships f ON (f.requester_id = u.id OR f.receiver_id = u.id)
-       WHERE (f.requester_id = $1 OR f.receiver_id = $1)
-         AND u.id != $1
-         AND f.status = 'accepted'`,
-      [userId]
-    );
-    res.json(result.rows.map(r => ({
-      userId: r.id,
-      username: r.username,
-      avatarId: r.avatar_id,
-      weeklyScore: r.weekly_score,
-      league: r.current_league
+    const users = await db("users")
+      .where("username", "like", `%${q}%`)
+      .whereNot("id", req.userId)
+      .select("id","username","avatar_id")
+      .limit(10);
+    res.json(users);
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
+// ── Arkadaş listesi ──
+router.get("/friends", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.userId!;
+    const fships = await db("friendships")
+      .where((b: any) => b.where("requester_id", uid).orWhere("receiver_id", uid))
+      .where("status", "accepted");
+    const friendIds = fships.map((f: any) =>
+      f.requester_id === uid ? f.receiver_id : f.requester_id);
+    const friends = await db("users")
+      .whereIn("id", friendIds)
+      .select("id","username","avatar_id","weekly_score","current_league");
+    res.json(friends.map((f: any) => ({
+      userId: f.id, username: f.username, avatarId: f.avatar_id,
+      weeklyScore: f.weekly_score, league: f.current_league,
     })));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Sunucu hatası.' });
-  }
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
-// Arkadaş ara
-router.get('/search', authMiddleware, async (req: AuthRequest, res) => {
-  const { q } = req.query;
-  if (!q || (q as string).length < 3) {
-    return res.status(400).json({ message: 'Arama terimi en az 3 karakter olmalı.' });
-  }
-  try {
-    const result = await pool.query(
-      'SELECT id, username, avatar_id FROM users WHERE username ILIKE $1 AND id != $2 LIMIT 10',
-      [`%${q}%`, req.userId]
-    );
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ message: 'Sunucu hatası.' });
-  }
-});
-
-// Arkadaşlık isteği gönder
-router.post('/request', authMiddleware, async (req: AuthRequest, res) => {
+// ── İstek gönder ──
+router.post("/request", authMiddleware, async (req: AuthRequest, res) => {
   const { receiverId } = req.body;
-  if (!receiverId) return res.status(400).json({ message: 'Alıcı ID gerekli.' });
-  
+  if (!receiverId || receiverId === req.userId)
+    return res.status(400).json({ message: "Geçersiz kullanıcı." });
   try {
-    await pool.query(
-      `INSERT INTO friendships (requester_id, receiver_id)
-       VALUES ($1, $2)
-       ON CONFLICT DO NOTHING`,
-      [req.userId, receiverId]
-    );
-    res.json({ message: 'İstek gönderildi.' });
-  } catch (err) {
-    res.status(500).json({ message: 'Sunucu hatası.' });
-  }
+    const exists = await db("friendships")
+      .where({ requester_id: req.userId, receiver_id: receiverId }).first();
+    if (exists) return res.status(409).json({ message: "İstek zaten gönderildi." });
+    await db("friendships").insert({ id: uuidv4(), requester_id: req.userId, receiver_id: receiverId });
+    res.json({ message: "İstek gönderildi." });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
-// Bekleyen istekleri getir
-router.get('/requests', authMiddleware, async (req: AuthRequest, res) => {
+// ── Gelen istekler ──
+router.get("/requests", authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT f.id as friendship_id, u.id as user_id, u.username, u.avatar_id
-       FROM friendships f
-       JOIN users u ON u.id = f.requester_id
-       WHERE f.receiver_id = $1 AND f.status = 'pending'`,
-      [req.userId]
-    );
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ message: 'Sunucu hatası.' });
-  }
+    const reqs = await db("friendships")
+      .where({ receiver_id: req.userId, status: "pending" })
+      .join("users", "users.id", "friendships.requester_id")
+      .select("friendships.id as friendship_id","users.id as user_id","users.username","users.avatar_id");
+    res.json(reqs);
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
-// İsteği kabul et
-router.post('/accept', authMiddleware, async (req: AuthRequest, res) => {
+// ── İstek kabul / reddet ──
+router.post("/accept", authMiddleware, async (req: AuthRequest, res) => {
   const { friendshipId } = req.body;
   try {
-    await pool.query(
-      "UPDATE friendships SET status = 'accepted' WHERE id = $1 AND receiver_id = $2",
-      [friendshipId, req.userId]
-    );
-    res.json({ message: 'İstek kabul edildi.' });
-  } catch (err) {
-    res.status(500).json({ message: 'Sunucu hatası.' });
-  }
+    await db("friendships").where({ id: friendshipId, receiver_id: req.userId }).update({ status: "accepted" });
+    res.json({ message: "İstek kabul edildi." });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
+router.post("/reject", authMiddleware, async (req: AuthRequest, res) => {
+  const { friendshipId } = req.body;
+  try {
+    await db("friendships").where({ id: friendshipId, receiver_id: req.userId }).delete();
+    res.json({ message: "İstek reddedildi." });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
+// ── Düello başlat ──
+router.post("/duel", authMiddleware, async (req: AuthRequest, res) => {
+  const { friendId, mode } = req.body;
+  const MODES = ["reflex","memory","football","word","attention","escape"];
+  if (!friendId || !MODES.includes(mode)) return res.status(400).json({ message: "Geçersiz veri." });
+  try {
+    const duelId = uuidv4();
+    await db("duels").insert({ id: duelId, challenger_id: req.userId, opponent_id: friendId, mode });
+    res.json({ duelId });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
 export default router;

@@ -1,74 +1,55 @@
-﻿import { Router } from 'express';
-import { pool } from '../db';
-import { authMiddleware, type AuthRequest } from '../middleware/auth.middleware';
+﻿import { Router } from "express";
+import db from "../database";
+import { authMiddleware, type AuthRequest } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.get('/global', async (req, res) => {
-  const mode = req.query.mode as string ?? 'all';
-  const period = req.query.period as string ?? 'weekly';
-  const limit = Math.min(parseInt(req.query.limit as string ?? '100'), 100);
-
+router.get("/global", async (req, res) => {
+  const period = (req.query.period as string) ?? "weekly";
+  const limit = Math.min(parseInt(req.query.limit as string ?? "100"), 100);
   try {
-    let query: string;
-    const params: any[] = [limit];
-
-    if (period === 'weekly') {
-      query = `
-        SELECT u.username, u.avatar_id, u.current_league, wl.total_score as score,
-               RANK() OVER (ORDER BY wl.total_score DESC) as rank
-        FROM weekly_leaderboard wl
-        JOIN users u ON u.id = wl.user_id
-        WHERE wl.week_start = DATE_TRUNC('week', NOW())::date
-        ORDER BY wl.total_score DESC LIMIT $1`;
-    } else if (period === 'daily') {
-      query = `
-        SELECT u.username, u.avatar_id, u.current_league,
-               SUM(gr.score) as score,
-               RANK() OVER (ORDER BY SUM(gr.score) DESC) as rank
-        FROM game_results gr
-        JOIN users u ON u.id = gr.user_id
-        WHERE gr.played_at >= NOW() - INTERVAL '1 day'
-        ${mode !== 'all' ? 'AND gr.mode = $2' : ''}
-        GROUP BY u.id, u.username, u.avatar_id, u.current_league
-        ORDER BY score DESC LIMIT $1`;
-      if (mode !== 'all') params.push(mode);
+    let rows: any[];
+    if (period === "weekly") {
+      rows = await db("users")
+        .select("id","username","avatar_id as avatarId","weekly_score as score","current_league as league")
+        .orderBy("weekly_score", "desc").limit(limit);
+    } else if (period === "daily") {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      rows = await db("game_results")
+        .join("users", "users.id", "game_results.user_id")
+        .select("users.id","users.username","users.avatar_id as avatarId","users.current_league as league")
+        .sum("game_results.score as score")
+        .where("game_results.played_at", ">=", since)
+        .groupBy("users.id","users.username","users.avatar_id","users.current_league")
+        .orderBy("score", "desc")
+        .limit(limit);
     } else {
-      query = `
-        SELECT u.username, u.avatar_id, u.current_league, pb.score,
-               RANK() OVER (ORDER BY pb.score DESC) as rank
-        FROM personal_bests pb
-        JOIN users u ON u.id = pb.user_id
-        ${mode !== 'all' ? 'WHERE pb.mode = $2' : ''}
-        ORDER BY pb.score DESC LIMIT $1`;
-      if (mode !== 'all') params.push(mode);
+      // alltime — en yüksek kişisel rekorlar
+      rows = await db("personal_bests")
+        .join("users", "users.id", "personal_bests.user_id")
+        .select("users.id","users.username","users.avatar_id as avatarId",
+          "personal_bests.score","users.current_league as league")
+        .orderBy("personal_bests.score", "desc").limit(limit);
     }
-
-    const result = await pool.query(query, params);
-    res.json(result.rows.map((r) => ({
-      rank: parseInt(r.rank),
-      username: r.username,
-      avatarId: r.avatar_id,
-      score: parseInt(r.score),
-      league: r.current_league,
-    })));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Sunucu hatası.' });
-  }
+    res.json(rows.map((r: any, i: number) => ({ ...r, rank: i + 1 })));
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
-router.get('/my-rank', authMiddleware, async (req: AuthRequest, res) => {
-  const period = req.query.period as string ?? 'weekly';
+router.get("/friends", authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT weekly_score as score FROM users WHERE id = $1`,
-      [req.userId]
-    );
-    res.json({ score: result.rows[0]?.score ?? 0 });
-  } catch {
-    res.status(500).json({ message: 'Sunucu hatası.' });
-  }
+    const uid = req.userId!;
+    const friendships = await db("friendships")
+      .where((b: any) => b.where("requester_id", uid).orWhere("receiver_id", uid))
+      .where("status", "accepted");
+    const friendIds = friendships.map((r: any) =>
+      r.requester_id === uid ? r.receiver_id : r.requester_id);
+
+    const users = await db("users")
+      .whereIn("id", [...friendIds, req.userId!])
+      .select("id","username","avatar_id as avatarId","weekly_score as score","current_league as league")
+      .orderBy("weekly_score", "desc");
+    res.json(users.map((u: any, i: number) => ({ ...u, rank: i + 1, isMe: u.id === req.userId })));
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
 export default router;

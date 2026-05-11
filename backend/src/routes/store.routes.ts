@@ -1,75 +1,41 @@
-import { Router } from 'express';
-import { pool } from '../db';
-import { authMiddleware, type AuthRequest } from '../middleware/auth.middleware';
+﻿import { Router } from "express";
+import db from "../database";
+import { authMiddleware, type AuthRequest } from "../middleware/auth.middleware";
 
 const router = Router();
 
-const COIN_PACKS = [
-  { id: 'coins_100', amount: 100, price: 1.99 },
-  { id: 'coins_500', amount: 500, price: 7.99 },
-  { id: 'coins_1000', amount: 1000, price: 12.99 },
-];
-
-router.get('/products', async (req, res) => {
-  res.json(COIN_PACKS);
+router.get("/packages", (_req, res) => {
+  const pkgs = [
+    { id: "coins_500",  coins: 500,  amount: 500,  price: "19",  label: "Küçük Paket" },
+    { id: "coins_1200", coins: 1200, amount: 1200, price: "39",  label: "Orta Paket",  popular: true },
+    { id: "coins_3000", coins: 3000, amount: 3000, price: "79",  label: "Büyük Paket" },
+    { id: "vip_30",     coins: 1000, amount: 1000, price: "99",  label: "VIP 30 Gün", premiumDays: 30 },
+    { id: "noads",      coins: 0,    amount: 0,    price: "49",  label: "Reklamsız" },
+  ];
+  res.json(pkgs);
 });
 
-router.post('/purchase-coins', authMiddleware, async (req: AuthRequest, res) => {
-  const { packId, transactionId } = req.body;
-  
-  const pack = COIN_PACKS.find(p => p.id === packId);
-  if (!pack) return res.status(400).json({ message: 'Geçersiz paket.' });
-
-  // In a real app, we would verify transactionId with Apple/Google API here.
-  
+router.post("/purchase", authMiddleware, async (req: AuthRequest, res) => {
+  const { packageId, receipt } = req.body;
+  if (!receipt) return res.status(400).json({ message: "Receipt gerekli." });
+  const COINS: Record<string, number> = { coins_500: 500, coins_1200: 1200, coins_3000: 3000, vip_30: 1000, noads: 0 };
+  const coins = COINS[packageId];
+  if (coins === undefined) return res.status(400).json({ message: "Geçersiz paket." });
   try {
-    await pool.query(
-      'UPDATE users SET coins = coins + $1 WHERE id = $2',
-      [pack.amount, req.userId]
-    );
-
-    const userRes = await pool.query('SELECT coins FROM users WHERE id = $1', [req.userId]);
-    res.json({
-      message: 'Satın alma başarılı.',
-      newBalance: userRes.rows[0].coins
-    });
-
-  } catch (err) {
-    res.status(500).json({ message: 'İşlem başarısız.' });
-  }
+    await db("users").where("id", req.userId).update({ coins: db.raw("coins + ?", [coins]) });
+    res.json({ success: true, coinsAdded: coins });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
-const AVATAR_PRICES: Record<number, number> = {
-  4: 100, 5: 100, 6: 250, 7: 250, 8: 500, 9: 500, 10: 1000
-};
-
-router.post('/unlock-avatar', authMiddleware, async (req: AuthRequest, res) => {
-  const { avatarId } = req.body;
-  const price = AVATAR_PRICES[avatarId];
-
-  if (!price) return res.status(400).json({ message: 'Bu avatar satın alınamaz.' });
-
+router.post("/spend", authMiddleware, async (req: AuthRequest, res) => {
+  const { amount } = req.body;
+  if (!amount || amount <= 0) return res.status(400).json({ message: "Geçersiz miktar." });
   try {
-    // 1. Kullanıcı bakiyesini kontrol et
-    const userRes = await pool.query('SELECT coins FROM users WHERE id = $1', [req.userId]);
-    const currentCoins = userRes.rows[0].coins;
-
-    if (currentCoins < price) {
-      return res.status(400).json({ message: 'Yetersiz coin.' });
-    }
-
-    // 2. Satın alımı gerçekleştir (Transaction kullanmak daha iyi ama şimdilik seri)
-    await pool.query('UPDATE users SET coins = coins - $1 WHERE id = $2', [price, req.userId]);
-    await pool.query(
-      'INSERT INTO user_avatars (user_id, avatar_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-      [req.userId, avatarId]
-    );
-
-    res.json({ message: 'Avatar kilidi açıldı.', newBalance: currentCoins - price });
-  } catch (err) {
-    res.status(500).json({ message: 'İşlem başarısız.' });
-  }
+    const user = await db("users").where("id", req.userId).first();
+    if ((user?.coins ?? 0) < amount) return res.status(400).json({ message: "Yetersiz coin." });
+    await db("users").where("id", req.userId).update({ coins: db.raw("coins - ?", [amount]) });
+    res.json({ success: true, remaining: user.coins - amount });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
 export default router;
-
