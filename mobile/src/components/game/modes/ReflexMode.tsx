@@ -4,40 +4,32 @@ import { useGameStore } from '../../../store/gameStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { Colors } from '../../../constants/colors';
 import { assetService } from '../../../services/asset.service';
-import { TimerBar } from '../TimerBar';
-import { ComboBar } from '../ComboBar';
 import { ScoreBar } from '../ScoreBar';
+import { ComboBar } from '../ComboBar';
+import { TimerBar } from '../TimerBar';
 
-const { width, height } = Dimensions.get('window');
-const TARGET_SIZE = 68;
-const GAME_AREA = { top: 160, bottom: height - 180 };
+const { width: SW, height: SH } = Dimensions.get('window');
+const LANES      = 3;
+const LANE_W     = (SW - 32) / LANES;
+const TARGET_H   = 56;
+const HIT_ZONE_Y = SH - 220;
+const HIT_WINDOW = 70;   // ± piksel hassasiyet
 
-type TargetType = 'normal' | 'bonus' | 'trap';
+type TargetType = 'normal' | 'bonus' | 'bomb';
 
-interface Target {
+interface FallingTarget {
   id: number;
-  x: number;
-  y: number;
+  lane: number;
   type: TargetType;
-  scale: Animated.Value;
+  y: Animated.Value;
+  speed: number;
+  scored: boolean;
 }
 
-function randomTarget(id: number): Target {
-  const rand = Math.random();
-  const type: TargetType = rand < 0.68 ? 'normal' : rand < 0.88 ? 'bonus' : 'trap';
-  return {
-    id,
-    x: Math.random() * (width - TARGET_SIZE - 24) + 12,
-    y: Math.random() * (GAME_AREA.bottom - GAME_AREA.top - TARGET_SIZE) + GAME_AREA.top,
-    type,
-    scale: new Animated.Value(0),
-  };
-}
-
-const TARGET_CONFIG = {
-  normal: { bg: '#e94560', border: '#ff6b7a', emoji: '🎯', pts: 10 },
-  bonus:  { bg: '#f0c040', border: '#ffd966', emoji: '⭐', pts: 25 },
-  trap:   { bg: '#444466', border: '#666688', emoji: '💀', pts: 0  },
+const TYPE_CONFIG: Record<TargetType, { emoji: string; color: string; pts: number }> = {
+  normal: { emoji: '●',  color: '#e94560', pts: 10 },
+  bonus:  { emoji: '⭐', color: '#f0c040', pts: 30 },
+  bomb:   { emoji: '💣', color: '#555577', pts: 0  },
 };
 
 interface Props { onEnd: () => void }
@@ -47,144 +39,215 @@ export function ReflexMode({ onEnd }: Props) {
   const { theme } = useSettingsStore();
   const C = Colors[theme];
 
-  const [targets, setTargets] = useState<Target[]>([]);
-  const [floats, setFloats] = useState<{ id: number; text: string; x: number; y: number; anim: Animated.Value }[]>([]);
-  const nextId = useRef(0);
+  const [targets, setTargets] = useState<FallingTarget[]>([]);
+  const [hitFeedback, setHitFeedback] = useState<{ lane: number; text: string; color: string } | null>(null);
+  const [missLane, setMissLane]       = useState<number | null>(null);
+
+  const nextId   = useRef(0);
+  const speed    = useRef(2.8);
   const endCalled = useRef(false);
-  const floatId = useRef(0);
+  const gameActive = useRef(true);
 
-  const spawnTarget = useCallback(() => {
-    setTargets((prev) => {
-      if (prev.length >= 5) return prev;
-      const t = randomTarget(nextId.current++);
-      // Pop-in animasyon
-      Animated.spring(t.scale, { toValue: 1, friction: 5, tension: 120, useNativeDriver: true }).start();
-      return [...prev, t];
-    });
-  }, []);
-
-  const removeTarget = useCallback((id: number) => {
-    setTargets((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const showFloat = (text: string, x: number, y: number) => {
-    const id = floatId.current++;
-    const anim = new Animated.Value(0);
-    setFloats((f) => [...f, { id, text, x, y, anim }]);
-    Animated.timing(anim, { toValue: 1, duration: 800, useNativeDriver: true }).start(() => {
-      setFloats((f) => f.filter((fl) => fl.id !== id));
-    });
-  };
-
+  // Hız artışı
   useEffect(() => {
-    const t = setInterval(spawnTarget, 700);
+    const t = setInterval(() => {
+      speed.current = Math.min(speed.current * 1.08, 8);
+    }, 4000);
     return () => clearInterval(t);
-  }, [spawnTarget]);
+  }, []);
 
-  const handleHit = (target: Target) => {
-    removeTarget(target.id);
-    if (target.type === 'trap') {
-      assetService.playSound('miss');
-      assetService.vibrate([0, 80, 40, 120]);
-      resetCombo();
-      showFloat('-CAN', target.x + 16, target.y);
-      const dead = loseLife();
-      if (dead && !endCalled.current) { endCalled.current = true; onEnd(); }
-      return;
-    }
-    assetService.playSound(target.type === 'bonus' ? 'combo' : 'hit');
-    assetService.vibrate(30);
-    const cfg = TARGET_CONFIG[target.type];
-    const multiplier = Math.max(1, Math.floor(combo / 3) + 1);
-    const total = cfg.pts * multiplier;
-    addScore(cfg.pts);
-    incrementCombo();
-    showFloat(`+${total}`, target.x + 16, target.y);
-  };
+  // Hedef spawn
+  useEffect(() => {
+    const spawnInterval = () => {
+      if (!gameActive.current) return;
+      const lane = Math.floor(Math.random() * LANES);
+      const rand  = Math.random();
+      const type: TargetType = rand < 0.65 ? 'normal' : rand < 0.85 ? 'bonus' : 'bomb';
+      const y = new Animated.Value(-TARGET_H - 20);
+      const id = nextId.current++;
 
-  const comboColor = combo >= 8 ? '#ff4444' : combo >= 5 ? C.accentYellow : combo >= 3 ? C.accentTeal : C.textSecondary;
+      setTargets((prev) => [...prev, { id, lane, type, y, speed: speed.current, scored: false }]);
+
+      Animated.timing(y, {
+        toValue: SH,
+        duration: (SH + TARGET_H) / speed.current * 16,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setTargets((prev) => {
+            const hit = prev.find((t) => t.id === id);
+            if (hit && !hit.scored && hit.type !== 'bomb') {
+              // Miss!
+              setMissLane(hit.lane);
+              setTimeout(() => setMissLane(null), 300);
+              resetCombo();
+              const dead = loseLife();
+              if (dead && !endCalled.current) { endCalled.current = true; onEnd(); }
+            }
+            return prev.filter((t) => t.id !== id);
+          });
+        }
+      });
+
+      // Rastgele aralık
+      const nextDelay = 900 - Math.min(combo * 30, 400);
+      setTimeout(spawnInterval, Math.max(nextDelay, 400));
+    };
+
+    const t = setTimeout(spawnInterval, 500);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleLanePress = useCallback((lane: number) => {
+    setTargets((prev) => {
+      let hit = false;
+      return prev.map((t) => {
+        if (hit || t.scored || t.lane !== lane) return t;
+
+        // Y pozisyonunu al
+        const yVal = (t.y as any)._value as number;
+        const dist = Math.abs(yVal - HIT_ZONE_Y);
+
+        if (dist > HIT_WINDOW) return t;
+
+        hit = true;
+        if (t.type === 'bomb') {
+          assetService.playSound('miss');
+          assetService.vibrate([0, 100, 50, 100]);
+          resetCombo();
+          setHitFeedback({ lane, text: '💥 Bomba!', color: '#ff4444' });
+          const dead = loseLife();
+          if (dead && !endCalled.current) { endCalled.current = true; onEnd(); }
+          return { ...t, scored: true };
+        }
+
+        const cfg = TYPE_CONFIG[t.type];
+        const mult = Math.max(1, Math.floor(combo / 3) + 1);
+        const pts = cfg.pts * mult;
+        addScore(cfg.pts);
+        incrementCombo();
+        assetService.playSound(t.type === 'bonus' ? 'combo' : 'hit');
+        assetService.vibrate(t.type === 'bonus' ? [0, 30, 20, 50] : 25);
+
+        const perfect = dist < 25;
+        setHitFeedback({
+          lane,
+          text: perfect ? `🎯 PERFECT +${pts}` : `+${pts}`,
+          color: perfect ? '#f0c040' : cfg.color,
+        });
+        setTimeout(() => setHitFeedback(null), 600);
+        return { ...t, scored: true };
+      });
+    });
+  }, [combo, addScore, incrementCombo, resetCombo, loseLife, onEnd]);
+
+  const s = styles(C);
 
   return (
-    <View style={[s.container, { backgroundColor: C.bgPrimary }]}>
+    <View style={[s.root, { backgroundColor: C.bgPrimary }]}>
       <ScoreBar />
-
-      <View style={s.hudRow}>
-        {/* Canlar */}
-        <View style={s.lives}>
-          {[0, 1, 2].map((i) => (
-            <Text key={i} style={[s.heart, { opacity: i < lives ? 1 : 0.2 }]}>❤️</Text>
-          ))}
-        </View>
-        {combo >= 3 && (
-          <View style={[s.comboPill, { backgroundColor: comboColor + '33', borderColor: comboColor }]}>
-            <Text style={[s.comboText, { color: comboColor }]}>🔥 x{combo}</Text>
-          </View>
-        )}
+      <View style={s.timerWrap}>
+        <TimerBar duration={30} isPlaying={true} onTimeUp={() => {
+          gameActive.current = false;
+          if (!endCalled.current) { endCalled.current = true; onEnd(); }
+        }} />
       </View>
 
-      <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
-        <TimerBar
-          duration={30}
-          isPlaying={true}
-          onTimeUp={() => {
-            if (!endCalled.current) { endCalled.current = true; onEnd(); }
-          }}
-        />
+      {/* Canlar */}
+      <View style={s.lives}>
+        {[0,1,2].map((i) => <Text key={i} style={[s.heart, { opacity: i < lives ? 1 : 0.2 }]}>❤️</Text>)}
       </View>
 
       <ComboBar combo={combo} />
 
-      {targets.map((t) => {
-        const cfg = TARGET_CONFIG[t.type];
-        return (
-          <TouchableOpacity
-            key={t.id}
-            style={[s.targetWrap, { left: t.x, top: t.y }]}
-            onPress={() => handleHit(t)}
-            activeOpacity={0.8}
-          >
-            <Animated.View style={[s.target, {
-              backgroundColor: cfg.bg,
-              borderColor: cfg.border,
-              transform: [{ scale: t.scale }],
-            }]}>
-              <Text style={s.targetEmoji}>{cfg.emoji}</Text>
-            </Animated.View>
-          </TouchableOpacity>
-        );
-      })}
+      {/* Şeritler */}
+      <View style={s.laneArea}>
+        {/* Şerit çizgileri */}
+        {[1, 2].map((i) => (
+          <View key={i} style={[s.laneLine, { left: i * LANE_W + 16, backgroundColor: C.border }]} />
+        ))}
 
-      {floats.map((f) => (
-        <Animated.Text
-          key={f.id}
-          style={[s.float, {
-            left: f.x, top: f.y,
-            color: f.text.startsWith('-') ? C.danger : C.accentYellow,
-            opacity: f.anim,
-            transform: [{ translateY: f.anim.interpolate({ inputRange: [0, 1], outputRange: [0, -50] }) }],
-          }]}
-        >
-          {f.text}
-        </Animated.Text>
-      ))}
+        {/* Hit zone çizgisi */}
+        <View style={[s.hitZone, { top: HIT_ZONE_Y, backgroundColor: C.accentTeal + '44', borderColor: C.accentTeal }]} />
+
+        {/* Hedefler */}
+        {targets.map((t) => !t.scored && (
+          <Animated.View
+            key={t.id}
+            style={[s.targetWrap, {
+              left: 16 + t.lane * LANE_W + (LANE_W - TARGET_H) / 2,
+              transform: [{ translateY: t.y }],
+            }]}
+          >
+            <View style={[s.target, { backgroundColor: TYPE_CONFIG[t.type].color, borderColor: TYPE_CONFIG[t.type].color + 'aa' }]}>
+              <Text style={s.targetEmoji}>{TYPE_CONFIG[t.type].emoji}</Text>
+            </View>
+          </Animated.View>
+        ))}
+
+        {/* Hit feedback */}
+        {hitFeedback && (
+          <Text style={[s.feedback, {
+            left: 16 + hitFeedback.lane * LANE_W,
+            width: LANE_W,
+            top: HIT_ZONE_Y - 30,
+            color: hitFeedback.color,
+          }]}>
+            {hitFeedback.text}
+          </Text>
+        )}
+      </View>
+
+      {/* Dokunma butonları */}
+      <View style={s.buttons}>
+        {Array.from({ length: LANES }).map((_, i) => {
+          const isMiss = missLane === i;
+          return (
+            <TouchableOpacity
+              key={i}
+              style={[s.laneBtn, {
+                backgroundColor: isMiss ? C.danger + '44' : C.bgSecondary,
+                borderColor: isMiss ? C.danger : C.border,
+              }]}
+              onPress={() => handleLanePress(i)}
+              activeOpacity={0.6}
+            >
+              <Text style={[s.laneBtnIcon, { color: C.textSecondary }]}>👇</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1 },
-  hudRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
-  lives: { flexDirection: 'row', gap: 4 },
-  heart: { fontSize: 22 },
-  comboPill: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1 },
-  comboText: { fontFamily: 'Nunito-ExtraBold', fontSize: 14 },
-  targetWrap: { position: 'absolute' },
-  target: {
-    width: TARGET_SIZE, height: TARGET_SIZE, borderRadius: TARGET_SIZE / 2,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 3,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 10,
+const styles = (C: typeof Colors.dark) => StyleSheet.create({
+  root: { flex: 1 },
+  timerWrap: { paddingHorizontal: 16, marginVertical: 4 },
+  lives: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 4 },
+  heart: { fontSize: 20 },
+  laneArea: { flex: 1, position: 'relative', overflow: 'hidden' },
+  laneLine: { position: 'absolute', top: 0, bottom: 0, width: 1 },
+  hitZone: {
+    position: 'absolute', left: 16, right: 16, height: TARGET_H + 8,
+    borderRadius: 12, borderWidth: 2,
   },
-  targetEmoji: { fontSize: 30 },
-  float: { position: 'absolute', fontFamily: 'Nunito-ExtraBold', fontSize: 20, pointerEvents: 'none' } as any,
+  targetWrap: { position: 'absolute', width: TARGET_H, height: TARGET_H },
+  target: {
+    width: TARGET_H, height: TARGET_H, borderRadius: TARGET_H / 2,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 3,
+    elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4, shadowRadius: 5,
+  },
+  targetEmoji: { fontSize: 26 },
+  feedback: {
+    position: 'absolute', textAlign: 'center',
+    fontFamily: 'Nunito-ExtraBold', fontSize: 18,
+  },
+  buttons: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
+  laneBtn: {
+    flex: 1, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2,
+  },
+  laneBtnIcon: { fontSize: 28 },
 });

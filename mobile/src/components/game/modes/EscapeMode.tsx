@@ -1,208 +1,297 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, PanResponder } from 'react-native';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Animated } from 'react-native';
 import { useGameStore } from '../../../store/gameStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { Colors } from '../../../constants/colors';
-import { useTimer } from '../../../hooks/useTimer';
+import { assetService } from '../../../services/asset.service';
 import { ScoreBar } from '../ScoreBar';
 import { ComboBar } from '../ComboBar';
-import { assetService } from '../../../services/asset.service';
 
-const { width, height: screenH } = Dimensions.get('window');
-const GAME_H = screenH - 200;
-const PLAYER_SIZE = 24;
-const OBSTACLE_W = 60;
+const { width: SW } = Dimensions.get('window');
+const LANES      = 3;
+const LANE_W     = (SW - 32) / LANES;
+const ROAD_H     = 420;
+const PLAYER_Y   = ROAD_H - 80;
+const OBJ_W      = 50;
+const OBJ_H      = 56;
 
-interface Obstacle {
+type ObjType = 'obstacle' | 'coin' | 'shield' | 'speed';
+
+interface RoadObj {
   id: number;
-  x: number;
-  y: number;
-  isBonus: boolean;
+  lane: number;
+  type: ObjType;
+  y: Animated.Value;
 }
+
+const OBJ_CFG: Record<ObjType, { emoji: string; color: string; label: string }> = {
+  obstacle: { emoji: '🧱', color: '#e94560', label: 'Engel'    },
+  coin:     { emoji: '🪙', color: '#f0c040', label: '+25 coin' },
+  shield:   { emoji: '🛡️', color: '#4ecdc4', label: 'Kalkan!'  },
+  speed:    { emoji: '⚡', color: '#9b59b6', label: 'Hız!'     },
+};
 
 interface Props { onEnd: () => void }
 
 export function EscapeMode({ onEnd }: Props) {
-  const { addScore, score } = useGameStore();
+  const { addScore, incrementCombo, resetCombo, score, combo } = useGameStore();
   const { theme } = useSettingsStore();
   const C = Colors[theme];
 
-  const [playerX, setPlayerX] = useState(width / 2 - PLAYER_SIZE / 2);
-  const [playerY, setPlayerY] = useState(GAME_H - 80);
-  const [obstacles, setObstacles] = useState<Obstacle[]>([]);
-  const [alive, setAlive] = useState(true);
+  const [playerLane, setPlayerLane] = useState(1);
+  const [objects, setObjects]       = useState<RoadObj[]>([]);
+  const [elapsed, setElapsed]       = useState(0);
+  const [hasShield, setHasShield]   = useState(false);
+  const [speedBoost, setSpeedBoost] = useState(false);
+  const [feedback, setFeedback]     = useState<{ text: string; color: string } | null>(null);
 
-  const nextId = useRef(0);
-  const speedRef = useRef(3);
-  const endCalled = useRef(false);
-  const playerRef = useRef({ x: width / 2, y: GAME_H - 80 });
+  const nextId     = useRef(0);
+  const speed      = useRef(2.5);
+  const endCalled  = useRef(false);
+  const shieldRef  = useRef(false);
+  const laneRef    = useRef(1);
+  const objectsRef = useRef<RoadObj[]>([]);
 
-  const { seconds: elapsed, startTimer, pauseTimer } = useTimer({
-    initialSeconds: 0,
-    countUp: true,
-    autoStart: true
-  });
+  // Senkron refs
+  useEffect(() => { laneRef.current = playerLane; }, [playerLane]);
+  useEffect(() => { objectsRef.current = objects; }, [objects]);
+  useEffect(() => { shieldRef.current = hasShield; }, [hasShield]);
 
-  const handleEnd = useCallback(() => {
-    if (!endCalled.current) {
-      endCalled.current = true;
-      setAlive(false);
-      pauseTimer();
-      onEnd();
-    }
-  }, [pauseTimer, onEnd]);
-
-  // Score ticker
+  // Elapsed timer
   useEffect(() => {
-    if (!alive) return;
     const t = setInterval(() => {
-      addScore(1);
+      setElapsed((e) => { addScore(2); return e + 1; });
     }, 1000);
     return () => clearInterval(t);
-  }, [alive, addScore]);
+  }, [addScore]);
 
-  // Speed up every 10s
+  // Hız artışı
   useEffect(() => {
-    if (elapsed > 0 && elapsed % 10 === 0) {
-      speedRef.current = Math.min(speedRef.current * 1.15, 15);
-    }
-  }, [elapsed]);
-
-  // Spawn obstacles
-  useEffect(() => {
-    if (!alive) return;
     const t = setInterval(() => {
-      const isBonus = Math.random() < 0.15;
-      setObstacles((obs) => [...obs, {
-        id: nextId.current++,
-        x: Math.random() * (width - OBSTACLE_W),
-        y: -40,
-        isBonus,
-      }]);
-    }, 1200);
+      speed.current = Math.min(speed.current * 1.1, 10);
+    }, 5000);
     return () => clearInterval(t);
-  }, [alive]);
+  }, []);
 
-  // Move obstacles + collision
+  // Nesne spawn
   useEffect(() => {
-    if (!alive) return;
-    const t = setInterval(() => {
-      setObstacles((obs) => {
-        const updated = obs
-          .map((o) => ({ ...o, y: o.y + speedRef.current }))
-          .filter((o) => o.y < GAME_H + 40);
+    const spawn = () => {
+      if (endCalled.current) return;
 
-        const px = playerRef.current.x;
-        const py = playerRef.current.y;
+      const lane = Math.floor(Math.random() * LANES);
+      const rand = Math.random();
+      const type: ObjType =
+        rand < 0.55 ? 'obstacle' :
+        rand < 0.75 ? 'coin' :
+        rand < 0.88 ? 'shield' : 'speed';
 
-        for (const o of updated) {
-          const dx = Math.abs(px - (o.x + OBSTACLE_W / 2));
-          const dy = Math.abs(py - (o.y + 20));
-          if (dx < PLAYER_SIZE + OBSTACLE_W / 2 && dy < PLAYER_SIZE + 20) {
-            if (o.isBonus) {
-              addScore(50);
-              assetService.playSound('combo');
-              assetService.vibrate(30);
-              return updated.filter((ob) => ob.id !== o.id);
+      const y = new Animated.Value(-OBJ_H - 20);
+      const id = nextId.current++;
+      const obj: RoadObj = { id, lane, type, y };
+
+      setObjects((prev) => [...prev, obj]);
+
+      const dur = (ROAD_H + OBJ_H + 20) / speed.current * 16;
+
+      Animated.timing(y, {
+        toValue: ROAD_H + 20,
+        duration: dur,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setObjects((prev) => {
+            const hit = prev.find((o) => o.id === id);
+            if (hit && hit.type === 'obstacle' && hit.lane === laneRef.current) {
+              // Engele çarptı (frame sonu kontrolü)
+              handleCollision();
+            }
+            return prev.filter((o) => o.id !== id);
+          });
+        }
+      });
+
+      // Çarpışma: anlık kontrolde yakalanamayabilir, y değerine bak
+      const checkInterval = setInterval(() => {
+        if (endCalled.current) { clearInterval(checkInterval); return; }
+        const yVal = (y as any)._value as number;
+        if (yVal >= PLAYER_Y - OBJ_H / 2 && yVal <= PLAYER_Y + 20) {
+          if (obj.lane === laneRef.current) {
+            clearInterval(checkInterval);
+            setObjects((prev) => prev.filter((o) => o.id !== id));
+            (y as any).stopAnimation();
+            if (obj.type === 'obstacle') {
+              handleCollision();
             } else {
-              assetService.playSound('miss');
-              assetService.vibrate([0, 200, 100, 200]);
-              handleEnd();
-              return [];
+              handlePickup(obj.type);
             }
           }
         }
-        return updated;
-      });
-    }, 30);
-    return () => clearInterval(t);
-  }, [alive, handleEnd, addScore]);
+        if (yVal > ROAD_H + 20) clearInterval(checkInterval);
+      }, 50);
+    };
 
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => alive,
-    onPanResponderMove: (e) => {
-      const newX = Math.max(0, Math.min(width - PLAYER_SIZE * 2, e.nativeEvent.pageX - PLAYER_SIZE));
-      setPlayerX(newX);
-      playerRef.current.x = newX + PLAYER_SIZE;
-    },
-  });
+    const t = setTimeout(() => {
+      spawn();
+      const iv = setInterval(() => {
+        if (endCalled.current) { clearInterval(iv); return; }
+        spawn();
+      }, Math.max(900 - elapsed * 5, 500));
+      return () => clearInterval(iv);
+    }, 800);
+
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleCollision = useCallback(() => {
+    if (shieldRef.current) {
+      setHasShield(false);
+      shieldRef.current = false;
+      assetService.playSound('miss');
+      assetService.vibrate(80);
+      showFeedback('🛡️ Kalkan kırıldı!', '#4ecdc4');
+      resetCombo();
+      return;
+    }
+    if (endCalled.current) return;
+    endCalled.current = true;
+    assetService.playSound('miss');
+    assetService.vibrate([0, 200, 100, 300]);
+    onEnd();
+  }, [onEnd, resetCombo]);
+
+  const handlePickup = useCallback((type: ObjType) => {
+    if (type === 'coin') {
+      addScore(25);
+      incrementCombo();
+      assetService.playSound('hit');
+      assetService.vibrate(30);
+      showFeedback('🪙 +25!', '#f0c040');
+    } else if (type === 'shield') {
+      setHasShield(true);
+      shieldRef.current = true;
+      assetService.playSound('combo');
+      showFeedback('🛡️ Kalkan!', '#4ecdc4');
+    } else if (type === 'speed') {
+      setSpeedBoost(true);
+      addScore(50);
+      assetService.playSound('combo');
+      showFeedback('⚡ Hız x2!', '#9b59b6');
+      setTimeout(() => setSpeedBoost(false), 3000);
+    }
+  }, [addScore, incrementCombo]);
+
+  const showFeedback = (text: string, color: string) => {
+    setFeedback({ text, color });
+    setTimeout(() => setFeedback(null), 900);
+  };
+
+  const changeLane = (dir: -1 | 0 | 1) => {
+    setPlayerLane((l) => {
+      const next = Math.max(0, Math.min(LANES - 1, l + dir));
+      laneRef.current = next;
+      return next;
+    });
+  };
 
   const s = styles(C);
 
-  // Hız rengini hesapla
-  const speedLevel = Math.min(Math.floor((speedRef.current - 3) / 2), 4);
+  const speedLevel = Math.min(Math.floor((speed.current - 2.5) / 1), 4);
   const speedColors = ['#4ecdc4','#2ecc71','#f0c040','#e67e22','#e94560'];
-  const speedColor = speedColors[speedLevel] ?? '#e94560';
 
   return (
-    <View style={s.container} {...panResponder.panHandlers}>
+    <View style={s.root}>
       <ScoreBar />
-      <ComboBar combo={0} />
+      <ComboBar combo={combo} />
+
+      {/* HUD */}
       <View style={s.hud}>
-        <View style={s.statBox}>
-          <Text style={[s.statLabel, { color: C.textSecondary }]}>SÜRE</Text>
-          <Text style={[s.statVal, { color: C.textPrimary }]}>{elapsed}s</Text>
-        </View>
-        <View style={[s.speedMeter, { backgroundColor: speedColor + '22', borderColor: speedColor }]}>
-          <Text style={[s.speedText, { color: speedColor }]}>💨 {speedRef.current.toFixed(1)}x</Text>
-        </View>
-        <View style={s.statBox}>
-          <Text style={[s.statLabel, { color: C.textSecondary }]}>HEDEF</Text>
-          <Text style={[s.statVal, { color: C.accentYellow }]}>60s</Text>
+        <Text style={[s.timeText, { color: C.textPrimary }]}>⏱ {elapsed}s</Text>
+        {hasShield && <Text style={s.shieldIcon}>🛡️ Kalkan</Text>}
+        {speedBoost && <Text style={[s.shieldIcon, { color: '#9b59b6' }]}>⚡ Hız x2</Text>}
+        <View style={[s.speedBadge, { backgroundColor: speedColors[speedLevel] + '22', borderColor: speedColors[speedLevel] }]}>
+          <Text style={[s.speedText, { color: speedColors[speedLevel] }]}>Lvl {speedLevel + 1}</Text>
         </View>
       </View>
 
-      {/* Zemin çizgisi */}
-      <View style={[s.groundLine, { backgroundColor: C.border }]} />
-
-      {/* Oyun alanı */}
-      <View style={[s.gameArea, { height: GAME_H }]}>
-        {/* Oyuncu — koşan karakter */}
-        <View style={[s.player, { left: playerX, top: playerY }]}>
-          <Text style={s.playerEmoji}>🏃</Text>
-          {/* Gölge */}
-          <View style={[s.shadow, { backgroundColor: C.textSecondary + '33' }]} />
-        </View>
-
-        {/* Engeller */}
-        {obstacles.map((o) => (
-          <View key={o.id} style={[
-            s.obstacle,
-            {
-              left: o.x, top: o.y,
-              backgroundColor: o.isBonus ? C.accentYellow + '22' : C.danger + '11',
-              borderColor: o.isBonus ? C.accentYellow : C.danger,
-            }
-          ]}>
-            <Text style={s.obstacleEmoji}>{o.isBonus ? '⭐' : '🧱'}</Text>
-          </View>
+      {/* Yol */}
+      <View style={[s.road, { backgroundColor: C.bgSecondary }]}>
+        {/* Şerit çizgileri */}
+        {[1, 2].map((i) => (
+          <View key={i} style={[s.laneLine, { left: 16 + i * LANE_W, backgroundColor: C.border }]} />
         ))}
+
+        {/* Nesneler */}
+        {objects.map((o) => (
+          <Animated.View key={o.id} style={[s.objWrap, {
+            left: 16 + o.lane * LANE_W + (LANE_W - OBJ_W) / 2,
+            transform: [{ translateY: o.y }],
+          }]}>
+            <View style={[s.obj, {
+              backgroundColor: OBJ_CFG[o.type].color + '22',
+              borderColor: OBJ_CFG[o.type].color,
+            }]}>
+              <Text style={s.objEmoji}>{OBJ_CFG[o.type].emoji}</Text>
+            </View>
+          </Animated.View>
+        ))}
+
+        {/* Oyuncu */}
+        <View style={[s.player, {
+          left: 16 + playerLane * LANE_W + (LANE_W - OBJ_W) / 2,
+          top: PLAYER_Y,
+          borderColor: hasShield ? '#4ecdc4' : '#e94560',
+          backgroundColor: hasShield ? '#4ecdc433' : '#e9456022',
+        }]}>
+          <Text style={s.playerEmoji}>{hasShield ? '🛡️' : '🏃'}</Text>
+        </View>
+
+        {/* Feedback */}
+        {feedback && (
+          <Text style={[s.feedback, { color: feedback.color }]}>{feedback.text}</Text>
+        )}
       </View>
 
-      <Text style={[s.hint, { color: C.textSecondary }]}>
-        👆 Parmağını sürükle → engelleri aş!
-      </Text>
+      {/* Kontrol Butonları */}
+      <View style={s.controls}>
+        <TouchableOpacity style={[s.ctrlBtn, { backgroundColor: C.bgSecondary }]} onPress={() => changeLane(-1)}>
+          <Text style={s.ctrlText}>◀</Text>
+        </TouchableOpacity>
+        <View style={[s.ctrlCenter, { backgroundColor: C.bgTertiary }]}>
+          <Text style={[s.ctrlHint, { color: C.textSecondary }]}>Şerit değiştir</Text>
+        </View>
+        <TouchableOpacity style={[s.ctrlBtn, { backgroundColor: C.bgSecondary }]} onPress={() => changeLane(1)}>
+          <Text style={s.ctrlText}>▶</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bgPrimary },
-  hud: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
-  statBox: { alignItems: 'center' },
-  statLabel: { fontSize: 10, fontFamily: 'Nunito-SemiBold', letterSpacing: 1 },
-  statVal: { fontSize: 20, fontFamily: 'Nunito-ExtraBold' },
-  speedMeter: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1.5 },
-  speedText: { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
-  groundLine: { height: 1, marginHorizontal: 16, marginBottom: 4 },
-  gameArea: { flex: 1, overflow: 'hidden', position: 'relative' },
-  player: { position: 'absolute', alignItems: 'center' },
-  playerEmoji: { fontSize: 32 },
-  shadow: { width: 24, height: 6, borderRadius: 12, marginTop: -4 },
-  obstacle: {
-    position: 'absolute', width: OBSTACLE_W, height: 44,
-    borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 2,
+  root: { flex: 1, backgroundColor: C.bgPrimary },
+  hud: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 6, gap: 10 },
+  timeText: { fontFamily: 'Nunito-Bold', fontSize: 16 },
+  shieldIcon: { fontFamily: 'Nunito-Bold', fontSize: 13, color: '#4ecdc4' },
+  speedBadge: { marginLeft: 'auto', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1 },
+  speedText: { fontFamily: 'Nunito-ExtraBold', fontSize: 12 },
+  road: { height: ROAD_H, position: 'relative', overflow: 'hidden', marginHorizontal: 16, borderRadius: 16, marginBottom: 8 },
+  laneLine: { position: 'absolute', top: 0, bottom: 0, width: 1.5 },
+  objWrap: { position: 'absolute', width: OBJ_W, height: OBJ_H },
+  obj: { width: OBJ_W, height: OBJ_H, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  objEmoji: { fontSize: 28 },
+  player: {
+    position: 'absolute', width: OBJ_W, height: OBJ_H,
+    borderRadius: 14, borderWidth: 2.5,
+    alignItems: 'center', justifyContent: 'center',
   },
-  obstacleEmoji: { fontSize: 22 },
-  hint: { textAlign: 'center', paddingBottom: 12, fontFamily: 'Nunito-Regular', fontSize: 12 },
+  playerEmoji: { fontSize: 30 },
+  feedback: {
+    position: 'absolute', top: PLAYER_Y - 40, alignSelf: 'center',
+    fontFamily: 'Nunito-ExtraBold', fontSize: 20, width: '100%', textAlign: 'center',
+  },
+  controls: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, height: 60 },
+  ctrlBtn: { flex: 2, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  ctrlText: { fontSize: 28, color: '#e94560', fontWeight: '900' },
+  ctrlCenter: { flex: 3, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  ctrlHint: { fontFamily: 'Nunito-Regular', fontSize: 12 },
 });

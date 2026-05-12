@@ -1,172 +1,236 @@
-import { useState, useEffect, useRef } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { View, TouchableOpacity, Text, StyleSheet, Animated, Vibration } from 'react-native';
 import { useGameStore } from '../../../store/gameStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { Colors } from '../../../constants/colors';
 import { assetService } from '../../../services/asset.service';
 import { ScoreBar } from '../ScoreBar';
-import { ComboBar } from '../ComboBar';
 
-const SHAPES = [
-  { id: 'red_circle',    label: '🔴', color: '#e94560' },
-  { id: 'blue_square',  label: '🟦', color: '#4ecdc4' },
-  { id: 'green_tri',    label: '🟢', color: '#2ecc71' },
-  { id: 'yellow_star',  label: '⭐', color: '#f0c040' },
-  { id: 'purple_diam',  label: '💜', color: '#9b59b6' },
+const BUTTONS = [
+  { id: 0, color: '#e94560', dark: '#8b1a2e', emoji: '🔴', label: 'Kırmızı' },
+  { id: 1, color: '#2ecc71', dark: '#166a3a', emoji: '🟢', label: 'Yeşil'  },
+  { id: 2, color: '#f0c040', dark: '#7a6010', emoji: '🟡', label: 'Sarı'   },
+  { id: 3, color: '#4ecdc4', dark: '#1e6b66', emoji: '🔵', label: 'Mavi'   },
 ];
-
-const ROUNDS = [
-  { count: 3, showMs: 2000, reward: 100 },
-  { count: 4, showMs: 1500, reward: 200 },
-  { count: 5, showMs: 1500, reward: 350 },
-  { count: 6, showMs: 1000, reward: 500 },
-];
-
-function generateSequence(count: number) {
-  return Array.from({ length: count }, () => SHAPES[Math.floor(Math.random() * SHAPES.length)]);
-}
-
-interface Props { onEnd: () => void }
 
 type Phase = 'show' | 'input' | 'result' | 'countdown';
+
+interface Props { onEnd: () => void }
 
 export function MemoryMode({ onEnd }: Props) {
   const { addScore, score } = useGameStore();
   const { theme } = useSettingsStore();
   const C = Colors[theme];
 
-  const [round, setRound] = useState(0);
-  const [sequence, setSequence] = useState(() => generateSequence(3));
-  const [phase, setPhase] = useState<Phase>('show');
-  const [showIdx, setShowIdx] = useState(0);
-  const [inputSeq, setInputSeq] = useState<string[]>([]);
-  const [success, setSuccess] = useState(false);
+  const [sequence, setSequence]   = useState<number[]>([]);
+  const [inputSeq, setInputSeq]   = useState<number[]>([]);
+  const [phase, setPhase]         = useState<Phase>('show');
+  const [activeBtn, setActiveBtn] = useState<number | null>(null);
+  const [round, setRound]         = useState(1);
+  const [lives, setLives]         = useState(3);
   const [countdown, setCountdown] = useState(3);
+  const [wrongBtn, setWrongBtn]   = useState<number | null>(null);
+
   const endCalled = useRef(false);
+  const showSpeed = useRef(600);
 
-  const roundCfg = ROUNDS[Math.min(round, ROUNDS.length - 1)];
+  // İlk sekansı oluştur
+  useEffect(() => {
+    startNewRound([]);
+  }, []);
 
-  // Gösterim fazı
+  const startNewRound = useCallback((prev: number[]) => {
+    const next = [...prev, Math.floor(Math.random() * 4)];
+    setSequence(next);
+    setInputSeq([]);
+    setRound(next.length);
+    showSpeed.current = Math.max(280, 600 - next.length * 25);
+    setPhase('show');
+  }, []);
+
+  // Gösterim animasyonu
   useEffect(() => {
     if (phase !== 'show') return;
-    if (showIdx >= sequence.length) {
-      const t = setTimeout(() => { setPhase('input'); }, 400);
-      return () => clearTimeout(t);
-    }
-    assetService.playSound('hit'); // Her gösterimde ses çal
-    const t = setTimeout(() => setShowIdx((i) => i + 1), roundCfg.showMs / sequence.length);
+    let i = 0;
+    const show = () => {
+      if (i >= sequence.length) {
+        setTimeout(() => setPhase('input'), 400);
+        return;
+      }
+      setActiveBtn(sequence[i]);
+      assetService.playSound('hit');
+      setTimeout(() => {
+        setActiveBtn(null);
+        i++;
+        setTimeout(show, showSpeed.current * 0.3);
+      }, showSpeed.current * 0.7);
+    };
+    const t = setTimeout(show, 600);
     return () => clearTimeout(t);
-  }, [phase, showIdx, sequence]);
+  }, [phase, sequence]);
 
-  const handleInput = (shapeId: string) => {
+  const handlePress = useCallback((btnId: number) => {
     if (phase !== 'input') return;
-    const next = [...inputSeq, shapeId];
-    const idx = next.length - 1;
+    setActiveBtn(btnId);
+    setTimeout(() => setActiveBtn(null), 200);
 
-    if (sequence[idx].id !== shapeId) {
+    const next = [...inputSeq, btnId];
+    const idx  = next.length - 1;
+
+    if (next[idx] !== sequence[idx]) {
+      // Yanlış!
       assetService.playSound('miss');
-      setPhase('result');
-      setSuccess(false);
-      setTimeout(() => { if (!endCalled.current) { endCalled.current = true; onEnd(); } }, 1500);
+      assetService.vibrate([0, 200, 100, 200]);
+      setWrongBtn(btnId);
+      setTimeout(() => setWrongBtn(null), 600);
+
+      const newLives = lives - 1;
+      setLives(newLives);
+
+      if (newLives <= 0) {
+        setPhase('result');
+        setTimeout(() => { if (!endCalled.current) { endCalled.current = true; onEnd(); } }, 1500);
+      } else {
+        // Tekrar göster
+        setTimeout(() => {
+          setInputSeq([]);
+          setPhase('show');
+        }, 1000);
+      }
       return;
     }
 
-    assetService.playSound('hit');
-    assetService.vibrate(40);
     if (next.length === sequence.length) {
-      addScore(roundCfg.reward);
+      // Doğru!
+      const pts = sequence.length * 50 + (sequence.length > 6 ? 100 : 0);
+      addScore(pts);
       assetService.playSound('combo');
-      assetService.vibrate([0, 50, 30, 80]);
-      setSuccess(true);
+      assetService.vibrate([0, 40, 20, 60]);
       setPhase('countdown');
-      const nextRound = round + 1;
-      const nextSeq = generateSequence(ROUNDS[Math.min(nextRound, ROUNDS.length - 1)].count + Math.max(0, nextRound - ROUNDS.length + 1));
-      let count = 3;
-      setCountdown(count);
+      let c = 3;
+      setCountdown(c);
       const tick = setInterval(() => {
-        count--;
-        setCountdown(count);
-        if (count <= 0) {
+        c--;
+        setCountdown(c);
+        if (c <= 0) {
           clearInterval(tick);
-          setRound(nextRound);
-          setSequence(nextSeq);
-          setShowIdx(0);
-          setInputSeq([]);
-          setPhase('show');
+          startNewRound(sequence);
         }
-      }, 800);
+      }, 700);
     } else {
       setInputSeq(next);
     }
-  };
+  }, [phase, inputSeq, sequence, lives, addScore, onEnd, startNewRound]);
 
   const s = styles(C);
-  const currentShape = phase === 'show' && showIdx < sequence.length ? sequence[showIdx] : null;
+
+  const phaseMsg = {
+    show: '👀 İzle ve ezberle!',
+    input: '👆 Sırayı tekrarla!',
+    result: '❌ Oyun Bitti!',
+    countdown: '✅ Harika!',
+  }[phase];
 
   return (
-    <View style={s.container}>
+    <View style={s.root}>
       <ScoreBar />
-      <ComboBar combo={0} />
-      <View style={s.hud}>
-        <Text style={s.round}>Tur {round + 1}</Text>
-        <Text style={s.progress}>{inputSeq.length}/{sequence.length}</Text>
+
+      {/* Tur + Canlar */}
+      <View style={s.header}>
+        <View style={s.roundBadge}>
+          <Text style={s.roundLabel}>TUR</Text>
+          <Text style={[s.roundNum, { color: C.accentTeal }]}>{round}</Text>
+        </View>
+
+        <View style={s.center}>
+          <Text style={[s.phaseMsg, { color: phase === 'input' ? C.accentYellow : C.textSecondary }]}>{phaseMsg}</Text>
+          {phase === 'input' && (
+            <Text style={[s.progress, { color: C.textSecondary }]}>{inputSeq.length} / {sequence.length}</Text>
+          )}
+          {phase === 'countdown' && (
+            <Text style={[s.countNum, { color: C.accentTeal }]}>{countdown}</Text>
+          )}
+        </View>
+
+        <View style={s.lives}>
+          {[0,1,2].map((i) => (
+            <Text key={i} style={[s.heart, { opacity: i < lives ? 1 : 0.2 }]}>❤️</Text>
+          ))}
+        </View>
       </View>
 
-      <View style={s.display}>
-        {phase === 'show' && currentShape ? (
-          <Text style={s.bigShape}>{currentShape.label}</Text>
-        ) : phase === 'countdown' ? (
-          <View style={{ alignItems: 'center' }}>
-            <Text style={[s.resultText, { color: C.accentTeal }]}>✅ Doğru!</Text>
-            <Text style={[s.bigShape, { color: C.accentYellow }]}>{countdown}</Text>
-          </View>
-        ) : phase === 'result' ? (
-          <Text style={[s.resultText, { color: success ? C.success : C.danger }]}>
-            {success ? '✅ Doğru!' : '❌ Yanlış!'}
-          </Text>
-        ) : (
-          <Text style={[s.hint, { color: C.textSecondary }]}>Diziyi tekrarla!</Text>
-        )}
+      {/* Sekans göstergesi */}
+      <View style={s.seqRow}>
+        {sequence.map((btnId, i) => {
+          const done  = i < inputSeq.length;
+          const btn   = BUTTONS[btnId];
+          return (
+            <View key={i} style={[s.seqDot, {
+              backgroundColor: done ? btn.color : C.bgTertiary,
+              width: Math.min(28, (280 / sequence.length) - 4),
+            }]} />
+          );
+        })}
       </View>
 
-      <View style={s.inputRow}>
-        {sequence.map((_, i) => (
-          <View key={i} style={[s.dot, {
-            backgroundColor: i < inputSeq.length ? C.accentTeal : C.bgTertiary,
-          }]} />
-        ))}
+      {/* 4 Renkli Buton — 2x2 grid */}
+      <View style={s.grid}>
+        {BUTTONS.map((btn) => {
+          const isActive = activeBtn === btn.id;
+          const isWrong  = wrongBtn === btn.id;
+          return (
+            <TouchableOpacity
+              key={btn.id}
+              style={[s.btn, {
+                backgroundColor: isActive ? btn.color : isWrong ? '#ff0000' : btn.dark,
+                transform: [{ scale: isActive ? 1.08 : 1 }],
+                shadowColor: isActive ? btn.color : 'transparent',
+                shadowOpacity: isActive ? 0.8 : 0,
+                shadowRadius: 12,
+                elevation: isActive ? 12 : 4,
+              }]}
+              onPress={() => handlePress(btn.id)}
+              activeOpacity={0.8}
+            >
+              <Text style={s.btnEmoji}>{btn.emoji}</Text>
+              {phase === 'input' && (
+                <Text style={[s.btnLabel, { color: '#ffffff99' }]}>{btn.label}</Text>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      <View style={s.buttons}>
-        {SHAPES.map((shape) => (
-          <TouchableOpacity
-            key={shape.id}
-            style={[s.shapeBtn, { backgroundColor: shape.color + '33', borderColor: shape.color }]}
-            onPress={() => handleInput(shape.id)}
-            disabled={phase !== 'input'}
-            activeOpacity={0.7}
-          >
-            <Text style={s.shapeBtnText}>{shape.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* İpucu */}
+      {phase === 'show' && sequence.length > 5 && (
+        <Text style={[s.tip, { color: C.textSecondary }]}>💡 Uzun sekanslar için ritme odaklan!</Text>
+      )}
     </View>
   );
 }
 
+const BTN_SIZE = 150;
+
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bgPrimary, padding: 20 },
-  hud: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  score: { color: C.accentYellow, fontSize: 18, fontFamily: 'Nunito-Bold' },
-  round: { color: C.textPrimary, fontSize: 18, fontFamily: 'Nunito-Bold' },
-  progress: { color: C.accentTeal, fontSize: 18, fontFamily: 'Nunito-Bold' },
-  display: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  bigShape: { fontSize: 120 },
-  hint: { fontSize: 20, fontFamily: 'Nunito-Regular' },
-  resultText: { fontSize: 32, fontFamily: 'Nunito-ExtraBold' },
-  inputRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24 },
-  dot: { width: 12, height: 12, borderRadius: 6 },
-  buttons: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 20 },
-  shapeBtn: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
-  shapeBtnText: { fontSize: 32 },
+  root: { flex: 1, backgroundColor: C.bgPrimary },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  roundBadge: { alignItems: 'center', backgroundColor: C.bgSecondary, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6, minWidth: 60 },
+  roundLabel: { color: C.textSecondary, fontSize: 10, fontFamily: 'Nunito-Bold', letterSpacing: 1 },
+  roundNum: { fontSize: 26, fontFamily: 'Nunito-ExtraBold' },
+  center: { flex: 1, alignItems: 'center' },
+  phaseMsg: { fontFamily: 'Nunito-Bold', fontSize: 15 },
+  progress: { fontFamily: 'Nunito-Regular', fontSize: 13, marginTop: 4 },
+  countNum: { fontSize: 36, fontFamily: 'Nunito-ExtraBold', marginTop: 4 },
+  lives: { flexDirection: 'row', gap: 4 },
+  heart: { fontSize: 20 },
+  seqRow: { flexDirection: 'row', justifyContent: 'center', gap: 4, marginBottom: 20, paddingHorizontal: 20, flexWrap: 'wrap' },
+  seqDot: { height: 10, borderRadius: 5 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, paddingHorizontal: 20 },
+  btn: {
+    width: BTN_SIZE, height: BTN_SIZE, borderRadius: 28,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  btnEmoji: { fontSize: 52 },
+  btnLabel: { fontSize: 13, fontFamily: 'Nunito-Bold', marginTop: 6 },
+  tip: { textAlign: 'center', fontFamily: 'Nunito-Regular', fontSize: 12, marginTop: 16, paddingHorizontal: 24 },
 });
