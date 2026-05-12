@@ -10,10 +10,9 @@ import { ReflexMode } from '../../src/components/game/modes/ReflexMode';
 import { MemoryMode } from '../../src/components/game/modes/MemoryMode';
 import { FootballMode } from '../../src/components/game/modes/FootballMode';
 import { WordMode } from '../../src/components/game/modes/WordMode';
-import { AttentionMode } from '../../src/components/game/modes/AttentionMode';
 import { EscapeMode } from '../../src/components/game/modes/EscapeMode';
 import { MathMode } from '../../src/components/game/modes/MathMode';
-import { ChainMode } from '../../src/components/game/modes/ChainMode';
+import { EnglishMode } from '../../src/components/game/modes/EnglishMode';
 
 const REVIVE_COST = 50;
 
@@ -38,7 +37,6 @@ export default function GameScreen() {
   }, [mode]);
 
   const handleEnd = () => {
-    // Eğer canı bittiyse ve yeterli coini varsa canlanma teklif et
     if (lives <= 0 && user && user.coins >= REVIVE_COST && !showRevive) {
       pauseGame();
       setShowRevive(true);
@@ -65,11 +63,11 @@ export default function GameScreen() {
 
   const handlePause = () => { setPaused(true); pauseGame(); };
   const handleResume = () => { setPaused(false); resumeGame(); };
-  const handleQuit = () => { 
-    setPaused(false); 
+  const handleQuit = () => {
+    setPaused(false);
     setShowRevive(false);
-    endGame(); 
-    router.replace('/(tabs)'); 
+    endGame();
+    router.replace('/(tabs)');
   };
 
   const s = styles(C);
@@ -77,14 +75,13 @@ export default function GameScreen() {
   const renderMode = () => {
     if (paused || showRevive) return null;
     switch (mode as GameModeId) {
-      case 'reflex':    return <ReflexMode onEnd={handleEnd} />;
-      case 'memory':    return <MemoryMode onEnd={handleEnd} />;
-      case 'football':  return <FootballMode onEnd={handleEnd} />;
-      case 'word':      return <WordMode onEnd={handleEnd} />;
-      case 'attention': return <AttentionMode onEnd={handleEnd} />;
-      case 'escape':    return <EscapeMode onEnd={handleEnd} />;
-      case 'math':      return <MathMode onEnd={handleEnd} />;
-      case 'chain':     return <ChainMode onEnd={handleEnd} />;
+      case 'reflex':   return <ReflexMode onEnd={handleEnd} />;
+      case 'memory':   return <MemoryMode onEnd={handleEnd} />;
+      case 'football': return <FootballMode onEnd={handleEnd} />;
+      case 'word':     return <WordMode onEnd={handleEnd} />;
+      case 'escape':   return <EscapeMode onEnd={handleEnd} />;
+      case 'math':     return <MathMode onEnd={handleEnd} />;
+      case 'english':  return <EnglishMode onEnd={handleEnd} />;
       default: return <Text style={{ color: C.textPrimary }}>Bilinmeyen mod</Text>;
     }
   };
@@ -146,5 +143,5 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   pauseCard: { width: 300, borderRadius: 24, padding: 24, alignItems: 'center', gap: 12 },
   pauseTitle: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', marginBottom: 4 },
   pauseBtn2: { width: '100%', borderRadius: 14, padding: 16, alignItems: 'center' },
-  pauseBtnText: { fontSize: 16, fontFamily: 'Nunito-Bold' },
+  pauseBtnText: { fontSize: 16, fontFamily: 'Nunito-Bold', color: '#fff' },
 });

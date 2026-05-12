@@ -6,14 +6,13 @@ import { Colors } from '../../../src/constants/colors';
 import { GAME_MODES, type GameModeId } from '../../../src/constants/gameModes';
 
 const HOW_TO_PLAY: Record<GameModeId, string> = {
-  reflex:    "3 şeritte yukarıdan düşen hedeflere dokun! Hit-zone'a gelince dokun. PERFECT vuruş bonus puan. Bomba = -1 can, Yıldız = +30p.",
-  memory:    "Simon Says! 4 renkli buton sırasını ezberle, aynı sırayla tekrarla. 3 can hakkın var. Dizi uzadıkça hızlanır!",
-  football:  "Sürükle → şut yap! Güç metresini izle. Üst köşe = 100p. Kaleci combo'ya göre hızlanır. Bölge butonuna bas!",
-  word:      "Verilen harflerden Türkçe kelimeler bul. 3 harf = 10p, 7+ harf = 200p. Tüm harfleri kullanan kelime 2x puan!",
-  attention: "Aralarında farklı olan nesneyi bul ve dokun! Renk, şekil veya boyut farkı. Zamanlayıcı rengi değişir.",
-  escape:    "◀ ▶ butonlarıyla şerit değiştir! 🪙 coin topla, 🛡️ kalkan al, ⚡ hız bonusu kazan. Engele çarpma!",
-  math:      "İşlemi hızlıca çöz, 4 seçenekten birini seç! Seviye arttıkça sayılar büyür. Seri yapınca bonus puan!",
-  chain:     "Son kelimenin son harfiyle başlayan yeni kelime bul! Zincirinizi kır madan devam et. 45 saniye!",
+  reflex:   "3 şeritte yukarıdan düşen hedeflere dokun! Hit-zone'a gelince dokun. PERFECT vuruş bonus puan. Bomba = -1 can, Yıldız = +30p.",
+  memory:   "Simon Says! 4 renkli buton sırasını ezberle, aynı sırayla tekrarla. 3 can hakkın var. Dizi uzadıkça hızlanır!",
+  football: "Sürükle → şut yap! Güç metresini izle. Üst köşe = 100p. Kaleci combo'ya göre hızlanır. Bölge butonuna bas!",
+  word:     "Verilen harflerden Türkçe kelimeler bul. 3 harf = 10p, 7+ harf = 200p. Tüm harfleri kullanan kelime 2x puan! Kelimelerin anlamlarını da öğren!",
+  escape:   "◀ ▶ butonlarıyla şerit değiştir! 🪙 coin topla, 🛡️ kalkan al, ⚡ hız bonusu kazan. Engele çarpma!",
+  math:     "İşlemi hızlıca çöz, 4 seçenekten birini seç! Seviye arttıkça sayılar büyür. Seri yapınca bonus puan!",
+  english:  "İngilizce kelimeyi gör, 4 seçenekten Türkçe karşılığını bul! Kolay=10p, Orta=20p, Zor=35p. 2+ seri yapınca bonus puan. 60 saniye!",
 };
 
 export default function ModeSelectScreen() {

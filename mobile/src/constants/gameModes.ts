@@ -1,4 +1,4 @@
-﻿export type GameModeId = 'reflex' | 'memory' | 'football' | 'word' | 'attention' | 'escape' | 'math' | 'chain';
+export type GameModeId = 'reflex' | 'memory' | 'football' | 'word' | 'escape' | 'math' | 'english';
 
 export interface GameModeConfig {
   id: GameModeId;
@@ -8,7 +8,7 @@ export interface GameModeConfig {
   icon: string;
   duration: number;
   color: string;
-  tag: string;        // eğitici etiket
+  tag: string;
 }
 
 export const GAME_MODES: GameModeConfig[] = [
@@ -46,21 +46,11 @@ export const GAME_MODES: GameModeConfig[] = [
     id: 'word',
     name: 'Kelime Yarışı',
     shortName: 'Kelime',
-    description: 'Verilen harflerden Türkçe kelimeler türet!',
+    description: 'Verilen harflerden Türkçe kelimeler türet, anlamlarını öğren!',
     icon: '📝',
     duration: 30,
     color: '#f0c040',
     tag: 'Türkçe & Dil',
-  },
-  {
-    id: 'attention',
-    name: 'Dikkat Oyunu',
-    shortName: 'Dikkat',
-    description: 'Nesneler arasındaki farklı olanı bul ve dokun!',
-    icon: '🔍',
-    duration: 20,
-    color: '#4ecdc4',
-    tag: 'Odak & Algı',
   },
   {
     id: 'escape',
@@ -83,13 +73,13 @@ export const GAME_MODES: GameModeConfig[] = [
     tag: 'Sayısal Düşünme',
   },
   {
-    id: 'chain',
-    name: 'Kelime Zinciri',
-    shortName: 'Zincir',
-    description: 'Son harften yeni kelime bul — zinciri kırma!',
-    icon: '🔗',
-    duration: 45,
-    color: '#8e44ad',
-    tag: 'Dil & Yaratıcılık',
+    id: 'english',
+    name: 'İngilizce Öğren',
+    shortName: 'İngilizce',
+    description: '5000+ İngilizce kelimeyi Türkçe karşılıklarıyla öğren!',
+    icon: '🇬🇧',
+    duration: 60,
+    color: '#1abc9c',
+    tag: 'İngilizce & Dil',
   },
 ];
