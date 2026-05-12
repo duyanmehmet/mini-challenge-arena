@@ -2,8 +2,9 @@ import { useEffect, useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, SafeAreaView,
+  StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useUserStore } from '../../src/store/userStore';
@@ -90,9 +91,12 @@ export default function HomeScreen() {
           <XPBar xp={user.xp} level={user.level} />
         </View>
 
-        {/* Başlık */}
+        {/* Başlık + Hızlı Oyna */}
         <View style={s.header}>
-          <Text style={s.headerTitle}>Oyun Modları</Text>
+          <View>
+            <Text style={s.headerTitle}>Oyun Modları</Text>
+            <Text style={[s.headerSub, { color: C.textSecondary }]}>Bir mod seç ve oynamaya başla!</Text>
+          </View>
           <TouchableOpacity
             style={[s.quickPlay, { backgroundColor: C.accentRed }]}
             onPress={() => {
@@ -100,7 +104,8 @@ export default function HomeScreen() {
               handleModePress(random.id);
             }}
           >
-            <Text style={s.quickPlayText}>⚡ Hızlı Oyna</Text>
+            <Text style={s.quickPlayIcon}>⚡</Text>
+            <Text style={s.quickPlayText}>Şansıma</Text>
           </TouchableOpacity>
         </View>
 
@@ -177,11 +182,13 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   username: { color: C.textPrimary, fontFamily: 'Nunito-Bold', fontSize: 15 },
   levelText: { color: C.textSecondary, fontFamily: 'Nunito-Regular', fontSize: 12 },
   xpSection: { paddingHorizontal: 16, marginBottom: 16 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12 },
   headerTitle: { color: C.textPrimary, fontFamily: 'Nunito-ExtraBold', fontSize: 20 },
-  quickPlay: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
-  quickPlayText: { color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 13 },
-  modesGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 10, marginBottom: 8 },
+  headerSub: { fontFamily: 'Nunito-Regular', fontSize: 12, marginTop: 2 },
+  quickPlay: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center' },
+  quickPlayIcon: { fontSize: 20, marginBottom: 2 },
+  quickPlayText: { color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 11 },
+  modesGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 6, marginBottom: 8 },
   section: { paddingHorizontal: 16, marginTop: 8 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   sectionTitle: { color: C.textPrimary, fontFamily: 'Nunito-Bold', fontSize: 16 },
