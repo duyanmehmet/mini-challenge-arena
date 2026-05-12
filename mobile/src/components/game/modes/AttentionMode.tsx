@@ -106,33 +106,53 @@ export function AttentionMode({ onEnd }: Props) {
   };
 
   const cols = Math.round(Math.sqrt(cfg.count));
-  const itemSize = (width - 40) / cols - 6;
+  const itemSize = (width - 48) / cols - 5;
   const s = styles(C);
+
+  // Timer bar rengi
+  const timerColor = timeLeft <= 2 ? C.danger : timeLeft <= 4 ? C.warning : C.accentTeal;
 
   return (
     <View style={s.container}>
       <ScoreBar />
       <ComboBar combo={0} />
+
+      {/* HUD */}
       <View style={s.hud}>
-        <Text style={s.round}>Tur {round + 1}</Text>
-        <Text style={[s.time, { color: timeLeft <= 2 ? C.danger : C.textPrimary }]}>{timeLeft}s</Text>
+        <View style={s.roundBadge}>
+          <Text style={s.roundLabel}>TUR</Text>
+          <Text style={[s.roundNum, { color: C.accentTeal }]}>{round + 1}</Text>
+        </View>
+
+        {/* Zamanlayıcı bar */}
+        <View style={s.timerWrap}>
+          <View style={[s.timerTrack, { backgroundColor: C.bgTertiary }]}>
+            <View style={[s.timerFill, { width: `${(timeLeft / (cfg.timeMs / 1000)) * 100}%`, backgroundColor: timerColor }]} />
+          </View>
+          <Text style={[s.timerText, { color: timerColor }]}>{timeLeft}s</Text>
+        </View>
       </View>
 
+      {/* Sonuç banner */}
       {result && (
-        <Text style={[s.result, { color: result === 'correct' ? C.success : C.danger }]}>
-          {result === 'correct' ? '✅ Doğru!' : '❌ Yanlış!'}
-        </Text>
+        <View style={[s.resultBanner, { backgroundColor: result === 'correct' ? C.success + '22' : C.danger + '22' }]}>
+          <Text style={[s.resultText, { color: result === 'correct' ? C.success : C.danger }]}>
+            {result === 'correct' ? '✅ Doğru!' : '❌ Yanlış!'}
+          </Text>
+        </View>
       )}
+
+      <Text style={[s.hint, { color: C.textSecondary }]}>Farklı olanı bul ve dokun!</Text>
 
       <View style={[s.grid, { width: width - 40 }]}>
         {items.map((item) => (
           <TouchableOpacity
             key={item.id}
-            style={[s.item, { width: itemSize, height: itemSize }]}
+            style={[s.item, { width: itemSize, height: itemSize, backgroundColor: C.bgSecondary, borderRadius: itemSize * 0.2 }]}
             onPress={() => handlePress(item.isDifferent)}
-            activeOpacity={0.7}
+            activeOpacity={0.6}
           >
-            <Text style={{ color: item.color, fontSize: item.size }}>{item.shape}</Text>
+            <Text style={{ color: item.color, fontSize: Math.min(item.size, itemSize * 0.6) }}>{item.shape}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -141,12 +161,18 @@ export function AttentionMode({ onEnd }: Props) {
 }
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bgPrimary, padding: 20, alignItems: 'center' },
-  hud: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 12 },
-  score: { color: C.accentYellow, fontSize: 18, fontFamily: 'Nunito-Bold' },
-  round: { color: C.textPrimary, fontSize: 18, fontFamily: 'Nunito-Bold' },
-  time: { fontSize: 18, fontFamily: 'Nunito-Bold' },
-  result: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', marginBottom: 12 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  container: { flex: 1, backgroundColor: C.bgPrimary, paddingHorizontal: 20, alignItems: 'center' },
+  hud: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginVertical: 8 },
+  roundBadge: { alignItems: 'center', backgroundColor: C.bgSecondary, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6 },
+  roundLabel: { color: C.textSecondary, fontSize: 10, fontFamily: 'Nunito-Bold', letterSpacing: 1 },
+  roundNum: { fontSize: 22, fontFamily: 'Nunito-ExtraBold' },
+  timerWrap: { flex: 1, marginLeft: 12, alignItems: 'flex-end' },
+  timerTrack: { width: '100%', height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 4 },
+  timerFill: { height: '100%', borderRadius: 4 },
+  timerText: { fontFamily: 'Nunito-ExtraBold', fontSize: 16 },
+  resultBanner: { width: '100%', borderRadius: 12, padding: 8, alignItems: 'center', marginBottom: 6 },
+  resultText: { fontSize: 20, fontFamily: 'Nunito-ExtraBold' },
+  hint: { fontFamily: 'Nunito-Regular', fontSize: 12, marginBottom: 8 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, justifyContent: 'center' },
   item: { alignItems: 'center', justifyContent: 'center' },
 });

@@ -129,43 +129,80 @@ export function EscapeMode({ onEnd }: Props) {
 
   const s = styles(C);
 
+  // Hız rengini hesapla
+  const speedLevel = Math.min(Math.floor((speedRef.current - 3) / 2), 4);
+  const speedColors = ['#4ecdc4','#2ecc71','#f0c040','#e67e22','#e94560'];
+  const speedColor = speedColors[speedLevel] ?? '#e94560';
+
   return (
     <View style={s.container} {...panResponder.panHandlers}>
       <ScoreBar />
       <ComboBar combo={0} />
       <View style={s.hud}>
-        <Text style={s.time}>⏱ {elapsed}s</Text>
-        <Text style={[s.speed, { color: C.accentYellow }]}>💨 x{speedRef.current.toFixed(1)}</Text>
+        <View style={s.statBox}>
+          <Text style={[s.statLabel, { color: C.textSecondary }]}>SÜRE</Text>
+          <Text style={[s.statVal, { color: C.textPrimary }]}>{elapsed}s</Text>
+        </View>
+        <View style={[s.speedMeter, { backgroundColor: speedColor + '22', borderColor: speedColor }]}>
+          <Text style={[s.speedText, { color: speedColor }]}>💨 {speedRef.current.toFixed(1)}x</Text>
+        </View>
+        <View style={s.statBox}>
+          <Text style={[s.statLabel, { color: C.textSecondary }]}>HEDEF</Text>
+          <Text style={[s.statVal, { color: C.accentYellow }]}>60s</Text>
+        </View>
       </View>
+
+      {/* Zemin çizgisi */}
+      <View style={[s.groundLine, { backgroundColor: C.border }]} />
 
       {/* Oyun alanı */}
       <View style={[s.gameArea, { height: GAME_H }]}>
-        {/* Oyuncu */}
+        {/* Oyuncu — koşan karakter */}
         <View style={[s.player, { left: playerX, top: playerY }]}>
-          <Text style={{ fontSize: 24 }}>🏃</Text>
+          <Text style={s.playerEmoji}>🏃</Text>
+          {/* Gölge */}
+          <View style={[s.shadow, { backgroundColor: C.textSecondary + '33' }]} />
         </View>
 
         {/* Engeller */}
         {obstacles.map((o) => (
-          <View key={o.id} style={[s.obstacle, { left: o.x, top: o.y, backgroundColor: o.isBonus ? C.accentYellow + '88' : C.danger + '88' }]}>
-            <Text style={{ fontSize: 20 }}>{o.isBonus ? '⭐' : '🧱'}</Text>
+          <View key={o.id} style={[
+            s.obstacle,
+            {
+              left: o.x, top: o.y,
+              backgroundColor: o.isBonus ? C.accentYellow + '22' : C.danger + '11',
+              borderColor: o.isBonus ? C.accentYellow : C.danger,
+            }
+          ]}>
+            <Text style={s.obstacleEmoji}>{o.isBonus ? '⭐' : '🧱'}</Text>
           </View>
         ))}
       </View>
 
-      <Text style={[s.hint, { color: C.textSecondary }]}>Parmağını sürükle → engelleri aş!</Text>
+      <Text style={[s.hint, { color: C.textSecondary }]}>
+        👆 Parmağını sürükle → engelleri aş!
+      </Text>
     </View>
   );
 }
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bgPrimary },
-  hud: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, paddingBottom: 8 },
-  score: { color: C.accentYellow, fontSize: 18, fontFamily: 'Nunito-Bold' },
-  time: { color: C.textPrimary, fontSize: 18, fontFamily: 'Nunito-Bold' },
-  speed: { fontSize: 18, fontFamily: 'Nunito-Bold' },
+  hud: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
+  statBox: { alignItems: 'center' },
+  statLabel: { fontSize: 10, fontFamily: 'Nunito-SemiBold', letterSpacing: 1 },
+  statVal: { fontSize: 20, fontFamily: 'Nunito-ExtraBold' },
+  speedMeter: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1.5 },
+  speedText: { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
+  groundLine: { height: 1, marginHorizontal: 16, marginBottom: 4 },
   gameArea: { flex: 1, overflow: 'hidden', position: 'relative' },
-  player: { position: 'absolute', width: PLAYER_SIZE * 2, height: PLAYER_SIZE * 2, alignItems: 'center', justifyContent: 'center' },
-  obstacle: { position: 'absolute', width: OBSTACLE_W, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  hint: { textAlign: 'center', padding: 12, fontFamily: 'Nunito-Regular', fontSize: 13 },
+  player: { position: 'absolute', alignItems: 'center' },
+  playerEmoji: { fontSize: 32 },
+  shadow: { width: 24, height: 6, borderRadius: 12, marginTop: -4 },
+  obstacle: {
+    position: 'absolute', width: OBSTACLE_W, height: 44,
+    borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 2,
+  },
+  obstacleEmoji: { fontSize: 22 },
+  hint: { textAlign: 'center', paddingBottom: 12, fontFamily: 'Nunito-Regular', fontSize: 12 },
 });

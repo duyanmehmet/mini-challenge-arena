@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts,
   Nunito_400Regular,
   Nunito_500Medium,
@@ -129,6 +130,7 @@ export default function RootLayout() {
   const C = Colors[theme];
 
   return (
+    <SafeAreaProvider>
     <ErrorBoundary>
       <View style={{ flex: 1 }}>
         {isOffline && (
@@ -147,6 +149,7 @@ export default function RootLayout() {
         </Stack>
       </View>
     </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 
