@@ -148,6 +148,9 @@ export default function RootLayout() {
           <Stack.Screen name="settings" options={{ headerShown: true, title: 'Ayarlar' }} />
           <Stack.Screen name="stats" options={{ headerShown: false }} />
           <Stack.Screen name="challenge" options={{ headerShown: false }} />
+          <Stack.Screen name="classic" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="duel/lobby" options={{ headerShown: false }} />
+          <Stack.Screen name="duel/[duelId]" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
         </Stack>
       </View>
     </ErrorBoundary>

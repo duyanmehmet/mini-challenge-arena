@@ -93,12 +93,26 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.actionBtn, { backgroundColor: C.accentPurple + '22', borderColor: C.accentPurple }]}
-            onPress={() => router.push('/(tabs)/friends' as any)}
+            onPress={() => router.push('/duel/lobby' as any)}
           >
             <Text style={s.actionIcon}>⚔️</Text>
             <Text style={[s.actionLabel, { color: C.accentPurple }]}>Arkadaşa{'\n'}Düello</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Klasik Tur */}
+        <TouchableOpacity
+          style={[s.classicBanner, { backgroundColor: '#e94560' }]}
+          onPress={() => router.push('/classic' as any)}
+          activeOpacity={0.85}
+        >
+          <Text style={s.classicIcon}>🏆</Text>
+          <View>
+            <Text style={s.classicTitle}>Klasik Tur</Text>
+            <Text style={s.classicSub}>10 soru · 3 can · Karışık kategoriler</Text>
+          </View>
+          <Text style={{ color: '#fff', fontSize: 22 }}>›</Text>
+        </TouchableOpacity>
 
         {/* Kategoriler — gruplu */}
         {CATEGORY_GROUPS.map((group) => {
@@ -200,6 +214,10 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   actionBtn: { flex: 1, borderRadius: 14, padding: 12, alignItems: 'center', borderWidth: 1.5 },
   actionIcon: { fontSize: 24, marginBottom: 4 },
   actionLabel: { fontSize: 11, fontFamily: 'Nunito-Bold', textAlign: 'center' },
+  classicBanner: { marginHorizontal: 16, marginBottom: 18, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  classicIcon: { fontSize: 32 },
+  classicTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: '#fff' },
+  classicSub: { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#ffffff99' },
   // Grup
   groupSection: { marginBottom: 8 },
   groupHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 10, gap: 8 },
