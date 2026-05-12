@@ -1,4 +1,4 @@
-﻿import type { GameModeId } from '../constants/gameModes';
+﻿import type { CategoryId as GameModeId } from '../constants/categories';
 
 export interface GameResult {
   mode: GameModeId;

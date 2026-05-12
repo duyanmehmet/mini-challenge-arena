@@ -8,7 +8,7 @@ import { Colors } from '../../src/constants/colors';
 import { Avatar } from '../../src/components/ui/Avatar';
 import { XPBar } from '../../src/components/ui/XPBar';
 import { CoinDisplay } from '../../src/components/ui/CoinDisplay';
-import { GAME_MODES } from '../../src/constants/gameModes';
+import { CATEGORIES as GAME_MODES } from '../../src/constants/categories';
 import { LEAGUES } from '../../src/constants/leagues';
 import { BADGES } from '../../src/constants/badges';
 import { userService } from '../../src/services/user.service';

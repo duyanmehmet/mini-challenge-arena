@@ -1,7 +1,7 @@
 ﻿import { TouchableOpacity, Text, StyleSheet, View, Dimensions } from 'react-native';
 import { useSettingsStore } from '../../store/settingsStore';
 import { Colors } from '../../constants/colors';
-import type { GameModeConfig } from '../../constants/gameModes';
+import type { CategoryConfig as GameModeConfig } from '../../constants/categories';
 
 const { width } = Dimensions.get('window');
 const CARD_W = (width - 48) / 2;   // 2 sutun, kenarlarda 12px bosluk
@@ -39,7 +39,7 @@ export function ModeCard({ mode, personalBest, onPress }: Props) {
 
       {/* Etiket */}
       <View style={[s.tagBadge, { backgroundColor: mode.color + '15' }]}>
-        <Text style={[s.tagText, { color: mode.color }]} numberOfLines={1}>{mode.tag}</Text>
+        <Text style={[s.tagText, { color: mode.color }]} numberOfLines={1}>{mode.questionCount}+ soru</Text>
       </View>
 
       {/* Kişisel rekor */}

@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
-import { GAME_MODES } from '../src/constants/gameModes';
+import { CATEGORIES as GAME_MODES } from '../src/constants/categories';
 import { Avatar } from '../src/components/ui/Avatar';
 import api from '../src/services/api';
 

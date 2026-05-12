@@ -1,84 +1,83 @@
-﻿import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useUserStore } from '../../../src/store/userStore';
 import { Colors } from '../../../src/constants/colors';
-import { GAME_MODES, type GameModeId } from '../../../src/constants/gameModes';
+import { CATEGORIES, type CategoryId } from '../../../src/constants/categories';
 
-const HOW_TO_PLAY: Record<GameModeId, string> = {
-  reflex:  "3 şeritte yukarıdan düşen hedeflere dokun! Hit-zone'a gelince dokun. PERFECT vuruş bonus puan. Bomba = -1 can, Yıldız = +30p.",
-  word:    "Sözlük tanımını oku, 4 kelimeden doğrusunu seç! Seri yapınca 1.5x ve 2x bonus. 150+ Türkçe kelime seni bekliyor!",
-  math:    "İşlemi hızlıca çöz, 4 seçenekten birini seç! Seviye arttıkça sayılar büyür. Seri yapınca bonus puan!",
-  english: "İngilizce kelimeyi gör, 4 seçenekten Türkçe karşılığını bul! Kolay=10p, Orta=20p, Zor=35p. 2+ seri yapınca bonus puan. 60 saniye!",
-};
-
-export default function ModeSelectScreen() {
-  const { mode } = useLocalSearchParams<{ mode: GameModeId }>();
+export default function CategorySelectScreen() {
+  const { mode } = useLocalSearchParams<{ mode: string }>();
   const { theme } = useSettingsStore();
   const { personalBests } = useUserStore();
   const C = Colors[theme];
 
-  const cfg = GAME_MODES.find((m) => m.id === mode);
-  if (!cfg) return null;
+  const cat = CATEGORIES.find((c) => c.id === mode);
+  if (!cat) return null;
 
   const pb = personalBests.find((p) => p.mode === mode);
-
   const s = styles(C);
 
   return (
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.content}>
 
-        {/* Geri */}
         <TouchableOpacity onPress={() => router.back()} style={s.back}>
           <Text style={[s.backText, { color: C.textSecondary }]}>← Geri</Text>
         </TouchableOpacity>
 
-        {/* Mod başlığı */}
-        <View style={[s.iconBg, { backgroundColor: cfg.color + '22' }]}>
-          <Text style={s.bigIcon}>{cfg.icon}</Text>
+        {/* İkon & Başlık */}
+        <View style={[s.iconBg, { backgroundColor: cat.color + '22' }]}>
+          <Text style={s.bigIcon}>{cat.icon}</Text>
         </View>
-        <Text style={[s.modeName, { color: C.textPrimary }]}>{cfg.name}</Text>
-        <Text style={[s.modeDesc, { color: C.textSecondary }]}>{cfg.description}</Text>
+        <Text style={[s.catName, { color: C.textPrimary }]}>{cat.name}</Text>
+        <View style={[s.tagBadge, { backgroundColor: cat.color + '22', borderColor: cat.color }]}>
+          <Text style={[s.tagText, { color: cat.color }]}>{cat.group === 'culture' ? '🏛️ Kültür' : cat.group === 'language' ? '🌍 Dil' : '⭐ Özel'}</Text>
+        </View>
+        <Text style={[s.catDesc, { color: C.textSecondary }]}>{cat.description}</Text>
 
-        {/* Kişisel rekor */}
+        {/* Kişisel Rekor */}
         {pb && (
-          <View style={[s.pbCard, { backgroundColor: C.bgSecondary, borderColor: cfg.color }]}>
+          <View style={[s.pbCard, { backgroundColor: C.bgSecondary, borderColor: cat.color }]}>
             <Text style={[s.pbLabel, { color: C.textSecondary }]}>KİŞİSEL REKORUN</Text>
-            <Text style={[s.pbScore, { color: cfg.color }]}>🏆 {pb.score.toLocaleString('tr-TR')}</Text>
+            <Text style={[s.pbScore, { color: cat.color }]}>🏆 {pb.score.toLocaleString('tr-TR')}</Text>
           </View>
         )}
 
-        {/* Nasıl oynanır */}
-        <View style={[s.howCard, { backgroundColor: C.bgSecondary, borderColor: C.border }]}>
-          <Text style={[s.howTitle, { color: C.textPrimary }]}>📋 Nasıl Oynanır?</Text>
-          <Text style={[s.howText, { color: C.textSecondary }]}>{HOW_TO_PLAY[mode as GameModeId]}</Text>
-        </View>
-
-        {/* Süre bilgisi */}
-        <View style={[s.infoRow, { backgroundColor: C.bgSecondary }]}>
-          <View style={s.infoItem}>
-            <Text style={[s.infoVal, { color: cfg.color }]}>
-              {cfg.duration > 0 ? `${cfg.duration}s` : '∞'}
-            </Text>
+        {/* Bilgi kartları */}
+        <View style={s.infoRow}>
+          <View style={[s.infoCard, { backgroundColor: C.bgSecondary }]}>
+            <Text style={[s.infoVal, { color: cat.color }]}>⏱ 60s</Text>
             <Text style={[s.infoLabel, { color: C.textSecondary }]}>Süre</Text>
           </View>
-          <View style={[s.divider, { backgroundColor: C.border }]} />
-          <View style={s.infoItem}>
-            <Text style={[s.infoVal, { color: cfg.color }]}>
-              {pb ? `#${pb.score}` : '—'}
-            </Text>
+          <View style={[s.infoCard, { backgroundColor: C.bgSecondary }]}>
+            <Text style={[s.infoVal, { color: cat.color }]}>{cat.questionCount}+</Text>
+            <Text style={[s.infoLabel, { color: C.textSecondary }]}>Soru</Text>
+          </View>
+          <View style={[s.infoCard, { backgroundColor: C.bgSecondary }]}>
+            <Text style={[s.infoVal, { color: cat.color }]}>{pb ? `${pb.score}` : '—'}</Text>
             <Text style={[s.infoLabel, { color: C.textSecondary }]}>En İyi</Text>
           </View>
         </View>
 
+        {/* Nasıl oynanır */}
+        <View style={[s.howCard, { backgroundColor: C.bgSecondary, borderColor: C.border }]}>
+          <Text style={[s.howTitle, { color: C.textPrimary }]}>📋 Nasıl Oynanır?</Text>
+          <Text style={[s.howText, { color: C.textSecondary }]}>
+            {cat.group === 'language'
+              ? `Kelimeyi gör, 4 seçenekten Türkçe karşılığını bul! Doğru cevaplar puan kazandırır. Seri yaptıkça bonus puan (3 seri → 1.5x, 5 seri → 2x). 60 saniyede mümkün olduğunca çok doğru yap!`
+              : cat.id === 'turkish'
+              ? `Sözlük tanımını oku, 4 kelimeden doğrusunu bul! Türkçe kelime dağarcığını geliştir. Seri yapınca bonus puan. 60 saniye!`
+              : `Her soruyu okuyarak 4 seçenekten doğrusunu seç! Doğru cevap = +10 puan. Seri yapınca bonus puan (1.5x ve 2x). 60 saniyede ne kadar doğru yapabilirsin?`}
+          </Text>
+        </View>
+
       </ScrollView>
 
-      {/* Oyna butonu */}
+      {/* Oyna Butonu */}
       <View style={s.footer}>
         <TouchableOpacity
-          style={[s.playBtn, { backgroundColor: cfg.color }]}
-          onPress={() => router.replace(`/game/${mode}`)}
+          style={[s.playBtn, { backgroundColor: cat.color }]}
+          onPress={() => router.replace(`/game/${mode}` as any)}
         >
           <Text style={s.playText}>▶ Oyna</Text>
         </TouchableOpacity>
@@ -89,24 +88,25 @@ export default function ModeSelectScreen() {
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bgPrimary },
-  content: { padding: 20, alignItems: 'center', paddingBottom: 100 },
+  content: { padding: 20, alignItems: 'center', paddingBottom: 120 },
   back: { alignSelf: 'flex-start', marginBottom: 16 },
   backText: { fontFamily: 'Nunito-Regular', fontSize: 15 },
-  iconBg: { width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  bigIcon: { fontSize: 60 },
-  modeName: { fontSize: 26, fontFamily: 'Nunito-ExtraBold', marginBottom: 8 },
-  modeDesc: { fontSize: 15, fontFamily: 'Nunito-Regular', textAlign: 'center', marginBottom: 20, lineHeight: 22 },
+  iconBg: { width: 110, height: 110, borderRadius: 55, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  bigIcon: { fontSize: 54 },
+  catName: { fontSize: 26, fontFamily: 'Nunito-ExtraBold', marginBottom: 8, textAlign: 'center' },
+  tagBadge: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 4, borderWidth: 1, marginBottom: 12 },
+  tagText: { fontFamily: 'Nunito-Bold', fontSize: 12 },
+  catDesc: { fontSize: 14, fontFamily: 'Nunito-Regular', textAlign: 'center', marginBottom: 20, lineHeight: 22 },
   pbCard: { width: '100%', borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1.5, marginBottom: 16 },
   pbLabel: { fontSize: 11, fontFamily: 'Nunito-Bold', letterSpacing: 1, marginBottom: 4 },
   pbScore: { fontSize: 28, fontFamily: 'Nunito-ExtraBold' },
-  howCard: { width: '100%', borderRadius: 14, padding: 16, borderWidth: 1, marginBottom: 16 },
+  infoRow: { flexDirection: 'row', gap: 10, width: '100%', marginBottom: 16 },
+  infoCard: { flex: 1, borderRadius: 14, padding: 14, alignItems: 'center' },
+  infoVal: { fontSize: 18, fontFamily: 'Nunito-ExtraBold', marginBottom: 2 },
+  infoLabel: { fontSize: 11, fontFamily: 'Nunito-Regular' },
+  howCard: { width: '100%', borderRadius: 14, padding: 16, borderWidth: 1 },
   howTitle: { fontFamily: 'Nunito-Bold', fontSize: 15, marginBottom: 10 },
   howText: { fontFamily: 'Nunito-Regular', fontSize: 14, lineHeight: 22 },
-  infoRow: { width: '100%', borderRadius: 14, flexDirection: 'row', padding: 16 },
-  infoItem: { flex: 1, alignItems: 'center' },
-  infoVal: { fontSize: 22, fontFamily: 'Nunito-ExtraBold' },
-  infoLabel: { fontSize: 12, fontFamily: 'Nunito-Regular', marginTop: 4 },
-  divider: { width: 1, marginHorizontal: 8 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 32, backgroundColor: C.bgPrimary + 'ee' },
   playBtn: { borderRadius: 16, padding: 18, alignItems: 'center' },
   playText: { color: '#fff', fontFamily: 'Nunito-ExtraBold', fontSize: 18 },

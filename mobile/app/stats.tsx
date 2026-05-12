@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
-import { GAME_MODES } from '../src/constants/gameModes';
+import { CATEGORIES as GAME_MODES } from '../src/constants/categories';
 import { LEAGUES } from '../src/constants/leagues';
 import { XPBar } from '../src/components/ui/XPBar';
 import api from '../src/services/api';
@@ -89,7 +89,7 @@ export default function StatsScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[s.modeName, { color: C.textPrimary }]}>{mode.shortName}</Text>
-                <Text style={[s.modeTag, { color: C.textSecondary }]}>{mode.tag}</Text>
+                <Text style={[s.modeTag, { color: C.textSecondary }]}>{mode.questionCount}+ soru</Text>
               </View>
               <Text style={[s.modeScore, { color: pb ? C.accentYellow : C.textSecondary }]}>
                 {pb ? pb.score.toLocaleString('tr-TR') : '—'}

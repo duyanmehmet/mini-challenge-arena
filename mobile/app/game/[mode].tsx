@@ -5,16 +5,19 @@ import { useGameStore } from '../../src/store/gameStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useUserStore } from '../../src/store/userStore';
 import { Colors } from '../../src/constants/colors';
-import { GAME_MODES, type GameModeId } from '../../src/constants/gameModes';
-import { ReflexMode } from '../../src/components/game/modes/ReflexMode';
-import { WordMode } from '../../src/components/game/modes/WordMode';
-import { MathMode } from '../../src/components/game/modes/MathMode';
-import { EnglishMode } from '../../src/components/game/modes/EnglishMode';
+import { CATEGORIES, type CategoryId } from '../../src/constants/categories';
+import { QuizMode } from '../../src/components/game/modes/QuizMode';
 
 const REVIVE_COST = 50;
 
+const QUIZ_CATEGORIES: CategoryId[] = [
+  'history','geography','science','general','art','cinema','sports',
+  'english','german','french','arabic','spanish','turkish',
+  'kids','license','medical','economy',
+];
+
 export default function GameScreen() {
-  const { mode } = useLocalSearchParams<{ mode: GameModeId }>();
+  const { mode } = useLocalSearchParams<{ mode: string }>();
   const { startGame, endGame, pauseGame, resumeGame, buyLife, lives } = useGameStore();
   const { user } = useUserStore();
   const { theme } = useSettingsStore();
@@ -24,12 +27,12 @@ export default function GameScreen() {
   const [showRevive, setShowRevive] = useState(false);
   const started = useRef(false);
 
-  const modeCfg = GAME_MODES.find((m) => m.id === mode);
+  const catCfg = CATEGORIES.find((c) => c.id === mode);
 
   useEffect(() => {
     if (!started.current && mode) {
       started.current = true;
-      startGame(mode as GameModeId);
+      startGame(mode as any);
     }
   }, [mode]);
 
@@ -39,7 +42,6 @@ export default function GameScreen() {
       setShowRevive(true);
       return;
     }
-
     const result = endGame();
     router.replace({
       pathname: '/game/result',
@@ -49,47 +51,37 @@ export default function GameScreen() {
 
   const handleRevive = () => {
     const success = buyLife(REVIVE_COST);
-    if (success) {
-      setShowRevive(false);
-      resumeGame();
-    } else {
-      Alert.alert('Hata', 'Yetersiz coin!');
-      handleEnd();
-    }
+    if (success) { setShowRevive(false); resumeGame(); }
+    else { Alert.alert('Hata', 'Yetersiz coin!'); handleEnd(); }
   };
 
   const handlePause = () => { setPaused(true); pauseGame(); };
   const handleResume = () => { setPaused(false); resumeGame(); };
-  const handleQuit = () => {
-    setPaused(false);
-    setShowRevive(false);
-    endGame();
-    router.replace('/(tabs)');
-  };
+  const handleQuit = () => { setPaused(false); setShowRevive(false); endGame(); router.replace('/(tabs)'); };
 
   const s = styles(C);
 
-  const renderMode = () => {
+  const isQuizMode = QUIZ_CATEGORIES.includes(mode as CategoryId);
+
+  const renderContent = () => {
     if (paused || showRevive) return null;
-    switch (mode as GameModeId) {
-      case 'reflex':  return <ReflexMode onEnd={handleEnd} />;
-      case 'word':    return <WordMode onEnd={handleEnd} />;
-      case 'math':    return <MathMode onEnd={handleEnd} />;
-      case 'english': return <EnglishMode onEnd={handleEnd} />;
-      default: return <Text style={{ color: C.textPrimary }}>Bilinmeyen mod</Text>;
-    }
+    if (isQuizMode) return <QuizMode categoryId={mode as CategoryId} onEnd={handleEnd} />;
+    return <Text style={{ color: C.textPrimary, textAlign: 'center', marginTop: 40 }}>Bilinmeyen kategori</Text>;
   };
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bgPrimary }]}>
       <View style={s.topBar}>
-        <Text style={[s.modeName, { color: C.textPrimary }]}>{modeCfg?.icon} {modeCfg?.name}</Text>
+        <View style={s.topLeft}>
+          <Text style={s.catIcon}>{catCfg?.icon}</Text>
+          <Text style={[s.modeName, { color: C.textPrimary }]}>{catCfg?.name}</Text>
+        </View>
         <TouchableOpacity style={[s.pauseBtn, { backgroundColor: C.bgSecondary }]} onPress={handlePause}>
           <Text style={{ fontSize: 18 }}>⏸</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={{ flex: 1 }}>{renderMode()}</View>
+      <View style={{ flex: 1 }}>{renderContent()}</View>
 
       <Modal visible={paused} transparent animationType="fade">
         <View style={s.overlay}>
@@ -129,11 +121,13 @@ export default function GameScreen() {
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
   safe: { flex: 1 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
-  modeName: { fontSize: 16, fontFamily: 'Nunito-Bold' },
+  topLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  catIcon: { fontSize: 20 },
+  modeName: { fontSize: 15, fontFamily: 'Nunito-Bold' },
   pauseBtn: { padding: 8, borderRadius: 20 },
   overlay: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'center', alignItems: 'center' },
   pauseCard: { width: 300, borderRadius: 24, padding: 24, alignItems: 'center', gap: 12 },
-  pauseTitle: { fontSize: 24, fontFamily: 'Nunito-ExtraBold', marginBottom: 4 },
+  pauseTitle: { fontSize: 22, fontFamily: 'Nunito-ExtraBold', marginBottom: 4 },
   pauseBtn2: { width: '100%', borderRadius: 14, padding: 16, alignItems: 'center' },
   pauseBtnText: { fontSize: 16, fontFamily: 'Nunito-Bold', color: '#fff' },
 });

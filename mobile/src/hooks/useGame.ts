@@ -1,6 +1,6 @@
 ﻿import { useCallback } from 'react';
 import { useGameStore } from '../store/gameStore';
-import type { GameModeId } from '../constants/gameModes';
+import type { CategoryId as GameModeId } from '../constants/categories';
 
 export function useGame() {
   const store = useGameStore();

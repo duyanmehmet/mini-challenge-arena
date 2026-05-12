@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Animated } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useUserStore } from '../../src/store/userStore';
 import { Colors } from '../../src/constants/colors';
-import { GAME_MODES } from '../../src/constants/gameModes';
+import { CATEGORIES as GAME_MODES } from '../../src/constants/categories';
 import { gameService } from '../../src/services/game.service';
 import LottieView from 'lottie-react-native';
 import { assetService } from '../../src/services/asset.service';
@@ -44,7 +44,7 @@ export default function ResultScreen() {
 
     addXP(xpEarned);
     addCoins(coinsEarned);
-    admobService.showInterstitial(); // Reklamı tetikle
+    admobService.showInterstitial(); // ReklamÄ± tetikle
 
 
     if (isNewRecord) {
@@ -54,7 +54,7 @@ export default function ResultScreen() {
     }
 
 
-    // Backend'e skor gönder, dönüşte streak/level store'a yansıt
+    // Backend'e skor gÃ¶nder, dÃ¶nÃ¼ÅŸte streak/level store'a yansÄ±t
     gameService.submitResult({
       mode: mode ?? '',
       score: numScore,
@@ -70,7 +70,7 @@ export default function ResultScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Mini Challenge Arena'da ${modeCfg?.name} modunda ${numScore} puan yaptım! Hadi sen de gel yarışalım! ⚡`,
+        message: `Mini Challenge Arena'da ${modeCfg?.name} modunda ${numScore} puan yaptÄ±m! Hadi sen de gel yarÄ±ÅŸalÄ±m! âš¡`,
       });
     } catch (error) {
       console.log(error);
@@ -96,12 +96,12 @@ export default function ResultScreen() {
 
         {isNewRecord && (
           <Animated.Text style={[s.record, { transform: [{ scale: scaleAnim }] }]}>
-            🎉 YENİ REKOR!
+            ğŸ‰ YENÄ° REKOR!
           </Animated.Text>
         )}
 
 
-        <Text style={s.modeIcon}>{modeCfg?.icon ?? '🎮'}</Text>
+        <Text style={s.modeIcon}>{modeCfg?.icon ?? 'ğŸ®'}</Text>
         <Text style={s.modeName}>{modeCfg?.name}</Text>
 
         <Animated.Text style={[s.scoreText, { transform: [{ scale: scaleAnim }], color: C.accentYellow }]}>
@@ -110,14 +110,14 @@ export default function ResultScreen() {
         <Text style={s.scoreLabel}>puan</Text>
 
         <View style={s.statsRow}>
-          <StatBox label="En Yüksek Combo" value={`x${numCombo}`} color={C.accentTeal} />
-          <StatBox label="Süre" value={`${numDuration}s`} color={C.accentPurple} />
+          <StatBox label="En YÃ¼ksek Combo" value={`x${numCombo}`} color={C.accentTeal} />
+          <StatBox label="SÃ¼re" value={`${numDuration}s`} color={C.accentPurple} />
           <StatBox label="XP" value={`+${xpEarned}`} color={C.accentGreen} />
         </View>
 
         <View style={s.rewardsRow}>
-          <Text style={[s.reward, { color: C.accentYellow }]}>🪙 +{coinsEarned} coin</Text>
-          <Text style={[s.reward, { color: C.accentTeal }]}>⚡ +{xpEarned} XP</Text>
+          <Text style={[s.reward, { color: C.accentYellow }]}>ğŸª™ +{coinsEarned} coin</Text>
+          <Text style={[s.reward, { color: C.accentTeal }]}>âš¡ +{xpEarned} XP</Text>
         </View>
 
         <View style={s.buttons}>
@@ -126,13 +126,13 @@ export default function ResultScreen() {
               style={[s.btn, { backgroundColor: C.accentRed, flex: 1 }]}
               onPress={() => router.replace(`/game/${mode}`)}
             >
-              <Text style={s.btnText}>🔄 Tekrar</Text>
+              <Text style={s.btnText}>ğŸ”„ Tekrar</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.btn, { backgroundColor: C.accentTeal, flex: 1 }]}
               onPress={handleShare}
             >
-              <Text style={s.btnText}>📤 Paylaş</Text>
+              <Text style={s.btnText}>ğŸ“¤ PaylaÅŸ</Text>
             </TouchableOpacity>
           </View>
           
@@ -140,7 +140,7 @@ export default function ResultScreen() {
             style={[s.btn, { backgroundColor: C.bgTertiary }]}
             onPress={() => router.replace('/(tabs)')}
           >
-            <Text style={[s.btnText, { color: C.textSecondary }]}>🏠 Ana Menü</Text>
+            <Text style={[s.btnText, { color: C.textSecondary }]}>ğŸ  Ana MenÃ¼</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>

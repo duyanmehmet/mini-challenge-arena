@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameModeId } from '../constants/gameModes';
+import type { CategoryId as GameModeId } from '../constants/categories';
 import { useUserStore } from './userStore';
 
 interface GameState {
