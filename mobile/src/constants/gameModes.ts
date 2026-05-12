@@ -1,4 +1,4 @@
-﻿export type GameModeId = 'reflex' | 'memory' | 'football' | 'word' | 'attention' | 'escape';
+﻿export type GameModeId = 'reflex' | 'memory' | 'football' | 'word' | 'attention' | 'escape' | 'math' | 'chain';
 
 export interface GameModeConfig {
   id: GameModeId;
@@ -71,5 +71,25 @@ export const GAME_MODES: GameModeConfig[] = [
     duration: 0,
     color: '#e67e22',
     tag: 'Refleks & Strateji',
+  },
+  {
+    id: 'math',
+    name: 'Matematik Hızı',
+    shortName: 'Matematik',
+    description: '30 saniyede mümkün olduğunca çok işlem çöz!',
+    icon: '🔢',
+    duration: 30,
+    color: '#3498db',
+    tag: 'Sayısal Düşünme',
+  },
+  {
+    id: 'chain',
+    name: 'Kelime Zinciri',
+    shortName: 'Zincir',
+    description: 'Son harften yeni kelime bul — zinciri kırma!',
+    icon: '🔗',
+    duration: 45,
+    color: '#8e44ad',
+    tag: 'Dil & Yaratıcılık',
   },
 ];

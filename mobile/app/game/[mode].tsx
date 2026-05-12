@@ -12,6 +12,8 @@ import { FootballMode } from '../../src/components/game/modes/FootballMode';
 import { WordMode } from '../../src/components/game/modes/WordMode';
 import { AttentionMode } from '../../src/components/game/modes/AttentionMode';
 import { EscapeMode } from '../../src/components/game/modes/EscapeMode';
+import { MathMode } from '../../src/components/game/modes/MathMode';
+import { ChainMode } from '../../src/components/game/modes/ChainMode';
 
 const REVIVE_COST = 50;
 
@@ -81,6 +83,8 @@ export default function GameScreen() {
       case 'word':      return <WordMode onEnd={handleEnd} />;
       case 'attention': return <AttentionMode onEnd={handleEnd} />;
       case 'escape':    return <EscapeMode onEnd={handleEnd} />;
+      case 'math':      return <MathMode onEnd={handleEnd} />;
+      case 'chain':     return <ChainMode onEnd={handleEnd} />;
       default: return <Text style={{ color: C.textPrimary }}>Bilinmeyen mod</Text>;
     }
   };

@@ -13,6 +13,8 @@ import leaderboardRoutes from "./routes/leaderboard.routes";
 import userRoutes from "./routes/user.routes";
 import socialRoutes from "./routes/social.routes";
 import storeRoutes from "./routes/store.routes";
+import challengeRoutes from "./routes/challenge.routes";
+import clanRoutes from "./routes/clan.routes";
 import { setupSocket } from "./socket";
 
 dotenv.config();
@@ -33,6 +35,8 @@ app.use("/v1/leaderboard", leaderboardRoutes);
 app.use("/v1/user",        userRoutes);
 app.use("/v1/social",      socialRoutes);
 app.use("/v1/store",       storeRoutes);
+app.use("/v1/challenge",   challengeRoutes);
+app.use("/v1/clan",        clanRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 

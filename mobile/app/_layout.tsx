@@ -146,6 +146,8 @@ export default function RootLayout() {
           <Stack.Screen name="game/result" />
           <Stack.Screen name="game/select/[mode]" />
           <Stack.Screen name="settings" options={{ headerShown: true, title: 'Ayarlar' }} />
+          <Stack.Screen name="stats" options={{ headerShown: false }} />
+          <Stack.Screen name="challenge" options={{ headerShown: false }} />
         </Stack>
       </View>
     </ErrorBoundary>

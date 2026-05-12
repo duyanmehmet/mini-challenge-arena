@@ -91,6 +91,22 @@ export default function HomeScreen() {
           <XPBar xp={user.xp} level={user.level} />
         </View>
 
+        {/* Hızlı Aksiyonlar */}
+        <View style={s.actionRow}>
+          <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#f0c040' + '22', borderColor: '#f0c040' }]} onPress={() => router.push('/challenge' as any)}>
+            <Text style={s.actionIcon}>⚡</Text>
+            <Text style={[s.actionLabel, { color: '#f0c040' }]}>Günün{'\n'}Challenge'ı</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[s.actionBtn, { backgroundColor: C.accentTeal + '22', borderColor: C.accentTeal }]} onPress={() => router.push('/stats' as any)}>
+            <Text style={s.actionIcon}>📊</Text>
+            <Text style={[s.actionLabel, { color: C.accentTeal }]}>İstatistik{'\n'}lerim</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[s.actionBtn, { backgroundColor: C.accentPurple + '22', borderColor: C.accentPurple }]} onPress={() => router.push('/(tabs)/friends' as any)}>
+            <Text style={s.actionIcon}>⚔️</Text>
+            <Text style={[s.actionLabel, { color: C.accentPurple }]}>Arkadaşa{'\n'}Düello</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Başlık + Hızlı Oyna */}
         <View style={s.header}>
           <View>
@@ -181,7 +197,11 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   streakText: { fontFamily: 'Nunito-Bold', fontSize: 13 },
   username: { color: C.textPrimary, fontFamily: 'Nunito-Bold', fontSize: 15 },
   levelText: { color: C.textSecondary, fontFamily: 'Nunito-Regular', fontSize: 12 },
-  xpSection: { paddingHorizontal: 16, marginBottom: 16 },
+  xpSection: { paddingHorizontal: 16, marginBottom: 10 },
+  actionRow: { flexDirection: 'row', paddingHorizontal: 12, gap: 8, marginBottom: 14 },
+  actionBtn: { flex: 1, borderRadius: 14, padding: 12, alignItems: 'center', borderWidth: 1.5 },
+  actionIcon: { fontSize: 24, marginBottom: 4 },
+  actionLabel: { fontSize: 11, fontFamily: 'Nunito-Bold', textAlign: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12 },
   headerTitle: { color: C.textPrimary, fontFamily: 'Nunito-ExtraBold', fontSize: 20 },
   headerSub: { fontFamily: 'Nunito-Regular', fontSize: 12, marginTop: 2 },
