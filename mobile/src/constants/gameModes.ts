@@ -1,4 +1,4 @@
-export type GameModeId = 'reflex' | 'memory' | 'football' | 'word' | 'escape' | 'math' | 'english';
+export type GameModeId = 'reflex' | 'word' | 'math' | 'english';
 
 export interface GameModeConfig {
   id: GameModeId;
@@ -23,44 +23,14 @@ export const GAME_MODES: GameModeConfig[] = [
     tag: 'Hız & Koordinasyon',
   },
   {
-    id: 'memory',
-    name: 'Hafıza Modu',
-    shortName: 'Hafıza',
-    description: 'Gösterilen diziyi ezberle ve aynı sırayla tekrarla!',
-    icon: '🧠',
-    duration: 25,
-    color: '#9b59b6',
-    tag: 'Bellek Güçlendirme',
-  },
-  {
-    id: 'football',
-    name: 'Mini Futbol',
-    shortName: 'Futbol',
-    description: '10 atışta mümkün olan en yüksek skoru yap!',
-    icon: '⚽',
-    duration: 0,
-    color: '#2ecc71',
-    tag: 'Strateji & Hassasiyet',
-  },
-  {
     id: 'word',
-    name: 'Kelime Yarışı',
+    name: 'Kelime Quizi',
     shortName: 'Kelime',
-    description: 'Verilen harflerden Türkçe kelimeler türet, anlamlarını öğren!',
-    icon: '📝',
-    duration: 30,
+    description: 'Verilen Türkçe tanıma göre doğru kelimeyi bul!',
+    icon: '📖',
+    duration: 60,
     color: '#f0c040',
-    tag: 'Türkçe & Dil',
-  },
-  {
-    id: 'escape',
-    name: 'Kaçış Modu',
-    shortName: 'Kaçış',
-    description: 'Engelleri aş, ne kadar hayatta kalabilirsin?',
-    icon: '🏃',
-    duration: 0,
-    color: '#e67e22',
-    tag: 'Refleks & Strateji',
+    tag: 'Türkçe & Sözlük',
   },
   {
     id: 'math',

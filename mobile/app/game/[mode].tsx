@@ -7,10 +7,7 @@ import { useUserStore } from '../../src/store/userStore';
 import { Colors } from '../../src/constants/colors';
 import { GAME_MODES, type GameModeId } from '../../src/constants/gameModes';
 import { ReflexMode } from '../../src/components/game/modes/ReflexMode';
-import { MemoryMode } from '../../src/components/game/modes/MemoryMode';
-import { FootballMode } from '../../src/components/game/modes/FootballMode';
 import { WordMode } from '../../src/components/game/modes/WordMode';
-import { EscapeMode } from '../../src/components/game/modes/EscapeMode';
 import { MathMode } from '../../src/components/game/modes/MathMode';
 import { EnglishMode } from '../../src/components/game/modes/EnglishMode';
 
@@ -75,13 +72,10 @@ export default function GameScreen() {
   const renderMode = () => {
     if (paused || showRevive) return null;
     switch (mode as GameModeId) {
-      case 'reflex':   return <ReflexMode onEnd={handleEnd} />;
-      case 'memory':   return <MemoryMode onEnd={handleEnd} />;
-      case 'football': return <FootballMode onEnd={handleEnd} />;
-      case 'word':     return <WordMode onEnd={handleEnd} />;
-      case 'escape':   return <EscapeMode onEnd={handleEnd} />;
-      case 'math':     return <MathMode onEnd={handleEnd} />;
-      case 'english':  return <EnglishMode onEnd={handleEnd} />;
+      case 'reflex':  return <ReflexMode onEnd={handleEnd} />;
+      case 'word':    return <WordMode onEnd={handleEnd} />;
+      case 'math':    return <MathMode onEnd={handleEnd} />;
+      case 'english': return <EnglishMode onEnd={handleEnd} />;
       default: return <Text style={{ color: C.textPrimary }}>Bilinmeyen mod</Text>;
     }
   };
@@ -97,7 +91,6 @@ export default function GameScreen() {
 
       <View style={{ flex: 1 }}>{renderMode()}</View>
 
-      {/* Duraklatma Modalı */}
       <Modal visible={paused} transparent animationType="fade">
         <View style={s.overlay}>
           <View style={[s.pauseCard, { backgroundColor: C.bgSecondary }]}>
@@ -112,7 +105,6 @@ export default function GameScreen() {
         </View>
       </Modal>
 
-      {/* Canlanma Modalı */}
       <Modal visible={showRevive} transparent animationType="slide">
         <View style={s.overlay}>
           <View style={[s.pauseCard, { backgroundColor: C.bgSecondary, borderColor: C.accentYellow, borderWidth: 2 }]}>
