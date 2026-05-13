@@ -16,6 +16,7 @@ import storeRoutes from "./routes/store.routes";
 import challengeRoutes from "./routes/challenge.routes";
 import clanRoutes from "./routes/clan.routes";
 import liveRoutes from "./routes/live.routes";
+import battlepassRoutes from "./routes/battlepass.routes";
 import { setupSocket } from "./socket";
 import { LiveTournamentService } from "./services/LiveTournamentService";
 
@@ -43,6 +44,7 @@ app.use("/v1/store",       storeRoutes);
 app.use("/v1/challenge",   challengeRoutes);
 app.use("/v1/clan",        clanRoutes);
 app.use("/v1/live",        liveRoutes);
+app.use("/v1/battlepass", battlepassRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 

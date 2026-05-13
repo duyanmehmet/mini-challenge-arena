@@ -1,4 +1,5 @@
 import db from '../database';
+import { getSeedQuestions } from '../data/questions';
 import { Server as SocketServer } from 'socket.io';
 
 const CATEGORIES = ['general', 'history', 'geography', 'science', 'art', 'cinema', 'sports', 'turkey'];
@@ -67,10 +68,16 @@ export class LiveTournamentService {
 
       const tournamentId = id?.id ?? id;
 
+      // Seed-based soru seçimi — tüm kullanıcılar aynı soruları alır
+      const seed = parseInt(today.replace(/-/g, ''), 10);
+      const questions = getSeedQuestions(category, seed, 10);
+
+
       // Tüm bağlı kullanıcılara duyur
       this.io.emit('live_tournament_start', {
         tournamentId,
         category,
+        questions,   // tüm kullanıcılar aynı soruları alır
         message: `🏆 Canlı Yarışma başladı! Kategori: ${category} — 5 dakikan var!`,
         durationSeconds: 300,
       });

@@ -76,65 +76,19 @@ export default function HomeScreen() {
         </View>
 
         {/* Hızlı Aksiyonlar */}
+        {/* Satır 1: Oyun modları */}
         <View style={s.actionRow}>
-          <TouchableOpacity
-            style={[s.actionBtn, { backgroundColor: '#f0c040' + '22', borderColor: '#f0c040' }]}
-            onPress={() => router.push('/challenge' as any)}
-          >
-            <Text style={s.actionIcon}>⚡</Text>
-            <Text style={[s.actionLabel, { color: '#f0c040' }]}>Günlük{'\n'}Challenge</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.actionBtn, { backgroundColor: C.accentTeal + '22', borderColor: C.accentTeal }]}
-            onPress={() => router.push('/stats' as any)}
-          >
-            <Text style={s.actionIcon}>📊</Text>
-            <Text style={[s.actionLabel, { color: C.accentTeal }]}>İstatistik{'\n'}lerim</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.actionBtn, { backgroundColor: C.accentPurple + '22', borderColor: C.accentPurple }]}
-            onPress={() => router.push('/duel/lobby' as any)}
-          >
-            <Text style={s.actionIcon}>⚔️</Text>
-            <Text style={[s.actionLabel, { color: C.accentPurple }]}>Arkadaşa{'\n'}Düello</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.actionBtn, { backgroundColor: C.accentTeal + '22', borderColor: C.accentTeal }]}
-            onPress={() => router.push('/clan' as any)}
-          >
-            <Text style={s.actionIcon}>🛡️</Text>
-            <Text style={[s.actionLabel, { color: C.accentTeal }]}>Klan</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.actionBtn, { backgroundColor: C.accentPurple + '22', borderColor: C.accentPurple }]}
-            onPress={() => router.push('/battlepass' as any)}
-          >
-            <Text style={s.actionIcon}>⭐</Text>
-            <Text style={[s.actionLabel, { color: C.accentPurple }]}>Battle{'\n'}Pass</Text>
-          </TouchableOpacity>
+          <ActionBtn icon="🏆" label="Klasik Tur" color="#e94560" onPress={() => router.push('/classic' as any)} />
+          <ActionBtn icon="🔴" label="Canlı" color="#8e44ad" onPress={() => router.push('/live' as any)} />
+          <ActionBtn icon="⚔️" label="Düello" color={C.accentPurple} onPress={() => router.push('/duel/lobby' as any)} />
         </View>
 
-        {/* Hızlı Modlar */}
-        <View style={s.quickRow}>
-          <TouchableOpacity
-            style={[s.quickCard, { backgroundColor: '#e94560' }]}
-            onPress={() => router.push('/classic' as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={s.quickIcon}>🏆</Text>
-            <Text style={s.quickTitle}>Klasik Tur</Text>
-            <Text style={s.quickSub}>10 soru · 3 can</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[s.quickCard, { backgroundColor: '#8e44ad' }]}
-            onPress={() => router.push('/live' as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={s.quickIcon}>🔴</Text>
-            <Text style={s.quickTitle}>Canlı Yarışma</Text>
-            <Text style={s.quickSub}>Her gece 21:00</Text>
-          </TouchableOpacity>
+        {/* Satır 2: Özellikler */}
+        <View style={[s.actionRow, { marginTop: -4 }]}>
+          <ActionBtn icon="📊" label="İstatistik" color={C.accentTeal} onPress={() => router.push('/stats' as any)} />
+          <ActionBtn icon="🛡️" label="Klan" color={C.accentTeal} onPress={() => router.push('/clan' as any)} />
+          <ActionBtn icon="⭐" label="Battle Pass" color="#f0c040" onPress={() => router.push('/battlepass' as any)} />
+          <ActionBtn icon="⚡" label="Challenge" color="#f0c040" onPress={() => router.push('/challenge' as any)} />
         </View>
 
         {/* Kategoriler — gruplu */}
@@ -242,6 +196,9 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   quickIcon: { fontSize: 30, marginBottom: 2 },
   quickTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#fff', textAlign: 'center' },
   quickSub: { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#ffffff99', textAlign: 'center' },
+  actionBtnInner: { flex: 1, borderRadius: 12, padding: 10, alignItems: 'center', borderWidth: 1.5 },
+  actionIconInner: { fontSize: 20, marginBottom: 2 },
+  actionLabelInner: { fontSize: 10, fontFamily: 'Nunito-Bold', textAlign: 'center' },
   // Grup
   groupSection: { marginBottom: 8 },
   groupHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 10, gap: 8 },
@@ -266,3 +223,21 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   taskFill: { height: '100%', borderRadius: 2 },
   taskReward: { fontFamily: 'Nunito-Bold', fontSize: 13 },
 });
+
+function ActionBtn({ icon, label, color, onPress }: {
+  icon: string; label: string; color: string; onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={[{
+        flex: 1, borderRadius: 12, padding: 10, alignItems: 'center',
+        borderWidth: 1.5, backgroundColor: color + '18', borderColor: color,
+      }]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <Text style={{ fontSize: 20, marginBottom: 2 }}>{icon}</Text>
+      <Text style={{ fontSize: 10, fontFamily: 'Nunito-Bold', color, textAlign: 'center' }}>{label}</Text>
+    </TouchableOpacity>
+  );
+}

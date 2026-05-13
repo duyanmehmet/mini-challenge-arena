@@ -153,17 +153,17 @@ export default function RootLayout() {
             <Text style={s.offlineText}>📵 İnternet bağlantısı yok — çevrimdışı moddasınız</Text>
           </View>
         )}
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+        <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', animationDuration: 250 }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="onboarding" />
-          <Stack.Screen name="game/[mode]" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="game/[mode]" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="game/result" />
           <Stack.Screen name="game/select/[mode]" />
           <Stack.Screen name="settings" options={{ headerShown: true, title: 'Ayarlar' }} />
           <Stack.Screen name="stats" options={{ headerShown: false }} />
           <Stack.Screen name="challenge" options={{ headerShown: false }} />
-          <Stack.Screen name="classic" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="classic" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="duel/lobby" options={{ headerShown: false }} />
           <Stack.Screen name="duel/[duelId]" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
           <Stack.Screen name="live" options={{ headerShown: false, presentation: 'fullScreenModal' }} />

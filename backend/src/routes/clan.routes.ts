@@ -34,6 +34,35 @@ router.post("/join/:clanId", authMiddleware, async (req: AuthRequest, res) => {
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
+// Kullanıcının klanı
+router.get("/my", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const user = await db("users").where("id", req.userId).first();
+    if (!user?.clan_id) return res.json({ clan: null, members: [] });
+
+    const clan = await db("clans").where("id", user.clan_id).first();
+    if (!clan) return res.json({ clan: null, members: [] });
+
+    const members = await db("users")
+      .where("clan_id", user.clan_id)
+      .select("username", "avatar_id", "weekly_score", "level")
+      .orderBy("weekly_score", "desc")
+      .limit(30);
+
+    const leader = await db("users").where("id", clan.leader_id).select("username").first();
+
+    res.json({
+      clan: {
+        ...clan,
+        member_count: members.length,
+        weekly_score: members.reduce((s: number, m: any) => s + (m.weekly_score ?? 0), 0),
+        leader_username: leader?.username ?? '—',
+      },
+      members,
+    });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
 // Klan ara
 router.get("/search", async (req, res) => {
   const q = req.query.q as string;

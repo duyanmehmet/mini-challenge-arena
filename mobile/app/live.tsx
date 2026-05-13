@@ -35,10 +35,11 @@ export default function LiveTournamentScreen() {
   const C = Colors[theme];
 
   const [status, setStatus]       = useState<LiveStatus>({ status: 'none' });
-  const [phase, setPhase]         = useState<Phase>('lobby');
-  const [countdown, setCountdown] = useState(3);
-  const [tournamentId, setTournId]= useState<number | null>(null);
-  const [category, setCategory]   = useState<string>('general');
+  const [phase, setPhase]           = useState<Phase>('lobby');
+  const [countdown, setCountdown]   = useState(3);
+  const [tournamentId, setTournId]  = useState<number | null>(null);
+  const [category, setCategory]     = useState<string>('general');
+  const [serverQuestions, setServerQuestions] = useState<any[] | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
   const [myScore, setMyScore]     = useState(0);
   const [participantCount, setParticipantCount] = useState(0);
@@ -72,11 +73,12 @@ export default function LiveTournamentScreen() {
     const socket = socketService.getSocket();
     if (!socket) return;
 
-    socket.on('live_tournament_start', (data: { tournamentId: number; category: string; durationSeconds: number }) => {
+    socket.on('live_tournament_start', (data: { tournamentId: number; category: string; durationSeconds: number; questions?: any[] }) => {
       setTournId(data.tournamentId);
       setCategory(data.category);
       setTimeLeft(data.durationSeconds);
       setStatus({ status: 'active', category: data.category });
+      if (data.questions?.length) setServerQuestions(data.questions);
       startCountdown();
     });
 
@@ -172,6 +174,7 @@ export default function LiveTournamentScreen() {
       </View>
       <QuizMode
         categoryId={(category as CategoryId) ?? 'general'}
+        externalPool={serverQuestions ?? undefined}
         onEnd={handleEnd}
       />
     </SafeAreaView>
