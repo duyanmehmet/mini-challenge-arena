@@ -3,11 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Animated } from
 import { router } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useGameStore } from '../src/store/gameStore';
+import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
 import { CATEGORIES, type CategoryId } from '../src/constants/categories';
 import { getRandomMixedQuestions } from '../src/data/questions/index';
 import type { QuizQuestion } from '../src/types/quiz';
 import { QuizMode } from '../src/components/game/modes/QuizMode';
+import { gameService } from '../src/services/game.service';
 
 const TOTAL_QUESTIONS = 10;
 const MAX_LIVES = 3;
@@ -21,6 +23,7 @@ type Phase = 'intro' | 'playing' | 'result';
 export default function ClassicTourScreen() {
   const { theme } = useSettingsStore();
   const { startGame, endGame } = useGameStore();
+  const { addXP, addCoins, updateUser } = useUserStore();
   const C = Colors[theme];
 
   const [phase, setPhase]     = useState<Phase>('intro');
@@ -55,10 +58,28 @@ export default function ClassicTourScreen() {
 
   const handleEnd = () => {
     const result = endGame();
-    setFinalScore(result.score);
-    // Eğer tüm soruları bitirdiyse droppedAt null, erken bittiyse son soru numarasını göster
-    setDroppedAt(currentQ < TOTAL_QUESTIONS ? currentQ + 1 : null);
+    const finalPts = result.score;
+    setFinalScore(finalPts);
+    // currentQ = kaçıncı soruda bitirildi (0-indexed → +1)
+    const dropped = currentQ < TOTAL_QUESTIONS - 1 ? currentQ + 1 : null;
+    setDroppedAt(dropped);
     setPhase('result');
+
+    // XP & coin
+    const xp = 15 + (dropped === null ? 20 : 0); // turu tamamlarsa bonus
+    addXP(xp);
+    addCoins(Math.floor(finalPts / 80) + 5);
+
+    // Backend'e kaydet
+    gameService.submitResult({
+      mode: 'general',
+      score: finalPts,
+      duration_seconds: Math.floor(result.durationSeconds),
+      combo_max: result.maxCombo,
+    }).then((res) => {
+      if (res?.streakCount !== undefined) updateUser({ streakCount: res.streakCount });
+      if (res?.newLevel) updateUser({ level: res.newLevel });
+    }).catch(() => {});
   };
 
   const s = styles(C);
