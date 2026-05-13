@@ -7,11 +7,12 @@ import { Colors } from '../../src/constants/colors';
 import { CATEGORIES } from '../../src/constants/categories';
 import { gameService } from '../../src/services/game.service';
 import { assetService } from '../../src/services/asset.service';
+import api from '../../src/services/api';
 import { Share } from 'react-native';
 
 export default function ResultScreen() {
-  const { mode, score, maxCombo, duration } = useLocalSearchParams<{
-    mode: string; score: string; maxCombo: string; duration: string;
+  const { mode, score, maxCombo, duration, challengeId } = useLocalSearchParams<{
+    mode: string; score: string; maxCombo: string; duration: string; challengeId?: string;
   }>();
   const { theme } = useSettingsStore();
   const { personalBests, setPersonalBests, addXP, addCoins, updateUser } = useUserStore();
@@ -52,6 +53,11 @@ export default function ResultScreen() {
       assetService.playSound('levelup');
       const updated = personalBests.filter((p) => p.mode !== mode);
       setPersonalBests([...updated, { mode: mode ?? '', score: numScore, achievedAt: new Date().toISOString() }]);
+    }
+
+    // Challenge skoru varsa kaydet
+    if (challengeId) {
+      api.post('/challenge/submit', { challengeId, score: numScore }).catch(() => {});
     }
 
     // Backend'e skor gönder

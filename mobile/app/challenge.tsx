@@ -66,7 +66,9 @@ export default function ChallengeScreen() {
           ) : (
             <TouchableOpacity
               style={[s.playBtn, { backgroundColor: modeCfg?.color ?? C.accentRed }]}
-              onPress={() => { if (challenge) router.push(`/game/${challenge.mode}` as any); }}
+              onPress={() => {
+              if (challenge) router.push({ pathname: `/game/${challenge.mode}` as any, params: { challengeId: challenge.id } });
+            }}
             >
               <Text style={s.playBtnText}>▶ Şimdi Oyna — {modeCfg?.shortName}</Text>
             </TouchableOpacity>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, Modal, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, Modal, FlatList, ActivityIndicator, Alert, TextInput } from 'react-native';
 
 import { router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
@@ -28,8 +28,31 @@ export default function ProfileScreen() {
   const { user, updateUser, badges, personalBests } = useUserStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [processing, setProcessing] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
 
   const C = Colors[theme];
+
+  const handleUsernameEdit = () => {
+    setNewUsername(user?.username ?? '');
+    setEditingName(true);
+  };
+
+  const handleUsernameSave = async () => {
+    const trimmed = newUsername.trim();
+    if (!trimmed || trimmed.length < 3) {
+      Alert.alert('Hata', 'Kullanıcı adı en az 3 karakter olmalı.');
+      return;
+    }
+    try {
+      await userService.updateProfile({ username: trimmed });
+      updateUser({ username: trimmed });
+      setEditingName(false);
+      Alert.alert('✅ Güncellendi', 'Kullanıcı adın değiştirildi.');
+    } catch (e: any) {
+      Alert.alert('Hata', e.response?.data?.message ?? 'Güncellenemedi.');
+    }
+  };
 
   const handleAvatarPress = async (index: number) => {
     if (!user) return;
@@ -87,7 +110,10 @@ export default function ProfileScreen() {
             <Avatar avatarId={user.avatarId} size={80} />
             <View style={s.editBadge}><Text style={{ fontSize: 10 }}>✏️</Text></View>
           </TouchableOpacity>
-          <Text style={s.username}>{user.username}</Text>
+          <TouchableOpacity onPress={handleUsernameEdit} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={s.username}>{user.username}</Text>
+            <Text style={{ fontSize: 14, opacity: 0.5 }}>✏️</Text>
+          </TouchableOpacity>
           <Text style={s.levelBadge}>{league?.icon} {league?.name} • Seviye {user.level}</Text>
           {user.streakCount > 0 && (
             <Text style={[s.streak, { color: C.accentRed }]}>
@@ -133,6 +159,38 @@ export default function ProfileScreen() {
               <TouchableOpacity style={s.closeBtn} onPress={() => setModalVisible(false)}>
                 <Text style={{ color: C.textSecondary, fontFamily: 'Nunito-Bold' }}>Kapat</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Kullanıcı Adı Düzenleme Modalı */}
+        <Modal visible={editingName} transparent animationType="fade">
+          <View style={s.modalOverlay}>
+            <View style={[s.modalContent, { backgroundColor: C.bgSecondary }]}>
+              <Text style={[s.modalTitle, { color: C.textPrimary }]}>Kullanıcı Adını Değiştir</Text>
+              <TextInput
+                style={[s.nameInput, { backgroundColor: C.bgTertiary, color: C.textPrimary, borderColor: C.border }]}
+                value={newUsername}
+                onChangeText={setNewUsername}
+                placeholder="Yeni kullanıcı adı"
+                placeholderTextColor={C.textSecondary}
+                maxLength={20}
+                autoFocus
+              />
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+                <TouchableOpacity
+                  style={[s.closeBtn, { flex: 1, backgroundColor: C.bgTertiary, borderRadius: 12 }]}
+                  onPress={() => setEditingName(false)}
+                >
+                  <Text style={{ color: C.textSecondary, fontFamily: 'Nunito-Bold', textAlign: 'center' }}>İptal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.closeBtn, { flex: 1, backgroundColor: C.accentTeal, borderRadius: 12 }]}
+                  onPress={handleUsernameSave}
+                >
+                  <Text style={{ color: '#fff', fontFamily: 'Nunito-Bold', textAlign: 'center' }}>Kaydet</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -207,5 +265,6 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   priceTag: { position: 'absolute', bottom: 4, backgroundColor: '#000000aa', paddingHorizontal: 4, borderRadius: 4 },
   priceText: { color: '#fff', fontSize: 10, fontFamily: 'Nunito-Bold' },
   selectedDot: { position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, backgroundColor: C.success },
-  closeBtn: { marginTop: 16, padding: 12, alignItems: 'center' },
+  closeBtn: { marginTop: 0, padding: 12, alignItems: 'center' },
+  nameInput: { borderRadius: 12, padding: 14, fontSize: 16, borderWidth: 1.5, fontFamily: 'Nunito-Regular', marginTop: 8 },
 });

@@ -80,10 +80,10 @@ export default function DuelGameScreen() {
       setPhase('result');
     });
 
-    // Düelloya katıl
+    // Düelloya katıl — kategori ve kullanıcı bilgisiyle
     if (!started.current) {
       started.current = true;
-      socket.emit('duel_join', { duelId, userId: user?.id });
+      socket.emit('duel_join', { duelId, userId: user?.id, category: cat ?? 'general' });
       startGame((cat ?? 'general') as any);
     }
 
