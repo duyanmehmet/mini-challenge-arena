@@ -11,8 +11,7 @@ import { QuizMode } from '../../src/components/game/modes/QuizMode';
 const REVIVE_COST = 50;
 
 const QUIZ_CATEGORIES: CategoryId[] = [
-  'history','geography','science','general','art','cinema','sports',
-  'english','german','french','arabic','spanish','turkish',
+  'history','geography','science','general','art','cinema','sports','turkey',
   'kids','license','medical','economy',
 ];
 

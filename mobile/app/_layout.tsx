@@ -80,7 +80,22 @@ export default function RootLayout() {
         });
 
         socket.on('duel_started', (data: { duelId: string; mode: string }) => {
-          router.push(`/game/${data.mode}?duelId=${data.duelId}` as any);
+          router.push(`/duel/${data.duelId}?cat=${data.mode}` as any);
+        });
+
+        // Canlı yarışma bildirimleri
+        socket.on('live_tournament_soon', (data: { message: string; minutesLeft: number }) => {
+          Alert.alert('🏟️ Canlı Yarışma!', data.message, [
+            { text: 'Tamam' },
+            { text: 'Şimdi Git', onPress: () => router.push('/live' as any) },
+          ]);
+        });
+
+        socket.on('live_tournament_start', () => {
+          Alert.alert('🔴 Yarışma Başladı!', 'Canlı yarışma şu an aktif! Katılmak ister misin?', [
+            { text: 'Sonra' },
+            { text: 'Katıl!', onPress: () => router.push('/live' as any) },
+          ]);
         });
       }
     } else {
@@ -151,6 +166,7 @@ export default function RootLayout() {
           <Stack.Screen name="classic" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
           <Stack.Screen name="duel/lobby" options={{ headerShown: false }} />
           <Stack.Screen name="duel/[duelId]" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="live" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
         </Stack>
       </View>
     </ErrorBoundary>

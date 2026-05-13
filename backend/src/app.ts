@@ -15,7 +15,9 @@ import socialRoutes from "./routes/social.routes";
 import storeRoutes from "./routes/store.routes";
 import challengeRoutes from "./routes/challenge.routes";
 import clanRoutes from "./routes/clan.routes";
+import liveRoutes from "./routes/live.routes";
 import { setupSocket } from "./socket";
+import { LiveTournamentService } from "./services/LiveTournamentService";
 
 dotenv.config();
 
@@ -24,6 +26,9 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*", methods: ["GET","POST"] } });
 
 setupSocket(io);
+
+const liveTournament = new LiveTournamentService(io);
+liveTournament.start();
 
 app.use(cors({ origin: "*", methods: ["GET","POST","PATCH","DELETE"] }));
 app.use(express.json());
@@ -37,6 +42,7 @@ app.use("/v1/social",      socialRoutes);
 app.use("/v1/store",       storeRoutes);
 app.use("/v1/challenge",   challengeRoutes);
 app.use("/v1/clan",        clanRoutes);
+app.use("/v1/live",        liveRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 

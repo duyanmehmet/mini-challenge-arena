@@ -31,7 +31,7 @@ export default function CategorySelectScreen() {
         </View>
         <Text style={[s.catName, { color: C.textPrimary }]}>{cat.name}</Text>
         <View style={[s.tagBadge, { backgroundColor: cat.color + '22', borderColor: cat.color }]}>
-          <Text style={[s.tagText, { color: cat.color }]}>{cat.group === 'culture' ? '🏛️ Kültür' : cat.group === 'language' ? '🌍 Dil' : '⭐ Özel'}</Text>
+          <Text style={[s.tagText, { color: cat.color }]}>{cat.group === 'culture' ? '🏛️ Kültür & Bilim' : '⭐ Özel'}</Text>
         </View>
         <Text style={[s.catDesc, { color: C.textSecondary }]}>{cat.description}</Text>
 
@@ -63,11 +63,7 @@ export default function CategorySelectScreen() {
         <View style={[s.howCard, { backgroundColor: C.bgSecondary, borderColor: C.border }]}>
           <Text style={[s.howTitle, { color: C.textPrimary }]}>📋 Nasıl Oynanır?</Text>
           <Text style={[s.howText, { color: C.textSecondary }]}>
-            {cat.group === 'language'
-              ? `Kelimeyi gör, 4 seçenekten Türkçe karşılığını bul! Doğru cevaplar puan kazandırır. Seri yaptıkça bonus puan (3 seri → 1.5x, 5 seri → 2x). 60 saniyede mümkün olduğunca çok doğru yap!`
-              : cat.id === 'turkish'
-              ? `Sözlük tanımını oku, 4 kelimeden doğrusunu bul! Türkçe kelime dağarcığını geliştir. Seri yapınca bonus puan. 60 saniye!`
-              : `Her soruyu okuyarak 4 seçenekten doğrusunu seç! Doğru cevap = +10 puan. Seri yapınca bonus puan (1.5x ve 2x). 60 saniyede ne kadar doğru yapabilirsin?`}
+            {`Her soruyu okuyarak 4 seçenekten doğrusunu seç! ⚡ Hızlı cevap daha fazla puan kazandırır (2sn=30p, 6sn=20p, 12sn+=10p). 3+ seri yapınca bonus puan. 60 saniyede ne kadar doğru yapabilirsin?`}
           </Text>
         </View>
 

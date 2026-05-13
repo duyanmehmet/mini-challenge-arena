@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useGameStore } from '../../../store/gameStore';
 import { useSettingsStore } from '../../../store/settingsStore';
@@ -6,87 +6,125 @@ import { Colors } from '../../../constants/colors';
 import type { CategoryId } from '../../../constants/categories';
 import type { QuizQuestion } from '../../../types/quiz';
 import { getShuffledQuestions } from '../../../data/questions/index';
-import { ENGLISH_WORDS, getDistractors } from '../../../constants/englishWords';
-import { WORD_HINTS } from '../../../utils/wordHints';
+import { assetService } from '../../../services/asset.service';
 import { TimerBar } from '../TimerBar';
 import { ScoreBar } from '../ScoreBar';
 import { ComboBar } from '../ComboBar';
-import { assetService } from '../../../services/asset.service';
 
-const DURATION = 60;
-const BASE_PTS = 10;
+/** Cevap hızına göre puan hesapla (0-15 saniye içinde) */
+function speedScore(elapsedMs: number): number {
+  const s = elapsedMs / 1000;
+  if (s <= 2)  return 30;
+  if (s <= 4)  return 25;
+  if (s <= 6)  return 20;
+  if (s <= 9)  return 15;
+  if (s <= 12) return 10;
+  return 6;
+}
+
+const QUESTION_TIME = 15; // saniye / soru
+const SESSION_TIME  = 60; // genel süre (timer modu)
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
-function buildEnglishPool(): QuizQuestion[] {
-  return shuffle(ENGLISH_WORDS).map((word) => {
-    const distractors = getDistractors(word, ENGLISH_WORDS, 3);
-    const choices = shuffle([word.turkish, ...distractors]);
-    return { q: word.english, a: choices, c: choices.indexOf(word.turkish) };
-  });
-}
-
-function buildTurkishPool(): QuizQuestion[] {
-  const entries = Object.entries(WORD_HINTS);
-  const allWords = Object.keys(WORD_HINTS);
-  return shuffle(entries).map(([word, definition]) => {
-    const distractors = shuffle(allWords.filter((w) => w !== word)).slice(0, 3);
-    const choices = shuffle([word, ...distractors]);
-    return { q: `"${definition}"`, a: choices, c: choices.indexOf(word) };
-  });
-}
-
 interface Jokers { half: boolean; skip: boolean; time: boolean }
 
-interface Props {
+export interface Props {
   categoryId: CategoryId;
   onEnd: () => void;
-  /** Dışarıdan soru havuzu verilirse (Klasik Tur / Düello) */
   externalPool?: QuizQuestion[];
-  /** Kaç can hakkı — varsayılan sonsuz (timer modu) */
   lives?: number;
   onLifeLost?: () => void;
+  /** Düello modunda rakibin seçimini yayınlamak için */
+  onAnswer?: (correct: boolean, pts: number, qIndex: number) => void;
 }
 
-export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, onLifeLost }: Props) {
+export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, onLifeLost, onAnswer }: Props) {
   const { addScore, combo } = useGameStore();
   const { theme } = useSettingsStore();
   const C = Colors[theme];
 
-  const [pool] = useState<QuizQuestion[]>(() => {
-    if (externalPool) return externalPool;
-    if (categoryId === 'english') return buildEnglishPool();
-    if (categoryId === 'turkish') return buildTurkishPool();
-    return getShuffledQuestions(categoryId);
-  });
+  const [pool] = useState<QuizQuestion[]>(() =>
+    externalPool ?? getShuffledQuestions(categoryId)
+  );
 
-  const [qIndex, setQIndex] = useState(0);
+  const [qIndex, setQIndex]     = useState(0);
   const [feedback, setFeedback] = useState<{ text: string; correct: boolean } | null>(null);
-  const [streak, setStreak] = useState(0);
+  const [streak, setStreak]     = useState(0);
   const [answered, setAnswered] = useState(0);
-  const [lives, setLives] = useState(initialLives ?? 999);
-  const [jokers, setJokers] = useState<Jokers>({ half: true, skip: true, time: true });
-  // 50/50: indeksleri elimine edilen yanlış şıklar
-  const [eliminated, setEliminated] = useState<number[]>([]);
-  const [timerKey, setTimerKey] = useState(0); // timer reset için
+  const [lives, setLives]       = useState(initialLives ?? 999);
+  const [jokers, setJokers]     = useState<Jokers>({ half: true, skip: true, time: true });
+  const [eliminated, setElim]   = useState<number[]>([]);
+  const [sessionKey, setSessionKey] = useState(0); // session timer reset
+  // Hız ölçümü
+  const [qTimeLeft, setQTimeLeft] = useState(QUESTION_TIME);
+  const qStartRef = useRef(Date.now());
+  const qTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const endCalled = useRef(false);
+  const endCalled  = useRef(false);
   const feedbackAnim = useRef(new Animated.Value(0)).current;
-  const cardAnim = useRef(new Animated.Value(1)).current;
+  const cardAnim     = useRef(new Animated.Value(1)).current;
+  const timerAnim    = useRef(new Animated.Value(1)).current;
 
   const isLiveMode = initialLives !== undefined;
-  const isLanguageMode = ['english', 'german', 'french', 'arabic', 'spanish'].includes(categoryId);
-  const isTurkishMode = categoryId === 'turkish';
+  const current    = pool[qIndex];
 
-  const current = pool[qIndex];
+  // ── Soru başına 15 sn sayaç ──────────────────────────────────────────
+  useEffect(() => {
+    if (feedback) return;
+    qStartRef.current = Date.now();
+    setQTimeLeft(QUESTION_TIME);
+    timerAnim.setValue(1);
+    Animated.timing(timerAnim, { toValue: 0, duration: QUESTION_TIME * 1000, useNativeDriver: false }).start();
+
+    qTimerRef.current = setInterval(() => {
+      setQTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(qTimerRef.current!);
+          handleTimeOut();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+
+    return () => { if (qTimerRef.current) clearInterval(qTimerRef.current); };
+  }, [qIndex, feedback === null]);
+
+  const stopQTimer = () => {
+    if (qTimerRef.current) clearInterval(qTimerRef.current);
+  };
+
+  const handleTimeOut = () => {
+    if (feedback || endCalled.current) return;
+    assetService.playSound('miss');
+    assetService.vibrate([0, 60]);
+    setStreak(0);
+    const newLives = lives - 1;
+    if (isLiveMode) {
+      setLives(newLives);
+      onLifeLost?.();
+    }
+    setFeedback({ text: `⏰ Süre doldu! Cevap: "${current?.a[current.c]}"`, correct: false });
+    onAnswer?.(false, 0, qIndex);
+    setAnswered((n) => n + 1);
+    animateFeedback(() => {
+      setFeedback(null);
+      if (isLiveMode && newLives <= 0) {
+        if (!endCalled.current) { endCalled.current = true; onEnd(); }
+      } else {
+        nextQuestion();
+      }
+    });
+  };
 
   const nextQuestion = () => {
-    setEliminated([]);
+    setElim([]);
     Animated.sequence([
-      Animated.timing(cardAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-      Animated.timing(cardAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.timing(cardAnim, { toValue: 0, duration: 130, useNativeDriver: true }),
+      Animated.timing(cardAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
     ]).start();
     const next = qIndex + 1;
     if (isLiveMode && next >= pool.length) {
@@ -96,63 +134,61 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     setQIndex(next % pool.length);
   };
 
-  const handleChoice = (choiceIndex: number) => {
-    if (!current || feedback || eliminated.includes(choiceIndex)) return;
+  const animateFeedback = (cb: () => void) => {
+    Animated.sequence([
+      Animated.timing(feedbackAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+      Animated.delay(800),
+      Animated.timing(feedbackAnim, { toValue: 0, duration: 130, useNativeDriver: true }),
+    ]).start(cb);
+  };
 
-    const isCorrect = choiceIndex === current.c;
-    const streakBonus = streak >= 5 ? 2 : streak >= 3 ? 1.5 : 1;
-    const pts = Math.round(BASE_PTS * streakBonus);
+  const handleChoice = (choiceIdx: number) => {
+    if (!current || feedback || eliminated.includes(choiceIdx)) return;
+    stopQTimer();
+
+    const elapsed   = Date.now() - qStartRef.current;
+    const isCorrect = choiceIdx === current.c;
+    const streakBonus = streak >= 5 ? 1.5 : streak >= 3 ? 1.25 : 1;
+    const pts = isCorrect ? Math.round(speedScore(elapsed) * streakBonus) : 0;
 
     if (isCorrect) {
       addScore(pts);
       assetService.playSound('hit');
       assetService.vibrate(40);
       setStreak((s) => s + 1);
-      setFeedback({ text: `✅ Doğru! +${pts} puan`, correct: true });
+      const timeLabel = elapsed < 3000 ? ' ⚡Süper hızlı!' : elapsed < 6000 ? ' 🔥Hızlı!' : '';
+      setFeedback({ text: `✅ Doğru! +${pts} puan${timeLabel}`, correct: true });
     } else {
       assetService.playSound('miss');
       assetService.vibrate([0, 80]);
       setStreak(0);
       const newLives = lives - 1;
-      setLives(newLives);
-      onLifeLost?.();
+      if (isLiveMode) { setLives(newLives); onLifeLost?.(); }
       setFeedback({ text: `❌ Yanlış! Cevap: "${current.a[current.c]}"`, correct: false });
       if (isLiveMode && newLives <= 0) {
-        Animated.sequence([
-          Animated.timing(feedbackAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
-          Animated.delay(900),
-        ]).start(() => {
-          if (!endCalled.current) { endCalled.current = true; onEnd(); }
-        });
+        onAnswer?.(false, 0, qIndex);
+        setAnswered((n) => n + 1);
+        animateFeedback(() => { if (!endCalled.current) { endCalled.current = true; onEnd(); } });
         return;
       }
     }
 
+    onAnswer?.(isCorrect, pts, qIndex);
     setAnswered((n) => n + 1);
-
-    Animated.sequence([
-      Animated.timing(feedbackAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
-      Animated.delay(850),
-      Animated.timing(feedbackAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-    ]).start(() => {
-      setFeedback(null);
-      nextQuestion();
-    });
+    animateFeedback(() => { setFeedback(null); nextQuestion(); });
   };
 
   // ── Jokerler ──────────────────────────────────────────────────────────
   const useHalf = () => {
     if (!jokers.half || !current || feedback) return;
-    const wrongs = current.a
-      .map((_, i) => i)
-      .filter((i) => i !== current.c && !eliminated.includes(i));
-    const toElim = shuffle(wrongs).slice(0, 2);
-    setEliminated(toElim);
+    const wrongs = current.a.map((_, i) => i).filter((i) => i !== current.c && !eliminated.includes(i));
+    setElim(shuffle(wrongs).slice(0, 2));
     setJokers((j) => ({ ...j, half: false }));
   };
 
   const useSkip = () => {
     if (!jokers.skip || feedback) return;
+    stopQTimer();
     setJokers((j) => ({ ...j, skip: false }));
     setAnswered((n) => n + 1);
     nextQuestion();
@@ -161,43 +197,40 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const useTime = () => {
     if (!jokers.time || feedback) return;
     setJokers((j) => ({ ...j, time: false }));
-    setTimerKey((k) => k + 1); // timer'ı sıfırla
+    setSessionKey((k) => k + 1);
   };
 
   const s = styles(C);
 
   if (!current) return null;
 
-  const questionLabel = isLanguageMode
-    ? 'Bu kelimenin Türkçesi nedir?'
-    : isTurkishMode
-    ? 'Bu tanım hangi kelimeye ait?'
-    : '';
+  const timerColor = timerAnim.interpolate({
+    inputRange: [0, 0.33, 1],
+    outputRange: ['#e74c3c', '#f0c040', '#2ecc71'],
+  });
 
   return (
     <View style={s.container}>
       <ScoreBar />
 
-      {/* Timer — sadece timer modunda */}
+      {/* Session timer (timer modu) */}
       {!isLiveMode && (
-        <View style={{ paddingHorizontal: 20, marginTop: 10 }}>
+        <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
           <TimerBar
-            key={timerKey}
-            duration={60}
+            key={sessionKey}
+            duration={SESSION_TIME}
             isPlaying={true}
-            onTimeUp={() => {
-              if (!endCalled.current) { endCalled.current = true; onEnd(); }
-            }}
+            onTimeUp={() => { if (!endCalled.current) { endCalled.current = true; onEnd(); } }}
           />
         </View>
       )}
 
       <ComboBar combo={combo} />
 
-      {/* Üst satır: seri + can + soru sayısı */}
+      {/* Soru sayacı + can + seri */}
       <View style={s.statsRow}>
         {streak >= 3 && (
-          <View style={[s.badge, { backgroundColor: '#f0c040' + '22', borderColor: '#f0c040' }]}>
+          <View style={[s.badge, { backgroundColor: '#f0c04033', borderColor: '#f0c040' }]}>
             <Text style={[s.badgeText, { color: '#f0c040' }]}>🔥 {streak} seri</Text>
           </View>
         )}
@@ -213,15 +246,15 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
         </View>
       </View>
 
+      {/* Hız sayacı — soru başına 15 saniye */}
+      <View style={s.qTimerRow}>
+        <Animated.View style={[s.qTimerBar, { flex: timerAnim as any, backgroundColor: timerColor as any }]} />
+        <Text style={[s.qTimerLabel, { color: C.textSecondary }]}>{qTimeLeft}s</Text>
+      </View>
+
       {/* Soru kartı */}
       <Animated.View style={[s.questionCard, { backgroundColor: C.bgSecondary, opacity: cardAnim }]}>
-        {questionLabel ? (
-          <Text style={[s.questionLabel, { color: C.textSecondary }]}>{questionLabel}</Text>
-        ) : null}
-        <Text
-          style={[isLanguageMode ? s.bigQuestion : s.normalQuestion, { color: C.textPrimary }]}
-          numberOfLines={4}
-        >
+        <Text style={[s.normalQuestion, { color: C.textPrimary }]} numberOfLines={5}>
           {current.q}
         </Text>
       </Animated.View>
@@ -245,17 +278,14 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
           return (
             <TouchableOpacity
               key={i}
-              style={[
-                s.choiceBtn,
-                {
-                  backgroundColor: isElim ? C.bgTertiary : C.bgSecondary,
-                  borderColor: isElim ? C.bgTertiary : C.border,
-                  opacity: isElim ? 0.3 : 1,
-                },
-              ]}
+              style={[s.choiceBtn, {
+                backgroundColor: isElim ? C.bgTertiary : C.bgSecondary,
+                borderColor: isElim ? C.bgTertiary : C.border,
+                opacity: isElim ? 0.25 : 1,
+              }]}
               onPress={() => handleChoice(i)}
-              activeOpacity={isElim ? 1 : 0.7}
-              disabled={isElim}
+              disabled={isElim || !!feedback}
+              activeOpacity={0.75}
             >
               <Text style={[s.choiceText, { color: C.textPrimary }]} numberOfLines={3}>
                 {isElim ? '' : choice}
@@ -267,64 +297,57 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
 
       {/* Jokerler */}
       <View style={s.jokerRow}>
-        <TouchableOpacity
-          style={[s.jokerBtn, { opacity: jokers.half ? 1 : 0.3, backgroundColor: C.bgSecondary, borderColor: '#e74c3c' }]}
-          onPress={useHalf}
-          disabled={!jokers.half}
-        >
-          <Text style={s.jokerIcon}>✂️</Text>
-          <Text style={[s.jokerLabel, { color: '#e74c3c' }]}>50/50</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[s.jokerBtn, { opacity: jokers.skip ? 1 : 0.3, backgroundColor: C.bgSecondary, borderColor: '#3498db' }]}
-          onPress={useSkip}
-          disabled={!jokers.skip}
-        >
-          <Text style={s.jokerIcon}>⏭️</Text>
-          <Text style={[s.jokerLabel, { color: '#3498db' }]}>Geç</Text>
-        </TouchableOpacity>
-
+        <JokerBtn icon="✂️" label="50/50"  color="#e74c3c" active={jokers.half} onPress={useHalf} />
+        <JokerBtn icon="⏭️" label="Geç"   color="#3498db" active={jokers.skip} onPress={useSkip} />
         {!isLiveMode && (
-          <TouchableOpacity
-            style={[s.jokerBtn, { opacity: jokers.time ? 1 : 0.3, backgroundColor: C.bgSecondary, borderColor: '#2ecc71' }]}
-            onPress={useTime}
-            disabled={!jokers.time}
-          >
-            <Text style={s.jokerIcon}>⏱️</Text>
-            <Text style={[s.jokerLabel, { color: '#2ecc71' }]}>+60s</Text>
-          </TouchableOpacity>
+          <JokerBtn icon="⏱️" label="+60s" color="#2ecc71" active={jokers.time} onPress={useTime} />
         )}
       </View>
     </View>
   );
 }
 
+function JokerBtn({ icon, label, color, active, onPress }: {
+  icon: string; label: string; color: string; active: boolean; onPress: () => void;
+}) {
+  const { theme } = useSettingsStore();
+  const C = Colors[theme];
+  return (
+    <TouchableOpacity
+      style={[jStyle.btn, { backgroundColor: C.bgSecondary, borderColor: color, opacity: active ? 1 : 0.3 }]}
+      onPress={onPress}
+      disabled={!active}
+    >
+      <Text style={jStyle.icon}>{icon}</Text>
+      <Text style={[jStyle.label, { color }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+const jStyle = StyleSheet.create({
+  btn: { flex: 1, borderRadius: 14, paddingVertical: 10, alignItems: 'center', borderWidth: 1.5 },
+  icon: { fontSize: 18, marginBottom: 2 },
+  label: { fontFamily: 'Nunito-Bold', fontSize: 11 },
+});
+
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bgPrimary, paddingHorizontal: 16 },
-  statsRow: { flexDirection: 'row', gap: 8, marginVertical: 8, flexWrap: 'wrap' },
+  statsRow: { flexDirection: 'row', gap: 8, marginVertical: 6, flexWrap: 'wrap' },
   badge: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1 },
   badgeText: { fontFamily: 'Nunito-Bold', fontSize: 12 },
+  qTimerRow: { flexDirection: 'row', alignItems: 'center', height: 8, borderRadius: 4, backgroundColor: C.bgTertiary, marginBottom: 10, overflow: 'hidden' },
+  qTimerBar: { height: '100%', borderRadius: 4 },
+  qTimerLabel: { fontFamily: 'Nunito-Bold', fontSize: 11, position: 'absolute', right: 4 },
   questionCard: {
-    borderRadius: 20, padding: 22, alignItems: 'center', marginBottom: 12,
-    elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8,
-    minHeight: 120, justifyContent: 'center',
+    borderRadius: 20, padding: 20, alignItems: 'center', marginBottom: 10,
+    elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6,
+    minHeight: 110, justifyContent: 'center',
   },
-  questionLabel: { fontFamily: 'Nunito-Regular', fontSize: 12, marginBottom: 8 },
-  bigQuestion: { fontFamily: 'Nunito-ExtraBold', fontSize: 34, textAlign: 'center', letterSpacing: 1 },
   normalQuestion: { fontFamily: 'Nunito-Bold', fontSize: 16, textAlign: 'center', lineHeight: 24 },
   feedbackBox: { borderRadius: 12, padding: 10, alignItems: 'center', marginBottom: 8 },
-  feedbackText: { fontFamily: 'Nunito-Bold', fontSize: 14, textAlign: 'center' },
-  choicesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
-  choiceBtn: {
-    width: '47%', borderRadius: 14, padding: 14, alignItems: 'center',
-    justifyContent: 'center', borderWidth: 1.5, minHeight: 60,
-  },
+  feedbackText: { fontFamily: 'Nunito-Bold', fontSize: 13, textAlign: 'center' },
+  choicesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  choiceBtn: { width: '47%', borderRadius: 14, padding: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, minHeight: 58 },
   choiceText: { fontFamily: 'Nunito-Bold', fontSize: 13, textAlign: 'center' },
-  jokerRow: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 4 },
-  jokerBtn: {
-    flex: 1, borderRadius: 14, paddingVertical: 10, alignItems: 'center', borderWidth: 1.5,
-  },
-  jokerIcon: { fontSize: 18, marginBottom: 2 },
-  jokerLabel: { fontFamily: 'Nunito-Bold', fontSize: 11 },
+  jokerRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
 });

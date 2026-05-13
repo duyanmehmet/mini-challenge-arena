@@ -100,19 +100,28 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Klasik Tur */}
-        <TouchableOpacity
-          style={[s.classicBanner, { backgroundColor: '#e94560' }]}
-          onPress={() => router.push('/classic' as any)}
-          activeOpacity={0.85}
-        >
-          <Text style={s.classicIcon}>🏆</Text>
-          <View>
-            <Text style={s.classicTitle}>Klasik Tur</Text>
-            <Text style={s.classicSub}>10 soru · 3 can · Karışık kategoriler</Text>
-          </View>
-          <Text style={{ color: '#fff', fontSize: 22 }}>›</Text>
-        </TouchableOpacity>
+        {/* Hızlı Modlar */}
+        <View style={s.quickRow}>
+          <TouchableOpacity
+            style={[s.quickCard, { backgroundColor: '#e94560' }]}
+            onPress={() => router.push('/classic' as any)}
+            activeOpacity={0.85}
+          >
+            <Text style={s.quickIcon}>🏆</Text>
+            <Text style={s.quickTitle}>Klasik Tur</Text>
+            <Text style={s.quickSub}>10 soru · 3 can</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[s.quickCard, { backgroundColor: '#8e44ad' }]}
+            onPress={() => router.push('/live' as any)}
+            activeOpacity={0.85}
+          >
+            <Text style={s.quickIcon}>🔴</Text>
+            <Text style={s.quickTitle}>Canlı Yarışma</Text>
+            <Text style={s.quickSub}>Her gece 21:00</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Kategoriler — gruplu */}
         {CATEGORY_GROUPS.map((group) => {
@@ -214,10 +223,11 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   actionBtn: { flex: 1, borderRadius: 14, padding: 12, alignItems: 'center', borderWidth: 1.5 },
   actionIcon: { fontSize: 24, marginBottom: 4 },
   actionLabel: { fontSize: 11, fontFamily: 'Nunito-Bold', textAlign: 'center' },
-  classicBanner: { marginHorizontal: 16, marginBottom: 18, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  classicIcon: { fontSize: 32 },
-  classicTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: '#fff' },
-  classicSub: { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#ffffff99' },
+  quickRow: { flexDirection: 'row', marginHorizontal: 16, gap: 10, marginBottom: 18 },
+  quickCard: { flex: 1, borderRadius: 18, padding: 16, alignItems: 'center', gap: 4 },
+  quickIcon: { fontSize: 30, marginBottom: 2 },
+  quickTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#fff', textAlign: 'center' },
+  quickSub: { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#ffffff99', textAlign: 'center' },
   // Grup
   groupSection: { marginBottom: 8 },
   groupHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 10, gap: 8 },

@@ -5,9 +5,7 @@ import { useSettingsStore } from '../src/store/settingsStore';
 import { useGameStore } from '../src/store/gameStore';
 import { Colors } from '../src/constants/colors';
 import { CATEGORIES, type CategoryId } from '../src/constants/categories';
-import { getShuffledQuestions } from '../src/data/questions/index';
-import { ENGLISH_WORDS, getDistractors } from '../src/constants/englishWords';
-import { WORD_HINTS } from '../src/utils/wordHints';
+import { getRandomMixedQuestions } from '../src/data/questions/index';
 import type { QuizQuestion } from '../src/types/quiz';
 import { QuizMode } from '../src/components/game/modes/QuizMode';
 
@@ -20,34 +18,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 /** Tüm kategorilerden karışık 10 soru çek */
 function buildClassicPool(): Array<QuizQuestion & { categoryId: CategoryId }> {
-  const allCats = CATEGORIES.map((c) => c.id);
-  const result: Array<QuizQuestion & { categoryId: CategoryId }> = [];
-
-  // Her kategoriden 1-2 soru çek, karıştır, 10 al
-  for (const catId of shuffle(allCats)) {
-    let pool: QuizQuestion[] = [];
-    if (catId === 'english') {
-      pool = shuffle(ENGLISH_WORDS).slice(0, 5).map((word) => {
-        const distractors = getDistractors(word, ENGLISH_WORDS, 3);
-        const choices = shuffle([word.turkish, ...distractors]);
-        return { q: word.english, a: choices, c: choices.indexOf(word.turkish) };
-      });
-    } else if (catId === 'turkish') {
-      const entries = shuffle(Object.entries(WORD_HINTS)).slice(0, 5);
-      const allWords = Object.keys(WORD_HINTS);
-      pool = entries.map(([word, def]) => {
-        const dist = shuffle(allWords.filter((w) => w !== word)).slice(0, 3);
-        const choices = shuffle([word, ...dist]);
-        return { q: `"${def}"`, a: choices, c: choices.indexOf(word) };
-      });
-    } else {
-      pool = getShuffledQuestions(catId).slice(0, 2);
-    }
-    result.push(...pool.map((q) => ({ ...q, categoryId: catId })));
-    if (result.length >= TOTAL_QUESTIONS * 2) break;
-  }
-
-  return shuffle(result).slice(0, TOTAL_QUESTIONS);
+  return getRandomMixedQuestions(TOTAL_QUESTIONS);
 }
 
 type Phase = 'intro' | 'playing' | 'result';
