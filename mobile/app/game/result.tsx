@@ -68,13 +68,14 @@ export default function ResultScreen() {
   }, []);
 
   const handleShare = async () => {
+    const cat = modeCfg?.name ?? 'Quiz';
+    const record = isNewRecord ? ' 🏆 Yeni rekor!' : '';
     try {
       await Share.share({
-        message: `Mini Challenge Arena'da ${modeCfg?.name} modunda ${numScore} puan yaptÄ±m! Hadi sen de gel yarÄ±ÅŸalÄ±m! âš¡`,
+        message:
+          `${cat} kategorisinde ${numScore.toLocaleString('tr-TR')} puan yaptım!${record}\n\nBil Bakalım'da beni geçebilir misin? ⚡\n#BilBakalim #Quiz`,
       });
-    } catch (error) {
-      console.log(error);
-    }
+    } catch {}
   };
 
   const s = styles(C);

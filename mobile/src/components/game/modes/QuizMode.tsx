@@ -134,10 +134,11 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     setQIndex(next % pool.length);
   };
 
-  const animateFeedback = (cb: () => void) => {
+  const animateFeedback = (cb: () => void, hasExplanation = false) => {
+    const delay = hasExplanation ? 1800 : 800;
     Animated.sequence([
       Animated.timing(feedbackAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
-      Animated.delay(800),
+      Animated.delay(delay),
       Animated.timing(feedbackAnim, { toValue: 0, duration: 130, useNativeDriver: true }),
     ]).start(cb);
   };
@@ -150,6 +151,8 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     const isCorrect = choiceIdx === current.c;
     const streakBonus = streak >= 5 ? 1.5 : streak >= 3 ? 1.25 : 1;
     const pts = isCorrect ? Math.round(speedScore(elapsed) * streakBonus) : 0;
+
+    const hasExpl = !!current.e;
 
     if (isCorrect) {
       addScore(pts);
@@ -168,14 +171,14 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
       if (isLiveMode && newLives <= 0) {
         onAnswer?.(false, 0, qIndex);
         setAnswered((n) => n + 1);
-        animateFeedback(() => { if (!endCalled.current) { endCalled.current = true; onEnd(); } });
+        animateFeedback(() => { if (!endCalled.current) { endCalled.current = true; onEnd(); } }, hasExpl);
         return;
       }
     }
 
     onAnswer?.(isCorrect, pts, qIndex);
     setAnswered((n) => n + 1);
-    animateFeedback(() => { setFeedback(null); nextQuestion(); });
+    animateFeedback(() => { setFeedback(null); nextQuestion(); }, hasExpl);
   };
 
   // ── Jokerler ──────────────────────────────────────────────────────────
@@ -259,7 +262,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
         </Text>
       </Animated.View>
 
-      {/* Geri bildirim */}
+      {/* Geri bildirim + Açıklama */}
       {feedback && (
         <Animated.View style={[
           s.feedbackBox,
@@ -268,6 +271,11 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
           <Text style={[s.feedbackText, { color: feedback.correct ? C.success : C.danger }]}>
             {feedback.text}
           </Text>
+          {current.e ? (
+            <Text style={[s.explanationText, { color: C.textPrimary }]}>
+              💡 {current.e}
+            </Text>
+          ) : null}
         </Animated.View>
       )}
 
@@ -344,8 +352,9 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
     minHeight: 110, justifyContent: 'center',
   },
   normalQuestion: { fontFamily: 'Nunito-Bold', fontSize: 16, textAlign: 'center', lineHeight: 24 },
-  feedbackBox: { borderRadius: 12, padding: 10, alignItems: 'center', marginBottom: 8 },
+  feedbackBox: { borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 8, gap: 6 },
   feedbackText: { fontFamily: 'Nunito-Bold', fontSize: 13, textAlign: 'center' },
+  explanationText: { fontFamily: 'Nunito-Regular', fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: 4 },
   choicesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
   choiceBtn: { width: '47%', borderRadius: 14, padding: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, minHeight: 58 },
   choiceText: { fontFamily: 'Nunito-Bold', fontSize: 13, textAlign: 'center' },

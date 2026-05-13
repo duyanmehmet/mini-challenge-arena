@@ -12,12 +12,7 @@ import { QuizMode } from '../src/components/game/modes/QuizMode';
 const TOTAL_QUESTIONS = 10;
 const MAX_LIVES = 3;
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
-/** Tüm kategorilerden karışık 10 soru çek */
-function buildClassicPool(): Array<QuizQuestion & { categoryId: CategoryId }> {
+function buildPool(): Array<QuizQuestion & { categoryId: CategoryId }> {
   return getRandomMixedQuestions(TOTAL_QUESTIONS);
 }
 
@@ -25,16 +20,15 @@ type Phase = 'intro' | 'playing' | 'result';
 
 export default function ClassicTourScreen() {
   const { theme } = useSettingsStore();
-  const { score, startGame, endGame } = useGameStore();
+  const { startGame, endGame } = useGameStore();
   const C = Colors[theme];
 
-  const [phase, setPhase] = useState<Phase>('intro');
-  const [pool] = useState(() => buildClassicPool());
-  const [lives, setLives] = useState(MAX_LIVES);
-  const [currentQ, setCurrentQ] = useState(0);
-  const [correct, setCorrect] = useState(0);
-  const [finalScore, setFinalScore] = useState(0);
-  const [droppedAt, setDroppedAt] = useState<number | null>(null);
+  const [phase, setPhase]     = useState<Phase>('intro');
+  const [pool]                = useState(buildPool);
+  const [currentQ, setCurrentQ] = useState(0); // UI için — kategori rozetini güncellemek
+  const [correctCount, setCorrectCount] = useState(0);
+  const [finalScore, setFinalScore]   = useState(0);
+  const [droppedAt, setDroppedAt]     = useState<number | null>(null);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
@@ -42,8 +36,8 @@ export default function ClassicTourScreen() {
     Animated.sequence([
       Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
       Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 6,  duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0,  duration: 60, useNativeDriver: true }),
     ]).start();
   };
 
@@ -52,49 +46,50 @@ export default function ClassicTourScreen() {
     setPhase('playing');
   };
 
+  // QuizMode her cevaptan sonra burayı çağırır
+  const handleAnswer = (correct: boolean, _pts: number, qIdx: number) => {
+    setCurrentQ(qIdx + 1); // bir sonraki soruya geç (badge için)
+    if (correct) setCorrectCount((n) => n + 1);
+    else shake();
+  };
+
   const handleEnd = () => {
     const result = endGame();
     setFinalScore(result.score);
+    // Eğer tüm soruları bitirdiyse droppedAt null, erken bittiyse son soru numarasını göster
     setDroppedAt(currentQ < TOTAL_QUESTIONS ? currentQ + 1 : null);
     setPhase('result');
   };
 
-  const handleLifeLost = () => {
-    shake();
-    setLives((l) => l - 1);
-    setCurrentQ((q) => q + 1);
-  };
-
   const s = styles(C);
-  const catCfg = pool[currentQ] ? CATEGORIES.find((c) => c.id === pool[currentQ].categoryId) : null;
+  const catCfg = pool[Math.min(currentQ, pool.length - 1)]
+    ? CATEGORIES.find((c) => c.id === pool[Math.min(currentQ, pool.length - 1)].categoryId)
+    : null;
 
-  // ── Intro ──────────────────────────────────────────────────────────────
+  // ── Intro ───────────────────────────────────────────────────────────────
   if (phase === 'intro') {
     return (
       <SafeAreaView style={s.safe}>
         <TouchableOpacity onPress={() => router.back()} style={s.back}>
           <Text style={[s.backText, { color: C.textSecondary }]}>← Geri</Text>
         </TouchableOpacity>
-
         <View style={s.center}>
           <Text style={s.bigEmoji}>🏆</Text>
           <Text style={[s.title, { color: C.textPrimary }]}>Klasik Tur</Text>
           <Text style={[s.subtitle, { color: C.textSecondary }]}>
             10 soru · 3 can · Karışık kategoriler
           </Text>
-
           <View style={[s.rulesCard, { backgroundColor: C.bgSecondary }]}>
             {[
               '🎯 10 soruda en yüksek skoru yap',
               '❤️ 3 can hakkın var — yanlış = 1 can',
-              '✂️ 50/50, Geç ve +60s jokerlerini kullan',
-              '🔥 Seri yapınca bonus puan kazan',
+              '✂️ 50/50 ve Geç jokerlerini kullan',
+              '⚡ Hızlı cevap daha fazla puan kazandırır',
               '📂 Her sorunun kategorisi gösterilir',
             ].map((rule, i) => (
               <Text key={i} style={[s.ruleText, { color: C.textPrimary }]}>{rule}</Text>
             ))}
           </View>
-
           <TouchableOpacity style={[s.startBtn, { backgroundColor: '#e94560' }]} onPress={handleStart}>
             <Text style={s.startText}>▶ Başla!</Text>
           </TouchableOpacity>
@@ -103,9 +98,9 @@ export default function ClassicTourScreen() {
     );
   }
 
-  // ── Sonuç ──────────────────────────────────────────────────────────────
+  // ── Sonuç ───────────────────────────────────────────────────────────────
   if (phase === 'result') {
-    const pct = Math.round((correct / TOTAL_QUESTIONS) * 100);
+    const pct   = Math.round((correctCount / TOTAL_QUESTIONS) * 100);
     const emoji = pct >= 80 ? '🏆' : pct >= 60 ? '👏' : pct >= 40 ? '🙂' : '😅';
     return (
       <SafeAreaView style={s.safe}>
@@ -114,18 +109,22 @@ export default function ClassicTourScreen() {
           <Text style={[s.title, { color: C.textPrimary }]}>
             {droppedAt ? `${droppedAt}. Soruda Düştün!` : 'Turu Tamamladın!'}
           </Text>
-
           <View style={[s.rulesCard, { backgroundColor: C.bgSecondary }]}>
-            <ResultRow label="Toplam Puan" value={finalScore.toLocaleString('tr-TR')} color='#f0c040' />
-            <ResultRow label="Doğru Cevap" value={`${correct} / ${TOTAL_QUESTIONS}`} color={C.success} />
-            <ResultRow label="Başarı Oranı" value={`%${pct}`} color={C.accentTeal} />
+            <ResultRow label="Toplam Puan"   value={finalScore.toLocaleString('tr-TR')} color='#f0c040' />
+            <ResultRow label="Doğru Cevap"   value={`${correctCount} / ${TOTAL_QUESTIONS}`} color={C.success} />
+            <ResultRow label="Başarı Oranı"  value={`%${pct}`} color={C.accentTeal} />
             {droppedAt && <ResultRow label="Düştüğün Soru" value={`${droppedAt}. Soru`} color={C.danger} />}
           </View>
-
-          <TouchableOpacity style={[s.startBtn, { backgroundColor: '#e94560' }]} onPress={() => router.replace('/classic' as any)}>
+          <TouchableOpacity
+            style={[s.startBtn, { backgroundColor: '#e94560' }]}
+            onPress={() => router.replace('/classic' as any)}
+          >
             <Text style={s.startText}>🔄 Tekrar Oyna</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[s.startBtn, { backgroundColor: C.bgSecondary, marginTop: 10 }]} onPress={() => router.replace('/(tabs)')}>
+          <TouchableOpacity
+            style={[s.startBtn, { backgroundColor: C.bgSecondary, marginTop: 10 }]}
+            onPress={() => router.replace('/(tabs)')}
+          >
             <Text style={[s.startText, { color: C.textPrimary }]}>🏠 Ana Menü</Text>
           </TouchableOpacity>
         </View>
@@ -133,28 +132,29 @@ export default function ClassicTourScreen() {
     );
   }
 
-  // ── Oyun ──────────────────────────────────────────────────────────────
+  // ── Oyun ────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: C.bgPrimary }]}>
-      {/* Üst bar: kategori + can */}
+      {/* Kategori rozeti + Can */}
       <Animated.View style={[s.gameTopBar, { transform: [{ translateX: shakeAnim }] }]}>
-        <View style={[s.catBadge, { backgroundColor: (catCfg?.color ?? '#888') + '22', borderColor: catCfg?.color ?? '#888' }]}>
-          <Text style={s.catBadgeIcon}>{catCfg?.icon}</Text>
-          <Text style={[s.catBadgeName, { color: catCfg?.color ?? C.textPrimary }]}>{catCfg?.name}</Text>
-        </View>
-        <View style={s.livesRow}>
-          {Array.from({ length: MAX_LIVES }).map((_, i) => (
-            <Text key={i} style={{ fontSize: 20, opacity: i < lives ? 1 : 0.2 }}>❤️</Text>
-          ))}
-        </View>
+        {catCfg ? (
+          <View style={[s.catBadge, { backgroundColor: catCfg.color + '22', borderColor: catCfg.color }]}>
+            <Text style={s.catBadgeIcon}>{catCfg.icon}</Text>
+            <Text style={[s.catBadgeName, { color: catCfg.color }]}>{catCfg.name}</Text>
+          </View>
+        ) : <View />}
+        <Text style={[s.qCounter, { color: C.textSecondary }]}>
+          {Math.min(currentQ + 1, TOTAL_QUESTIONS)}/{TOTAL_QUESTIONS}
+        </Text>
       </Animated.View>
 
+      {/* Tüm pool tek seferde verilir — QuizMode can takibi yapar */}
       <QuizMode
-        categoryId={pool[currentQ]?.categoryId ?? 'general'}
-        externalPool={[pool[currentQ]]}
-        lives={lives}
+        categoryId={pool[0]?.categoryId ?? 'general'}
+        externalPool={pool}
+        lives={MAX_LIVES}
         onEnd={handleEnd}
-        onLifeLost={handleLifeLost}
+        onAnswer={handleAnswer}
       />
     </SafeAreaView>
   );
@@ -173,11 +173,11 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bgPrimary },
   back: { padding: 16 },
   backText: { fontFamily: 'Nunito-Regular', fontSize: 15 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  bigEmoji: { fontSize: 72, marginBottom: 12 },
-  title: { fontFamily: 'Nunito-ExtraBold', fontSize: 26, marginBottom: 6, textAlign: 'center' },
-  subtitle: { fontFamily: 'Nunito-Regular', fontSize: 14, marginBottom: 24, textAlign: 'center' },
-  rulesCard: { width: '100%', borderRadius: 20, padding: 20, marginBottom: 24, gap: 10 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 12 },
+  bigEmoji: { fontSize: 72 },
+  title: { fontFamily: 'Nunito-ExtraBold', fontSize: 26, textAlign: 'center' },
+  subtitle: { fontFamily: 'Nunito-Regular', fontSize: 14, textAlign: 'center' },
+  rulesCard: { width: '100%', borderRadius: 20, padding: 20, gap: 10 },
   ruleText: { fontFamily: 'Nunito-Regular', fontSize: 14, lineHeight: 22 },
   startBtn: { width: '100%', borderRadius: 16, padding: 18, alignItems: 'center' },
   startText: { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#fff' },
@@ -185,5 +185,5 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   catBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1.5 },
   catBadgeIcon: { fontSize: 16 },
   catBadgeName: { fontFamily: 'Nunito-Bold', fontSize: 13 },
-  livesRow: { flexDirection: 'row', gap: 4 },
+  qCounter: { fontFamily: 'Nunito-Bold', fontSize: 14 },
 });

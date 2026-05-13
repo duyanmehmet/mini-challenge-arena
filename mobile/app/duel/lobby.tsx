@@ -57,7 +57,7 @@ export default function DuelLobbyScreen() {
 
   const loadFriends = async () => {
     try {
-      const res = await api.get('/user/friends');
+      const res = await api.get('/social/friends');
       setFriends(res.data ?? []);
     } catch {
       setFriends([]);
