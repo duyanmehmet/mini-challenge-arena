@@ -1,18 +1,13 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Animated } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useUserStore } from '../../src/store/userStore';
 import { Colors } from '../../src/constants/colors';
-import { CATEGORIES as GAME_MODES } from '../../src/constants/categories';
+import { CATEGORIES } from '../../src/constants/categories';
 import { gameService } from '../../src/services/game.service';
-import LottieView from 'lottie-react-native';
 import { assetService } from '../../src/services/asset.service';
-import { admobService } from '../../src/services/admob.service';
 import { Share } from 'react-native';
-
-
-
 
 export default function ResultScreen() {
   const { mode, score, maxCombo, duration } = useLocalSearchParams<{
@@ -22,48 +17,44 @@ export default function ResultScreen() {
   const { personalBests, setPersonalBests, addXP, addCoins, updateUser } = useUserStore();
   const C = Colors[theme];
 
-  const numScore = parseInt(score ?? '0');
-  const numCombo = parseInt(maxCombo ?? '0');
+  const numScore    = parseInt(score    ?? '0');
+  const numCombo    = parseInt(maxCombo ?? '0');
   const numDuration = parseInt(duration ?? '0');
-  const modeCfg = GAME_MODES.find((m) => m.id === mode);
+  const modeCfg     = CATEGORIES.find((m) => m.id === mode);
 
-  const prevBest = personalBests.find((p) => p.mode === mode);
+  const prevBest    = personalBests.find((p) => p.mode === mode);
   const isNewRecord = !prevBest || numScore > prevBest.score;
 
-  const xpEarned = 10 + (isNewRecord ? 25 : 0);
+  const xpEarned    = 10 + (isNewRecord ? 25 : 0);
   const coinsEarned = Math.floor(numScore / 100) + 5;
 
-  const scaleAnim     = useRef(new Animated.Value(0)).current;
-  const fadeAnim      = useRef(new Animated.Value(0)).current;
-  const counterAnim   = useRef(new Animated.Value(0)).current;
+  const scaleAnim   = useRef(new Animated.Value(0)).current;
+  const fadeAnim    = useRef(new Animated.Value(0)).current;
+  const counterAnim = useRef(new Animated.Value(0)).current;
   const [displayScore, setDisplayScore] = useState(0);
 
   useEffect(() => {
-    // Puan sayacı animasyonu
-    counterAnim.addListener(({ value }) => setDisplayScore(Math.round(value)));
+    // Puan sayacı
+    const listenerId = counterAnim.addListener(({ value }) => setDisplayScore(Math.round(value)));
 
     Animated.parallel([
       Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 60, friction: 8 }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-      // Puanı 0'dan hedefe say
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.timing(counterAnim, { toValue: numScore, duration: 1200, useNativeDriver: false }),
     ]).start();
 
-    return () => counterAnim.removeAllListeners();
-
+    // XP & coin ekle
     addXP(xpEarned);
     addCoins(coinsEarned);
-    admobService.showInterstitial(); // ReklamÄ± tetikle
 
-
+    // Kişisel rekor güncelle
     if (isNewRecord) {
       assetService.playSound('levelup');
       const updated = personalBests.filter((p) => p.mode !== mode);
       setPersonalBests([...updated, { mode: mode ?? '', score: numScore, achievedAt: new Date().toISOString() }]);
     }
 
-
-    // Backend'e skor gÃ¶nder, dÃ¶nÃ¼ÅŸte streak/level store'a yansÄ±t
+    // Backend'e skor gönder
     gameService.submitResult({
       mode: mode ?? '',
       score: numScore,
@@ -74,15 +65,16 @@ export default function ResultScreen() {
       if (res?.newLevel)                  updateUser({ level: res.newLevel });
       if (res?.badgesUnlocked?.length)    assetService.playSound('win');
     }).catch(() => {});
+
+    return () => counterAnim.removeListener(listenerId);
   }, []);
 
   const handleShare = async () => {
-    const cat = modeCfg?.name ?? 'Quiz';
+    const cat    = modeCfg?.name ?? 'Quiz';
     const record = isNewRecord ? ' 🏆 Yeni rekor!' : '';
     try {
       await Share.share({
-        message:
-          `${cat} kategorisinde ${numScore.toLocaleString('tr-TR')} puan yaptım!${record}\n\nBil Bakalım'da beni geçebilir misin? ⚡\n#BilBakalim #Quiz`,
+        message: `${cat} kategorisinde ${numScore.toLocaleString('tr-TR')} puan yaptım!${record}\n\nBil Bakalım'da beni geçebilir misin? ⚡\n#BilBakalim #Quiz`,
       });
     } catch {}
   };
@@ -94,40 +86,28 @@ export default function ResultScreen() {
       <Animated.View style={[s.container, { opacity: fadeAnim }]}>
 
         {isNewRecord && (
-          <View style={[StyleSheet.absoluteFillObject, { zIndex: 1 }]} pointerEvents="none">
-            <LottieView
-              source={assetService.getAnimation('confetti')}
-              autoPlay
-              loop={false}
-              style={StyleSheet.absoluteFillObject}
-            />
-          </View>
-        )}
-
-        {isNewRecord && (
-          <Animated.Text style={[s.record, { transform: [{ scale: scaleAnim }] }]}>
-            ğŸ‰ YENÄ° REKOR!
+          <Animated.Text style={[s.record, { transform: [{ scale: scaleAnim }], color: C.accentYellow }]}>
+            🏆 YENİ REKOR!
           </Animated.Text>
         )}
 
-
-        <Text style={s.modeIcon}>{modeCfg?.icon ?? 'ğŸ®'}</Text>
-        <Text style={s.modeName}>{modeCfg?.name}</Text>
+        <Text style={s.modeIcon}>{modeCfg?.icon ?? '🎯'}</Text>
+        <Text style={[s.modeName, { color: C.textSecondary }]}>{modeCfg?.name}</Text>
 
         <Animated.Text style={[s.scoreText, { transform: [{ scale: scaleAnim }], color: C.accentYellow }]}>
           {displayScore.toLocaleString('tr-TR')}
         </Animated.Text>
-        <Text style={s.scoreLabel}>puan</Text>
+        <Text style={[s.scoreLabel, { color: C.textSecondary }]}>puan</Text>
 
-        <View style={s.statsRow}>
-          <StatBox label="En YÃ¼ksek Combo" value={`x${numCombo}`} color={C.accentTeal} />
-          <StatBox label="SÃ¼re" value={`${numDuration}s`} color={C.accentPurple} />
-          <StatBox label="XP" value={`+${xpEarned}`} color={C.accentGreen} />
+        <View style={[s.statsRow, { backgroundColor: C.bgSecondary }]}>
+          <StatBox label="En Yüksek Combo" value={`x${numCombo}`}    color={C.accentTeal}   />
+          <StatBox label="Süre"             value={`${numDuration}s`} color={C.accentPurple} />
+          <StatBox label="XP"               value={`+${xpEarned}`}    color={C.accentGreen}  />
         </View>
 
         <View style={s.rewardsRow}>
-          <Text style={[s.reward, { color: C.accentYellow }]}>ğŸª™ +{coinsEarned} coin</Text>
-          <Text style={[s.reward, { color: C.accentTeal }]}>âš¡ +{xpEarned} XP</Text>
+          <Text style={[s.reward, { color: C.accentYellow }]}>🪙 +{coinsEarned} coin</Text>
+          <Text style={[s.reward, { color: C.accentTeal }]}>⚡ +{xpEarned} XP</Text>
         </View>
 
         <View style={s.buttons}>
@@ -136,23 +116,24 @@ export default function ResultScreen() {
               style={[s.btn, { backgroundColor: C.accentRed, flex: 1 }]}
               onPress={() => router.replace(`/game/${mode}`)}
             >
-              <Text style={s.btnText}>ğŸ”„ Tekrar</Text>
+              <Text style={s.btnText}>🔄 Tekrar</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.btn, { backgroundColor: C.accentTeal, flex: 1 }]}
               onPress={handleShare}
             >
-              <Text style={s.btnText}>ğŸ“¤ PaylaÅŸ</Text>
+              <Text style={s.btnText}>📤 Paylaş</Text>
             </TouchableOpacity>
           </View>
-          
+
           <TouchableOpacity
             style={[s.btn, { backgroundColor: C.bgTertiary }]}
             onPress={() => router.replace('/(tabs)')}
           >
-            <Text style={[s.btnText, { color: C.textSecondary }]}>ğŸ  Ana MenÃ¼</Text>
+            <Text style={[s.btnText, { color: C.textSecondary }]}>🏠 Ana Menü</Text>
           </TouchableOpacity>
         </View>
+
       </Animated.View>
     </SafeAreaView>
   );
@@ -162,23 +143,23 @@ function StatBox({ label, value, color }: { label: string; value: string; color:
   return (
     <View style={{ alignItems: 'center', flex: 1 }}>
       <Text style={{ color, fontSize: 20, fontFamily: 'Nunito-ExtraBold' }}>{value}</Text>
-      <Text style={{ color: '#8888aa', fontSize: 11, fontFamily: 'Nunito-Regular', textAlign: 'center' }}>{label}</Text>
+      <Text style={{ color: '#888', fontSize: 11, fontFamily: 'Nunito-Regular', textAlign: 'center' }}>{label}</Text>
     </View>
   );
 }
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bgPrimary },
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  record: { fontSize: 22, color: C.accentYellow, fontFamily: 'Nunito-ExtraBold', marginBottom: 8 },
-  modeIcon: { fontSize: 64, marginBottom: 4 },
-  modeName: { color: C.textSecondary, fontFamily: 'Nunito-Regular', fontSize: 15, marginBottom: 16 },
-  scoreText: { fontSize: 72, fontFamily: 'Nunito-ExtraBold', lineHeight: 80 },
-  scoreLabel: { color: C.textSecondary, fontFamily: 'Nunito-Regular', fontSize: 16, marginBottom: 24 },
-  statsRow: { flexDirection: 'row', width: '100%', backgroundColor: C.bgSecondary, borderRadius: 16, padding: 16, marginBottom: 16 },
-  rewardsRow: { flexDirection: 'row', gap: 24, marginBottom: 32 },
-  reward: { fontFamily: 'Nunito-Bold', fontSize: 16 },
-  buttons: { width: '100%', gap: 12 },
-  btn: { borderRadius: 14, padding: 16, alignItems: 'center' },
-  btnText: { color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 16 },
+  safe:        { flex: 1, backgroundColor: C.bgPrimary },
+  container:   { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  record:      { fontSize: 22, fontFamily: 'Nunito-ExtraBold', marginBottom: 8 },
+  modeIcon:    { fontSize: 64, marginBottom: 4 },
+  modeName:    { fontFamily: 'Nunito-Regular', fontSize: 15, marginBottom: 16 },
+  scoreText:   { fontSize: 72, fontFamily: 'Nunito-ExtraBold', lineHeight: 80 },
+  scoreLabel:  { fontFamily: 'Nunito-Regular', fontSize: 16, marginBottom: 24 },
+  statsRow:    { flexDirection: 'row', width: '100%', borderRadius: 16, padding: 16, marginBottom: 16 },
+  rewardsRow:  { flexDirection: 'row', gap: 24, marginBottom: 32 },
+  reward:      { fontFamily: 'Nunito-Bold', fontSize: 16 },
+  buttons:     { width: '100%', gap: 12 },
+  btn:         { borderRadius: 14, padding: 16, alignItems: 'center' },
+  btnText:     { color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 16 },
 });

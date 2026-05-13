@@ -1,38 +1,43 @@
-import axios from "axios";
-import { useUserStore } from "../store/userStore";
+import axios from 'axios';
+import { useUserStore } from '../store/userStore';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.103:3000/v1";
-
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.103:3000/v1';
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  timeout: 10000, // 10 saniye timeout
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor for adding auth token
+// Token ekle
 api.interceptors.request.use(
   (config) => {
     const token = useUserStore.getState().token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling errors
+// Hata yönetimi
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Token süresi dolmuş → logout
     if (error.response?.status === 401) {
-      // Handle unauthorized (logout)
       useUserStore.getState().logout();
+      return Promise.reject(error);
     }
+
+    // Ağ hatası — kullanıcı dostu mesaj ekle
+    if (!error.response) {
+      error.userMessage = 'İnternet bağlantısı yok veya sunucu yanıt vermiyor.';
+    } else if (error.response.status >= 500) {
+      error.userMessage = 'Sunucu hatası, lütfen tekrar dene.';
+    } else {
+      error.userMessage = error.response?.data?.message ?? 'Bir hata oluştu.';
+    }
+
     return Promise.reject(error);
   }
 );

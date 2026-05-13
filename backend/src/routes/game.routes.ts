@@ -5,15 +5,24 @@ import { redis } from "../redis";
 import { v4 as uuidv4 } from "uuid";
 
 const router = Router();
-const VALID_MODES = ["reflex","memory","football","word","attention","escape"];
+const VALID_MODES = [
+  // Kültür
+  "history","geography","science","general","art","cinema","sports","turkey",
+  // Özel
+  "kids","license","medical","economy",
+  // Eski (geriye dönük uyumluluk)
+  "reflex","memory","football","word","attention","escape","math","english",
+];
 
 router.post("/result", authMiddleware, async (req: AuthRequest, res) => {
   const { mode, score, duration_seconds, combo_max } = req.body;
   if (!VALID_MODES.includes(mode) || typeof score !== "number")
     return res.status(400).json({ message: "Geçersiz veri." });
 
-  // Anti-cheat
-  if (score > 10000) return res.status(400).json({ message: "Şüpheli skor." });
+  // Anti-cheat — quiz modlarında skor sınırını yükselt
+  const maxScore = ["history","geography","science","general","art","cinema","sports","turkey","kids","license","medical","economy"].includes(mode)
+    ? 50000 : 10000;
+  if (score > maxScore) return res.status(400).json({ message: "Şüpheli skor." });
   if (duration_seconds < 5 && score > 500) return res.status(400).json({ message: "Geçersiz süre." });
 
   const userId = req.userId!;
@@ -74,9 +83,10 @@ router.post("/result", authMiddleware, async (req: AuthRequest, res) => {
     // Günlük görevler
     const { DailyTaskService } = await import("../services/DailyTaskService");
     await DailyTaskService.updateTaskProgress(userId, "play_count", 1);
-    if (mode === "reflex") await DailyTaskService.updateTaskProgress(userId, "score_reflex", score);
-    if (mode === "football") await DailyTaskService.updateTaskProgress(userId, "score_football", score);
-    if (mode === "word") await DailyTaskService.updateTaskProgress(userId, "word_count", 1);
+    await DailyTaskService.updateTaskProgress(userId, "score_any", score);
+    // Kategori bazlı görevler
+    const catTask = `score_${mode}`;
+    await DailyTaskService.updateTaskProgress(userId, catTask, score).catch(() => {});
 
     // Rozetler
     const { BadgeService } = await import("../services/BadgeService");

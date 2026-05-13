@@ -76,9 +76,8 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const isLiveMode = initialLives !== undefined;
   const current    = pool[qIndex];
 
-  // ── Soru başına 15 sn sayaç ──────────────────────────────────────────
+  // ── Soru başına 15 sn sayaç — qIndex değişince yeniden başlar ────────
   useEffect(() => {
-    if (feedback) return;
     qStartRef.current = Date.now();
     setQTimeLeft(QUESTION_TIME);
     timerAnim.setValue(1);
@@ -95,8 +94,11 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
       });
     }, 1000);
 
-    return () => { if (qTimerRef.current) clearInterval(qTimerRef.current); };
-  }, [qIndex, feedback === null]);
+    return () => {
+      if (qTimerRef.current) clearInterval(qTimerRef.current);
+      timerAnim.stopAnimation();
+    };
+  }, [qIndex]); // sadece soru değişince yenile
 
   const stopQTimer = () => {
     if (qTimerRef.current) clearInterval(qTimerRef.current);
