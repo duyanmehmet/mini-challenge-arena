@@ -153,22 +153,33 @@ export default function RootLayout() {
             <Text style={s.offlineText}>📵 İnternet bağlantısı yok — çevrimdışı moddasınız</Text>
           </View>
         )}
-        <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', animationDuration: 250 }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="game/[mode]" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="game/result" />
-          <Stack.Screen name="game/select/[mode]" />
-          <Stack.Screen name="settings" options={{ headerShown: true, title: 'Ayarlar' }} />
-          <Stack.Screen name="stats" options={{ headerShown: false }} />
-          <Stack.Screen name="challenge" options={{ headerShown: false }} />
-          <Stack.Screen name="classic" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="duel/lobby" options={{ headerShown: false }} />
-          <Stack.Screen name="duel/[duelId]" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="live" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="clan" options={{ headerShown: false }} />
-          <Stack.Screen name="battlepass" options={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', animationDuration: 280 }}>
+          {/* Sekmeler */}
+          <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 200 }} />
+
+          {/* Auth & Onboarding */}
+          <Stack.Screen name="(auth)" options={{ animation: 'fade', animationDuration: 300 }} />
+          <Stack.Screen name="onboarding" options={{ animation: 'fade', animationDuration: 400 }} />
+
+          {/* Oyun ekranları — aşağıdan yukarı (oyuna dalma hissi) */}
+          <Stack.Screen name="game/[mode]"      options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', animationDuration: 350 }} />
+          <Stack.Screen name="game/result"      options={{ animation: 'fade', animationDuration: 400 }} />
+          <Stack.Screen name="game/select/[mode]" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
+
+          {/* Klasik & Canlı — büyük etki, aşağıdan */}
+          <Stack.Screen name="classic"    options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', animationDuration: 350 }} />
+          <Stack.Screen name="live"       options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', animationDuration: 350 }} />
+
+          {/* Düello — rakiple karşılaşma anı */}
+          <Stack.Screen name="duel/lobby"    options={{ animation: 'slide_from_right', animationDuration: 280 }} />
+          <Stack.Screen name="duel/[duelId]" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', animationDuration: 400 }} />
+
+          {/* İçerik ekranları — sağdan kayma */}
+          <Stack.Screen name="stats"      options={{ animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="challenge"  options={{ animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="clan"       options={{ animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="battlepass" options={{ animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="settings"   options={{ headerShown: true, title: 'Ayarlar', animation: 'slide_from_right', animationDuration: 260 }} />
         </Stack>
       </View>
     </ErrorBoundary>

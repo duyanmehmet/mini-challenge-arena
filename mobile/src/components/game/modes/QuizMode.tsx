@@ -46,9 +46,12 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const { theme } = useSettingsStore();
   const C = Colors[theme];
 
-  const [pool] = useState<QuizQuestion[]>(() =>
-    externalPool ?? getShuffledQuestions(categoryId)
-  );
+  const [pool] = useState<QuizQuestion[]>(() => {
+    if (externalPool) return externalPool;
+    // Kolaydan zora sırala, aynı zorluk içinde karıştır
+    const raw = getShuffledQuestions(categoryId);
+    return [...raw].sort((a, b) => (a.d ?? 2) - (b.d ?? 2));
+  });
 
   const [qIndex, setQIndex]     = useState(0);
   const [feedback, setFeedback] = useState<{ text: string; correct: boolean } | null>(null);
@@ -64,9 +67,10 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const qStartRef = useRef(Date.now());
   const qTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const endCalled  = useRef(false);
+  const endCalled    = useRef(false);
   const feedbackAnim = useRef(new Animated.Value(0)).current;
   const cardAnim     = useRef(new Animated.Value(1)).current;
+  const cardSlide    = useRef(new Animated.Value(0)).current; // sağdan slide için
   const timerAnim    = useRef(new Animated.Value(1)).current;
 
   const isLiveMode = initialLives !== undefined;
@@ -124,9 +128,21 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const nextQuestion = () => {
     setElim([]);
     setSelectedIdx(null);
+    // Mevcut kart sola çıkar, yeni kart sağdan gelir
+    cardSlide.setValue(0);
     Animated.sequence([
-      Animated.timing(cardAnim, { toValue: 0, duration: 130, useNativeDriver: true }),
-      Animated.timing(cardAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
+      // Hızlıca sola çık
+      Animated.parallel([
+        Animated.timing(cardAnim,  { toValue: 0,    duration: 120, useNativeDriver: true }),
+        Animated.timing(cardSlide, { toValue: -60,  duration: 120, useNativeDriver: true }),
+      ]),
+      // Sağdan pozisyona al
+      Animated.timing(cardSlide, { toValue: 40, duration: 0, useNativeDriver: true }),
+      // İçeri süz
+      Animated.parallel([
+        Animated.timing(cardAnim,  { toValue: 1,   duration: 220, useNativeDriver: true }),
+        Animated.spring(cardSlide, { toValue: 0, tension: 80, friction: 9, useNativeDriver: true }),
+      ]),
     ]).start();
     const next = qIndex + 1;
     if (isLiveMode && next >= pool.length) {
@@ -258,8 +274,8 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
         <Text style={[s.qTimerLabel, { color: C.textSecondary }]}>{qTimeLeft}s</Text>
       </View>
 
-      {/* Soru kartı */}
-      <Animated.View style={[s.questionCard, { backgroundColor: C.bgSecondary, opacity: cardAnim }]}>
+      {/* Soru kartı — sağdan slide animasyonu */}
+      <Animated.View style={[s.questionCard, { backgroundColor: C.bgSecondary, opacity: cardAnim, transform: [{ translateX: cardSlide }] }]}>
         <Text style={[s.normalQuestion, { color: C.textPrimary }]} numberOfLines={5}>
           {current.q}
         </Text>

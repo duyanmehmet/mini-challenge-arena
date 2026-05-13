@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
@@ -18,7 +18,18 @@ export default function HomeScreen() {
   const { user, personalBests, setDailyTasks, setPersonalBests, updateUser, token } = useUserStore();
   const C = Colors[theme];
 
+  // Sayfa açılış animasyonu
+  const fadeAnim    = useRef(new Animated.Value(0)).current;
+  const slideAnim   = useRef(new Animated.Value(30)).current;
+
   useEffect(() => { loadSettings(); }, []);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -49,6 +60,7 @@ export default function HomeScreen() {
     <SafeAreaView style={s.safe}>
       <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         {/* Üst Bar */}
         <View style={s.topBar}>
           <TouchableOpacity style={s.userInfo} onPress={() => router.push('/(tabs)/profile')}>
@@ -101,11 +113,12 @@ export default function HomeScreen() {
                 <Text style={[s.groupTitle, { color: C.textPrimary }]}>{group.label}</Text>
               </View>
               <View style={s.catsGrid}>
-                {cats.map((cat) => (
+                {cats.map((cat, idx) => (
                   <CategoryCard
                     key={cat.id}
                     cat={cat}
                     C={C}
+                    index={idx}
                     onPress={() => router.push(`/game/select/${cat.id}` as any)}
                   />
                 ))}
@@ -117,28 +130,42 @@ export default function HomeScreen() {
         {/* Günlük Görevler */}
         <DailyTasksSection C={C} s={s} />
 
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function CategoryCard({ cat, C, onPress }: { cat: CategoryConfig; C: any; onPress: () => void }) {
+function CategoryCard({ cat, C, onPress, index = 0 }: { cat: CategoryConfig; C: any; onPress: () => void; index?: number }) {
+  const scaleAnim = useRef(new Animated.Value(0.85)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const delay = index * 40; // stagger — her kart 40ms sonra başlar
+    Animated.parallel([
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 280, delay, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, tension: 70, friction: 8, delay, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
   return (
-    <TouchableOpacity
-      style={[styles(C).catCard, { borderColor: cat.color + '55', backgroundColor: C.bgSecondary }]}
-      onPress={onPress}
-      activeOpacity={0.75}
-    >
-      <View style={[styles(C).catIconBg, { backgroundColor: cat.color + '22' }]}>
-        <Text style={styles(C).catIcon}>{cat.icon}</Text>
-      </View>
-      <Text style={[styles(C).catName, { color: C.textPrimary }]} numberOfLines={2}>
-        {cat.name}
-      </Text>
-      <Text style={[styles(C).catTag, { color: cat.color }]} numberOfLines={1}>
-        {cat.questionCount}+ soru
-      </Text>
-    </TouchableOpacity>
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        style={[styles(C).catCard, { borderColor: cat.color + '55', backgroundColor: C.bgSecondary }]}
+        onPress={onPress}
+        activeOpacity={0.75}
+      >
+        <View style={[styles(C).catIconBg, { backgroundColor: cat.color + '22' }]}>
+          <Text style={styles(C).catIcon}>{cat.icon}</Text>
+        </View>
+        <Text style={[styles(C).catName, { color: C.textPrimary }]} numberOfLines={2}>
+          {cat.name}
+        </Text>
+        <Text style={[styles(C).catTag, { color: cat.color }]} numberOfLines={1}>
+          {cat.questionCount}+ soru
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 

@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Animated } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
@@ -33,14 +33,23 @@ export default function ResultScreen() {
   const xpEarned = 10 + (isNewRecord ? 25 : 0);
   const coinsEarned = Math.floor(numScore / 100) + 5;
 
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim     = useRef(new Animated.Value(0)).current;
+  const fadeAnim      = useRef(new Animated.Value(0)).current;
+  const counterAnim   = useRef(new Animated.Value(0)).current;
+  const [displayScore, setDisplayScore] = useState(0);
 
   useEffect(() => {
+    // Puan sayacı animasyonu
+    counterAnim.addListener(({ value }) => setDisplayScore(Math.round(value)));
+
     Animated.parallel([
       Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 60, friction: 8 }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      // Puanı 0'dan hedefe say
+      Animated.timing(counterAnim, { toValue: numScore, duration: 1200, useNativeDriver: false }),
     ]).start();
+
+    return () => counterAnim.removeAllListeners();
 
     addXP(xpEarned);
     addCoins(coinsEarned);
@@ -106,7 +115,7 @@ export default function ResultScreen() {
         <Text style={s.modeName}>{modeCfg?.name}</Text>
 
         <Animated.Text style={[s.scoreText, { transform: [{ scale: scaleAnim }], color: C.accentYellow }]}>
-          {numScore.toLocaleString('tr-TR')}
+          {displayScore.toLocaleString('tr-TR')}
         </Animated.Text>
         <Text style={s.scoreLabel}>puan</Text>
 
