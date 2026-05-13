@@ -35,6 +35,10 @@ router.patch("/profile", authMiddleware, async (req: AuthRequest, res) => {
   if (username) {
     if (username.length < 3 || username.length > 20)
       return res.status(400).json({ message: "Kullanıcı adı 3-20 karakter olmalı." });
+    // Benzersizlik kontrolü
+    const existing = await db("users").where("username", username).whereNot("id", req.userId).first();
+    if (existing)
+      return res.status(409).json({ message: "Bu kullanıcı adı zaten alınmış." });
     updates.username = username;
   }
   if (avatar_id !== undefined) updates.avatar_id = avatar_id;

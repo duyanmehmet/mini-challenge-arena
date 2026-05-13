@@ -80,6 +80,15 @@ router.post("/result", authMiddleware, async (req: AuthRequest, res) => {
     await redis.zIncrBy(weekKey, score, userId).catch(() => {});
     await redis.expire(weekKey, 60 * 60 * 24 * 8).catch(() => {});
 
+    // Klan haftalık puanını güncelle
+    const freshUser = await db("users").where("id", userId).select("clan_id").first();
+    if (freshUser?.clan_id) {
+      await db("clans")
+        .where("id", freshUser.clan_id)
+        .update({ weekly_score: db.raw("weekly_score + ?", [score]) })
+        .catch(() => {});
+    }
+
     // Günlük görevler
     const { DailyTaskService } = await import("../services/DailyTaskService");
     await DailyTaskService.updateTaskProgress(userId, "play_count", 1);
