@@ -79,8 +79,8 @@ export default function RootLayout() {
           );
         });
 
-        socket.on('duel_started', (data: { duelId: string; mode: string }) => {
-          router.push(`/duel/${data.duelId}?cat=${data.mode}` as any);
+        socket.on('duel_accepted', (data: { duelId: string }) => {
+          router.push(`/duel/${data.duelId}` as any);
         });
 
         // Canlı yarışma bildirimleri
@@ -167,6 +167,8 @@ export default function RootLayout() {
           <Stack.Screen name="duel/lobby" options={{ headerShown: false }} />
           <Stack.Screen name="duel/[duelId]" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
           <Stack.Screen name="live" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="clan" options={{ headerShown: false }} />
+          <Stack.Screen name="battlepass" options={{ headerShown: false }} />
         </Stack>
       </View>
     </ErrorBoundary>

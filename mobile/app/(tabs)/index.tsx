@@ -98,6 +98,20 @@ export default function HomeScreen() {
             <Text style={s.actionIcon}>⚔️</Text>
             <Text style={[s.actionLabel, { color: C.accentPurple }]}>Arkadaşa{'\n'}Düello</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.actionBtn, { backgroundColor: C.accentTeal + '22', borderColor: C.accentTeal }]}
+            onPress={() => router.push('/clan' as any)}
+          >
+            <Text style={s.actionIcon}>🛡️</Text>
+            <Text style={[s.actionLabel, { color: C.accentTeal }]}>Klan</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.actionBtn, { backgroundColor: C.accentPurple + '22', borderColor: C.accentPurple }]}
+            onPress={() => router.push('/battlepass' as any)}
+          >
+            <Text style={s.actionIcon}>⭐</Text>
+            <Text style={[s.actionLabel, { color: C.accentPurple }]}>Battle{'\n'}Pass</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Hızlı Modlar */}

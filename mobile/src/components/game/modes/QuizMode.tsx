@@ -57,6 +57,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const [lives, setLives]       = useState(initialLives ?? 999);
   const [jokers, setJokers]     = useState<Jokers>({ half: true, skip: true, time: true });
   const [eliminated, setElim]   = useState<number[]>([]);
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null); // seçilen şık highlight için
   const [sessionKey, setSessionKey] = useState(0); // session timer reset
   // Hız ölçümü
   const [qTimeLeft, setQTimeLeft] = useState(QUESTION_TIME);
@@ -122,6 +123,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
 
   const nextQuestion = () => {
     setElim([]);
+    setSelectedIdx(null);
     Animated.sequence([
       Animated.timing(cardAnim, { toValue: 0, duration: 130, useNativeDriver: true }),
       Animated.timing(cardAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
@@ -146,6 +148,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const handleChoice = (choiceIdx: number) => {
     if (!current || feedback || eliminated.includes(choiceIdx)) return;
     stopQTimer();
+    setSelectedIdx(choiceIdx);
 
     const elapsed   = Date.now() - qStartRef.current;
     const isCorrect = choiceIdx === current.c;
@@ -282,21 +285,41 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
       {/* 4 şık */}
       <View style={s.choicesGrid}>
         {current.a.map((choice, i) => {
-          const isElim = eliminated.includes(i);
+          const isElim    = eliminated.includes(i);
+          const isCorrect = i === current.c;
+          const isSelected = i === selectedIdx;
+
+          // Feedback gösterilirken renkleri uygula
+          let bg          = C.bgSecondary;
+          let border      = C.border;
+          let textColor   = C.textPrimary;
+
+          if (feedback && !isElim) {
+            if (isCorrect) {
+              bg     = C.success + '33';
+              border = C.success;
+              textColor = C.success;
+            } else if (isSelected) {
+              bg     = C.danger + '33';
+              border = C.danger;
+              textColor = C.danger;
+            }
+          }
+
           return (
             <TouchableOpacity
               key={i}
               style={[s.choiceBtn, {
-                backgroundColor: isElim ? C.bgTertiary : C.bgSecondary,
-                borderColor: isElim ? C.bgTertiary : C.border,
+                backgroundColor: isElim ? C.bgTertiary : bg,
+                borderColor: isElim ? C.bgTertiary : border,
                 opacity: isElim ? 0.25 : 1,
               }]}
               onPress={() => handleChoice(i)}
               disabled={isElim || !!feedback}
               activeOpacity={0.75}
             >
-              <Text style={[s.choiceText, { color: C.textPrimary }]} numberOfLines={3}>
-                {isElim ? '' : choice}
+              <Text style={[s.choiceText, { color: isElim ? 'transparent' : textColor }]} numberOfLines={3}>
+                {choice}
               </Text>
             </TouchableOpacity>
           );
