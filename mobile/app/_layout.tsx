@@ -16,6 +16,7 @@ import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
 import { socketService } from '../src/services/socket.service';
 import { Alert, View, Text, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { notificationService } from '../src/services/notification.service';
 import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
 
@@ -145,6 +146,7 @@ export default function RootLayout() {
   const C = Colors[theme];
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
     <ErrorBoundary>
       <View style={{ flex: 1 }}>
@@ -184,6 +186,7 @@ export default function RootLayout() {
       </View>
     </ErrorBoundary>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

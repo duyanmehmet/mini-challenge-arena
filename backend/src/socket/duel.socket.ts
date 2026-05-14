@@ -3,11 +3,20 @@ import db from '../database';
 import { v4 as uuidv4 } from 'uuid';
 import { getSeedQuestions } from '../data/questions';
 
+interface DuelPlayer {
+  userId: string;
+  socketId: string;
+  username: string;
+  avatarId: number;
+  score: number;
+  done: boolean;
+}
+
 interface DuelRoom {
   duelId: string;
   category: string;
-  players: { userId: string; socketId: string; score: number; done: boolean }[];
-  questions: unknown[]; // client-side sorular — challeger gönderir, ikinci oyuncuya iletilir
+  players: DuelPlayer[];
+  questions: unknown[];
   startedAt: number;
 }
 
@@ -49,23 +58,25 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
   });
 
   // ── Düello odasına katıl ─────────────────────────────────────────────
-  socket.on('duel_join', ({ duelId, questions, userId: uid }: {
+  socket.on('duel_join', async ({ duelId, category: clientCategory }: {
     duelId: string;
-    questions?: unknown[];
-    userId: string;
+    category?: string;
+    userId?: string;
   }) => {
+    // DB'den kullanıcı bilgisi çek
+    const userRow = await db('users').where({ id: userId }).select('username', 'avatar_id').first().catch(() => null);
+    const username = userRow?.username ?? 'Oyuncu';
+    const avatarId = userRow?.avatar_id ?? 0;
+
     let room = rooms.get(duelId);
 
     if (!room) {
-      // İlk oyuncu odayı oluşturuyor
-      // Sunucu tarafında seed-based soru seçimi — her iki oyuncu aynı soruları alır
-      const category = (userId && questions?.length === 0) ? 'general' : 'general';
+      const category = clientCategory ?? 'general';
       const serverQuestions = getSeedQuestions(
-        (questions as any)?.[0]?.category ?? 'general',
-        Math.floor(Date.now() / 86400000), // günlük seed
+        category,
+        Math.floor(Date.now() / 86400000),
         10
       );
-
       room = {
         duelId,
         category,
@@ -79,20 +90,16 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
     // Oyuncuyu odaya ekle
     const alreadyIn = room.players.find((p) => p.userId === userId);
     if (!alreadyIn) {
-      room.players.push({ userId, socketId: socket.id, score: 0, done: false });
+      room.players.push({ userId, socketId: socket.id, username, avatarId, score: 0, done: false });
       socket.join(duelId);
     }
 
-    // İkinci oyuncu katıldığında — sunucu sorularını her iki tarafa da gönder
+    // İkinci oyuncu katıldığında — sorular + rakip bilgisi gönder
     if (room.players.length === 2) {
-      const finalQuestions = room.questions;
-
-      // Her iki oyuncuya rakip bilgisi ve sorular
       const [p1, p2] = room.players;
-      io.to(p1.socketId).emit('duel_opponent_joined', { username: p2.userId, avatarId: 0 });
-      io.to(p2.socketId).emit('duel_opponent_joined', { username: p1.userId, avatarId: 0 });
-      // Her iki oyuncuya aynı soruları gönder
-      io.to(duelId).emit('duel_questions', { questions: finalQuestions });
+      io.to(p1.socketId).emit('duel_opponent_joined', { username: p2.username, avatarId: p2.avatarId });
+      io.to(p2.socketId).emit('duel_opponent_joined', { username: p1.username, avatarId: p1.avatarId });
+      io.to(duelId).emit('duel_questions', { questions: room.questions });
     }
   });
 
@@ -104,13 +111,14 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
     if (player) player.score = score;
 
     // Rakibe canlı skor gönder
+    const me = room.players.find((p) => p.userId === userId);
     socket.to(duelId).emit('duel_opponent_update', {
       userId,
       score,
       answered: 0,
       lastCorrect: null,
-      username: userId,
-      avatarId: 0,
+      username: me?.username ?? 'Oyuncu',
+      avatarId: me?.avatarId ?? 0,
     });
   });
 
@@ -122,13 +130,15 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
     qIndex: number;
     userId: string;
   }) => {
+    const ansRoom = rooms.get(duelId);
+    const ansPlayer = ansRoom?.players.find((p) => p.userId === userId);
     socket.to(duelId).emit('duel_opponent_update', {
       userId,
-      score: rooms.get(duelId)?.players.find((p) => p.userId === userId)?.score ?? 0,
+      score: ansPlayer?.score ?? 0,
       answered: qIndex + 1,
       lastCorrect: correct,
-      username: userId,
-      avatarId: 0,
+      username: ansPlayer?.username ?? 'Oyuncu',
+      avatarId: ansPlayer?.avatarId ?? 0,
     });
   });
 

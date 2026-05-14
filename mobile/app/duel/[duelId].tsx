@@ -26,7 +26,7 @@ export default function DuelGameScreen() {
   const { duelId, cat } = useLocalSearchParams<{ duelId: string; cat: string }>();
   const { theme } = useSettingsStore();
   const { user } = useUserStore();
-  const { score, startGame, endGame } = useGameStore();
+  const { score, lives, startGame, endGame, loseLife } = useGameStore();
   const C = Colors[theme];
 
   const [phase, setPhase]         = useState<Phase>('waiting');
@@ -233,6 +233,8 @@ export default function DuelGameScreen() {
         externalPool={sharedPool ?? undefined}
         onEnd={handleEnd}
         onAnswer={handleAnswer}
+        lives={lives}
+        onLifeLost={loseLife}
       />
     </SafeAreaView>
   );

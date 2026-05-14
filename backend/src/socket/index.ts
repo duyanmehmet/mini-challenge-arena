@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { handleDuelEvents } from './duel.socket';
+import { handleClanEvents } from './clan.socket';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 
@@ -24,8 +25,8 @@ export const setupSocket = (io: Server) => {
     
     socket.join(userId);
 
-    // Düello olaylarını yönet
     handleDuelEvents(io, socket, userId);
+    handleClanEvents(io, socket, userId);
 
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${userId}`);

@@ -21,17 +21,22 @@ router.get("/today", async (_req, res) => {
         (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
       );
       const mode = MODES[dayOfYear % MODES.length];
-      const id = uuidv4();
-      const newChallenge = {
+      const id   = uuidv4();
+      await db("daily_challenges").insert({
         id, date: today, mode,
         seed: dayOfYear * 137 + 42,
         target_score: 500 + (dayOfYear % 30) * 50,
         special_rule: null,
-      };
-      await db("daily_challenges").insert(newChallenge).onConflict("date").ignore();
-      challenge = await db("daily_challenges").where("date", today).first() ?? newChallenge;
+      }).onConflict("date").ignore();
+      challenge = await db("daily_challenges").where("date", today).first();
     }
-    res.json(challenge); // id dahil tüm alanlar döner
+    // id yoksa (eski satır) backfill et
+    if (challenge && !challenge.id) {
+      const id = uuidv4();
+      await db("daily_challenges").where("date", today).update({ id });
+      challenge.id = id;
+    }
+    res.json(challenge);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Sunucu hatası." });
@@ -45,9 +50,9 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res) => {
   if (!score || score < 0) return res.status(400).json({ message: "Geçersiz skor." });
 
   try {
-    // Hangi challenge? — ID ile veya bugünün tarihi ile bul
+    // Hangi challenge? — ID veya tarih ile bul
     const challenge = challengeId
-      ? await db("daily_challenges").where("id", challengeId).first()
+      ? await db("daily_challenges").where("id", challengeId).orWhere("date", challengeId).first()
       : await db("daily_challenges").where("date", today).first();
 
     if (!challenge) return res.status(404).json({ message: "Challenge bulunamadı." });
@@ -79,6 +84,50 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res) => {
     console.error(err);
     res.status(500).json({ message: "Sunucu hatası." });
   }
+});
+
+// Kullanıcının bugünkü durumu + streak
+router.get("/my-status", authMiddleware, async (req: AuthRequest, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const challenge = await db("daily_challenges").where("date", today).first();
+    const entry = challenge
+      ? await db("daily_challenge_scores").where({ date: today, user_id: req.userId }).first()
+      : null;
+
+    // Streak hesapla: ardışık kaç gün oynadı
+    const dates: string[] = await db("daily_challenge_scores")
+      .where("user_id", req.userId)
+      .orderBy("date", "desc")
+      .pluck("date");
+
+    let streak = 0;
+    let checkDate = today;
+    for (const d of dates) {
+      if (d === checkDate) {
+        streak++;
+        const prev = new Date(checkDate);
+        prev.setDate(prev.getDate() - 1);
+        checkDate = prev.toISOString().slice(0, 10);
+      } else break;
+    }
+
+    // Liderlik sırası
+    let rank: number | null = null;
+    if (entry) {
+      const above = await db("daily_challenge_scores")
+        .where("date", today).where("score", ">", entry.score).count("* as cnt").first();
+      rank = parseInt((above as any)?.cnt ?? "0") + 1;
+    }
+
+    res.json({
+      score: entry?.score ?? null,
+      completed: entry ? entry.score >= (challenge?.target_score ?? 500) : false,
+      streak,
+      rank,
+      xpBonus: entry ? (entry.score >= (challenge?.target_score ?? 500) ? 100 : 25) : null,
+    });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
 // Liderlik

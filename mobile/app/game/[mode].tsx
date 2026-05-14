@@ -17,7 +17,7 @@ const QUIZ_CATEGORIES: CategoryId[] = [
 
 export default function GameScreen() {
   const { mode, challengeId } = useLocalSearchParams<{ mode: string; challengeId?: string }>();
-  const { startGame, endGame, pauseGame, resumeGame, buyLife, lives } = useGameStore();
+  const { startGame, endGame, pauseGame, resumeGame, buyLife, loseLife, lives } = useGameStore();
   const { user } = useUserStore();
   const { theme } = useSettingsStore();
   const C = Colors[theme];
@@ -70,7 +70,14 @@ export default function GameScreen() {
 
   const renderContent = () => {
     if (paused || showRevive) return null;
-    if (isQuizMode) return <QuizMode categoryId={mode as CategoryId} onEnd={handleEnd} />;
+    if (isQuizMode) return (
+      <QuizMode
+        categoryId={mode as CategoryId}
+        onEnd={handleEnd}
+        lives={lives}
+        onLifeLost={loseLife}
+      />
+    );
     return <Text style={{ color: C.textPrimary, textAlign: 'center', marginTop: 40 }}>Bilinmeyen kategori</Text>;
   };
 
