@@ -1,8 +1,8 @@
-﻿import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
+import { useUserStore } from '../../src/store/userStore';
 import { Colors } from '../../src/constants/colors';
 import { socketService } from '../../src/services/socket.service';
 import api from '../../src/services/api';
@@ -13,21 +13,22 @@ interface Friend {
   username: string;
   avatarId: number;
   level: number;
+  isOnline?: boolean;
 }
 
 const DUEL_CATEGORIES = [
-  { id: 'general',   label: 'Genel',   icon: '💡' },
-  { id: 'history',   label: 'Tarih',   icon: '🏺' },
-  { id: 'science',   label: 'Bilim',   icon: '🔬' },
-  { id: 'sports',    label: 'Spor',    icon: '⚽' },
-  { id: 'cinema',    label: 'Sinema',  icon: '🎬' },
-  { id: 'geography', label: 'Coğrafya',icon: '🌍' },
+  { id: 'general',   label: 'Genel Kültür', icon: '💡' },
+  { id: 'history',   label: 'Tarih',        icon: '🏺' },
+  { id: 'science',   label: 'Bilim',        icon: '🔬' },
+  { id: 'sports',    label: 'Spor',         icon: '⚽' },
+  { id: 'english',   label: 'İngilizce',    icon: '🇬🇧' },
+  { id: 'cinema',    label: 'Sinema',       icon: '🎬' },
 ];
 
 export default function DuelLobbyScreen() {
   const { theme } = useSettingsStore();
+  const { user } = useUserStore();
   const C = Colors[theme];
-  const s = styles(C);
 
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
@@ -57,14 +58,7 @@ export default function DuelLobbyScreen() {
   const loadFriends = async () => {
     try {
       const res = await api.get('/social/friends');
-      // API userId döndürüyor, id'ye normalize ediyoruz
-      const normalized: Friend[] = (res.data ?? []).map((f: any) => ({
-        id: f.userId ?? f.id,
-        username: f.username,
-        avatarId: f.avatarId ?? f.avatar_id ?? 0,
-        level: f.level ?? 1,
-      }));
-      setFriends(normalized);
+      setFriends(res.data ?? []);
     } catch {
       setFriends([]);
     } finally {
@@ -74,124 +68,131 @@ export default function DuelLobbyScreen() {
 
   const sendChallenge = () => {
     if (!selectedFriend) {
-      Alert.alert('Arkadaş Seç', 'Listeden bir arkadaş seç!');
+      Alert.alert('Arkadaş Seç', 'Düello için bir arkadaş seç!');
       return;
     }
     const socket = socketService.getSocket();
-    if (!socket) { Alert.alert('Bağlantı yok', 'Sunucuya bağlanılamadı.'); return; }
+    if (!socket) { Alert.alert('Bağlantı yok'); return; }
     socket.emit('duel_invite', { targetId: selectedFriend.id, mode: selectedCat });
     setWaiting(true);
   };
 
-  const selectedCatObj = DUEL_CATEGORIES.find((c) => c.id === selectedCat)!;
+  const s = styles(C);
 
   return (
     <SafeAreaView style={s.safe}>
-      {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Text style={[s.backText, { color: C.textSecondary }]}>←</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={[s.back, { color: C.textSecondary }]}>← Geri</Text>
         </TouchableOpacity>
         <Text style={[s.title, { color: C.textPrimary }]}>⚔️ Düello</Text>
-        <View style={{ width: 36 }} />
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        {/* Kategori seçimi */}
-        <Text style={[s.label, { color: C.textSecondary }]}>KATEGORİ</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catRow}>
-          {DUEL_CATEGORIES.map((cat) => {
-            const active = cat.id === selectedCat;
+      {/* Kategori seçimi */}
+      <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Kategori Seç</Text>
+      <FlatList
+        data={DUEL_CATEGORIES}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(c) => c.id}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}
+        renderItem={({ item }) => {
+          const active = item.id === selectedCat;
+          return (
+            <TouchableOpacity
+              style={[
+                s.catChip,
+                {
+                  backgroundColor: active ? C.accentPurple : C.bgSecondary,
+                  borderColor: active ? C.accentPurple : C.border,
+                },
+              ]}
+              onPress={() => setSelectedCat(item.id)}
+            >
+              <Text style={s.catChipIcon}>{item.icon}</Text>
+              <Text style={[s.catChipLabel, { color: active ? '#fff' : C.textPrimary }]}>
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
+        style={{ marginBottom: 16 }}
+      />
+
+      {/* Seçili arkadaş */}
+      {selectedFriend && (
+        <View style={[s.selectedCard, { backgroundColor: C.bgSecondary, borderColor: C.accentPurple }]}>
+          <Avatar avatarId={selectedFriend.avatarId} size={44} />
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={[s.friendName, { color: C.textPrimary }]}>{selectedFriend.username}</Text>
+            <Text style={[s.friendLevel, { color: C.textSecondary }]}>Seviye {selectedFriend.level}</Text>
+          </View>
+          <Text style={{ fontSize: 22 }}>🎯</Text>
+        </View>
+      )}
+
+      {/* Arkadaş listesi */}
+      <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Arkadaşlar</Text>
+      {loading ? (
+        <ActivityIndicator color={C.accentPurple} style={{ marginTop: 20 }} />
+      ) : friends.length === 0 ? (
+        <View style={s.emptyBox}>
+          <Text style={{ fontSize: 40 }}>👥</Text>
+          <Text style={[s.emptyText, { color: C.textSecondary }]}>
+            Henüz arkadaşın yok.{'\n'}Arkadaş ekleyip düello yap!
+          </Text>
+          <TouchableOpacity
+            style={[s.addFriendBtn, { backgroundColor: C.accentPurple }]}
+            onPress={() => router.push('/(tabs)/friends' as any)}
+          >
+            <Text style={s.addFriendText}>Arkadaş Ekle</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={friends}
+          keyExtractor={(f) => f.id}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+          renderItem={({ item }) => {
+            const isSelected = selectedFriend?.id === item.id;
             return (
               <TouchableOpacity
-                key={cat.id}
-                style={[s.catChip, { backgroundColor: active ? C.accentPurple : C.bgSecondary, borderColor: active ? C.accentPurple : C.border }]}
-                onPress={() => setSelectedCat(cat.id)}
-              >
-                <Text style={s.catIcon}>{cat.icon}</Text>
-                <Text style={[s.catLabel, { color: active ? '#fff' : C.textSecondary }]}>{cat.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {/* Seçili özet */}
-        <View style={[s.summaryBox, { backgroundColor: C.bgSecondary, borderColor: C.border }]}>
-          <View style={s.summaryItem}>
-            <Text style={[s.summaryKey, { color: C.textSecondary }]}>Kategori</Text>
-            <Text style={[s.summaryVal, { color: C.textPrimary }]}>{selectedCatObj.icon} {selectedCatObj.label}</Text>
-          </View>
-          <View style={[s.divider, { backgroundColor: C.border }]} />
-          <View style={s.summaryItem}>
-            <Text style={[s.summaryKey, { color: C.textSecondary }]}>Rakip</Text>
-            <Text style={[s.summaryVal, { color: selectedFriend ? C.accentPurple : C.textSecondary }]}>
-              {selectedFriend ? selectedFriend.username : 'Seçilmedi'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Arkadaş listesi */}
-        <Text style={[s.label, { color: C.textSecondary }]}>ARKADAŞLAR</Text>
-        {loading ? (
-          <ActivityIndicator color={C.accentPurple} style={{ marginTop: 24 }} />
-        ) : friends.length === 0 ? (
-          <View style={s.emptyBox}>
-            <Text style={{ fontSize: 36 }}>👥</Text>
-            <Text style={[s.emptyText, { color: C.textSecondary }]}>Henüz arkadaşın yok</Text>
-            <TouchableOpacity
-              style={[s.emptyBtn, { backgroundColor: C.accentPurple }]}
-              onPress={() => router.push('/(tabs)/friends' as any)}
-            >
-              <Text style={s.emptyBtnText}>Arkadaş Ekle</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={s.friendList}>
-            {friends.map((item) => {
-              const isSelected = selectedFriend?.id === item.id;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[s.friendRow, {
+                style={[
+                  s.friendRow,
+                  {
                     backgroundColor: isSelected ? C.accentPurple + '22' : C.bgSecondary,
                     borderColor: isSelected ? C.accentPurple : C.border,
-                  }]}
-                  onPress={() => setSelectedFriend(isSelected ? null : item)}
-                >
-                  <Avatar avatarId={item.avatarId} size={38} />
-                  <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={[s.friendName, { color: C.textPrimary }]}>{item.username}</Text>
-                    <Text style={[s.friendLevel, { color: C.textSecondary }]}>Seviye {item.level}</Text>
-                  </View>
-                  <View style={[s.radioOuter, { borderColor: isSelected ? C.accentPurple : C.border }]}>
-                    {isSelected && <View style={[s.radioInner, { backgroundColor: C.accentPurple }]} />}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
+                  },
+                ]}
+                onPress={() => setSelectedFriend(isSelected ? null : item)}
+              >
+                <Avatar avatarId={item.avatarId} size={40} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={[s.friendName, { color: C.textPrimary }]}>{item.username}</Text>
+                  <Text style={[s.friendLevel, { color: C.textSecondary }]}>Seviye {item.level}</Text>
+                </View>
+                {isSelected && <Text style={{ fontSize: 20 }}>✅</Text>}
+              </TouchableOpacity>
+            );
+          }}
+        />
+      )}
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
-
-      {/* Footer — Düello butonu */}
-      <View style={[s.footer, { borderTopColor: C.border }]}>
+      {/* Düello başlat */}
+      <View style={s.footer}>
         <TouchableOpacity
-          style={[s.challengeBtn, { backgroundColor: waiting || !selectedFriend ? C.bgTertiary : C.accentPurple }]}
+          style={[s.challengeBtn, { backgroundColor: waiting ? C.bgTertiary : C.accentPurple }]}
           onPress={sendChallenge}
-          disabled={waiting || !selectedFriend}
-          activeOpacity={0.8}
+          disabled={waiting}
         >
           {waiting ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <ActivityIndicator color="#fff" />
+            <>
+              <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
               <Text style={s.challengeText}>Cevap bekleniyor...</Text>
-            </View>
+            </>
           ) : (
-            <Text style={[s.challengeText, { color: selectedFriend ? '#fff' : C.textSecondary }]}>
-              {selectedFriend ? `⚔️ ${selectedFriend.username}'ı Düelloya Davet Et` : 'Önce Arkadaş Seç'}
-            </Text>
+            <Text style={s.challengeText}>⚔️ Düelloya Davet Et</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -200,32 +201,23 @@ export default function DuelLobbyScreen() {
 }
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: C.bgPrimary },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn:      { width: 36, height: 36, justifyContent: 'center' },
-  backText:     { fontSize: 22 },
-  title:        { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
-  label:        { fontFamily: 'Nunito-Bold', fontSize: 11, letterSpacing: 1, paddingHorizontal: 16, marginTop: 16, marginBottom: 8 },
-  catRow:       { paddingHorizontal: 16, gap: 8, paddingBottom: 4 },
-  catChip:      { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1.5 },
-  catIcon:      { fontSize: 14 },
-  catLabel:     { fontFamily: 'Nunito-Bold', fontSize: 12 },
-  summaryBox:   { marginHorizontal: 16, marginTop: 16, borderRadius: 14, borderWidth: 1, flexDirection: 'row', overflow: 'hidden' },
-  summaryItem:  { flex: 1, padding: 14, alignItems: 'center' },
-  summaryKey:   { fontFamily: 'Nunito-Regular', fontSize: 11, marginBottom: 4 },
-  summaryVal:   { fontFamily: 'Nunito-Bold', fontSize: 14 },
-  divider:      { width: 1 },
-  friendList:   { paddingHorizontal: 16, gap: 8 },
-  friendRow:    { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 10, borderWidth: 1.5 },
-  friendName:   { fontFamily: 'Nunito-Bold', fontSize: 14 },
-  friendLevel:  { fontFamily: 'Nunito-Regular', fontSize: 11, marginTop: 1 },
-  radioOuter:   { width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  radioInner:   { width: 10, height: 10, borderRadius: 5 },
-  emptyBox:     { alignItems: 'center', gap: 12, paddingVertical: 40 },
-  emptyText:    { fontFamily: 'Nunito-Regular', fontSize: 14 },
-  emptyBtn:     { borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10 },
-  emptyBtnText: { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff' },
-  footer:       { paddingHorizontal: 16, paddingBottom: 24, paddingTop: 12, borderTopWidth: 1 },
-  challengeBtn: { borderRadius: 14, padding: 15, alignItems: 'center' },
-  challengeText:{ fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
+  safe: { flex: 1, backgroundColor: C.bgPrimary },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
+  back: { fontFamily: 'Nunito-Regular', fontSize: 15 },
+  title: { fontFamily: 'Nunito-ExtraBold', fontSize: 20 },
+  sectionLabel: { fontFamily: 'Nunito-Bold', fontSize: 13, paddingHorizontal: 16, marginBottom: 8 },
+  catChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1.5 },
+  catChipIcon: { fontSize: 16 },
+  catChipLabel: { fontFamily: 'Nunito-Bold', fontSize: 13 },
+  selectedCard: { marginHorizontal: 16, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'center', borderWidth: 2, marginBottom: 16 },
+  friendRow: { borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1.5 },
+  friendName: { fontFamily: 'Nunito-Bold', fontSize: 15 },
+  friendLevel: { fontFamily: 'Nunito-Regular', fontSize: 12, marginTop: 2 },
+  emptyBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
+  emptyText: { fontFamily: 'Nunito-Regular', fontSize: 14, textAlign: 'center', lineHeight: 22 },
+  addFriendBtn: { borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12 },
+  addFriendText: { fontFamily: 'Nunito-Bold', fontSize: 15, color: '#fff' },
+  footer: { padding: 16, paddingBottom: 28 },
+  challengeBtn: { borderRadius: 16, padding: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+  challengeText: { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: '#fff' },
 });

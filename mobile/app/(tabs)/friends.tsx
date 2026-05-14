@@ -1,7 +1,5 @@
-﻿import { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView } from 'react-native-gesture-handler';
+import { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { Colors } from '../../src/constants/colors';
 import { Avatar } from '../../src/components/ui/Avatar';
@@ -167,6 +165,9 @@ export default function FriendsScreen() {
     </SafeAreaView>
   );
 }
+
+// styles update
+import { ScrollView } from 'react-native-gesture-handler';
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bgPrimary },

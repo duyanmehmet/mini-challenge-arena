@@ -1,8 +1,9 @@
-﻿import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
+  ScrollView, ActivityIndicator, Alert,
+} from 'react-native';
 import { router } from 'expo-router';
-import { ScreenHeader } from '../src/components/ui/ScreenHeader';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
@@ -84,7 +85,14 @@ export default function BattlePassScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <ScreenHeader title="⭐ Battle Pass" />
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={[s.back, { color: C.textSecondary }]}>← Geri</Text>
+        </TouchableOpacity>
+        <Text style={[s.title, { color: C.textPrimary }]}>⭐ Battle Pass</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Sezon kartı */}
         <View style={[s.seasonCard, { backgroundColor: C.accentPurple + '22', borderColor: C.accentPurple }]}>

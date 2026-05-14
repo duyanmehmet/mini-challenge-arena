@@ -1,311 +1,123 @@
-﻿import { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+﻿import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import { router } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
-import { CATEGORIES } from '../src/constants/categories';
+import { CATEGORIES as GAME_MODES } from '../src/constants/categories';
 import { Avatar } from '../src/components/ui/Avatar';
 import api from '../src/services/api';
 
-interface Status {
-  score: number | null;
-  completed: boolean;
-  streak: number;
-  rank: number | null;
-  xpBonus: number | null;
-}
-
 export default function ChallengeScreen() {
   const { theme } = useSettingsStore();
-  const { user }  = useUserStore();
+  const { user } = useUserStore();
   const C = Colors[theme];
-  const s = styles(C);
-
-  const [challenge, setChallenge]     = useState<any>(null);
-  const [status, setStatus]           = useState<Status | null>(null);
+  const [challenge, setChallenge] = useState<any>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [loading, setLoading]         = useState(true);
-
-  // İlerleme çubuğu animasyonu
-  const progressAnim = useState(new Animated.Value(0))[0];
-
-  // Oyundan dönünce durum yenilenir
-  useFocusEffect(useCallback(() => {
-    loadAll();
-  }, []));
+  const [myScore, setMyScore]    = useState<number | null>(null);
+  const [loading, setLoading]    = useState(true);
 
   useEffect(() => {
-    if (!challenge || status?.score == null) return;
-    const pct = Math.min(status.score / challenge.target_score, 1);
-    Animated.timing(progressAnim, { toValue: pct, duration: 900, useNativeDriver: false }).start();
-  }, [challenge, status]);
-
-  const loadAll = async () => {
-    try {
-      const [cRes, stRes, lbRes] = await Promise.all([
-        api.get('/challenge/today'),
-        api.get('/challenge/my-status'),
-        api.get('/challenge/leaderboard'),
-      ]);
-      setChallenge(cRes.data);
-      setStatus(stRes.data);
-      setLeaderboard(lbRes.data ?? []);
-    } catch {}
-    finally { setLoading(false); }
-  };
+    Promise.all([
+      api.get('/challenge/today'),
+      api.get('/challenge/leaderboard'),
+    ]).then(([c, lb]) => {
+      setChallenge(c.data);
+      setLeaderboard(lb.data);
+      const mine = lb.data.find((e: any) => e.username === user?.username);
+      if (mine) setMyScore(mine.score);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
 
   if (!user) return null;
-
-  const catCfg     = challenge ? CATEGORIES.find((m) => m.id === challenge.mode) : null;
-  const catColor   = catCfg?.color ?? C.accentRed;
-  const today      = new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
-  const targetXP   = 100;
-  const bonusXP    = 25;
-  const pct        = challenge && status?.score != null
-    ? Math.min((status.score / challenge.target_score) * 100, 100)
-    : 0;
-  const met        = status?.completed ?? false;
+  const s = styles(C);
+  const modeCfg = challenge ? GAME_MODES.find((m) => m.id === challenge.mode) : null;
+  const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long' });
 
   return (
     <SafeAreaView style={s.safe}>
-      {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={[s.backIcon, { color: C.textSecondary }]}>←</Text>
-        </TouchableOpacity>
-        <Text style={[s.pageTitle, { color: C.textPrimary }]}>⚡ Günün Görevi</Text>
-        {/* Streak */}
-        {status && status.streak > 0 ? (
-          <View style={[s.streakBadge, { backgroundColor: '#f0c040' + '22', borderColor: '#f0c040' }]}>
-            <Text style={s.streakFire}>🔥</Text>
-            <Text style={s.streakCount}>{status.streak}</Text>
-          </View>
-        ) : <View style={{ width: 56 }} />}
-      </View>
+      <TouchableOpacity onPress={() => router.back()} style={s.back}>
+        <Text style={[s.backText, { color: C.textSecondary }]}>← Geri</Text>
+      </TouchableOpacity>
+      <Text style={[s.title, { color: C.textPrimary }]}>⚡ Günün Challenge'ı</Text>
+      <Text style={[s.date, { color: C.textSecondary }]}>{today}</Text>
 
       {loading ? (
-        <ActivityIndicator color={catColor} style={{ marginTop: 60 }} />
+        <ActivityIndicator color={C.accentRed} style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 14 }}>
-
-          {/* Tarih */}
-          <Text style={[s.dateText, { color: C.textSecondary }]}>{today}</Text>
-
-          {/* Kategori kartı */}
-          {catCfg && (
-            <View style={[s.heroCard, { backgroundColor: catColor + '18', borderColor: catColor }]}>
-              <Text style={s.heroIcon}>{catCfg.icon}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.heroCategory, { color: C.textSecondary }]}>Bugünün Kategorisi</Text>
-                <Text style={[s.heroName, { color: C.textPrimary }]}>{catCfg.name}</Text>
-                <Text style={[s.heroDesc, { color: C.textSecondary }]} numberOfLines={2}>{catCfg.description}</Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Mod kartı */}
+          {modeCfg && (
+            <View style={[s.modeCard, { backgroundColor: modeCfg.color + '15', borderColor: modeCfg.color }]}>
+              <Text style={s.modeEmoji}>{modeCfg.icon}</Text>
+              <View>
+                <Text style={[s.modeName, { color: C.textPrimary }]}>{modeCfg.name}</Text>
+                <Text style={[s.modeTag, { color: C.textSecondary }]}>{modeCfg.description}</Text>
+                <Text style={[s.target, { color: modeCfg.color }]}>🎯 Hedef: {challenge?.target_score} puan</Text>
               </View>
             </View>
           )}
 
-          {/* Hedef & İlerleme */}
-          <View style={[s.goalCard, { backgroundColor: C.bgSecondary }]}>
-            <View style={s.goalHeader}>
-              <Text style={[s.goalLabel, { color: C.textSecondary }]}>Hedef Puan</Text>
-              <Text style={[s.goalTarget, { color: catColor }]}>
-                {challenge?.target_score?.toLocaleString('tr-TR')} puan
-              </Text>
+          {/* Kendi skoru */}
+          {myScore !== null ? (
+            <View style={[s.myScore, { backgroundColor: C.success + '15', borderColor: C.success }]}>
+              <Text style={[s.myScoreText, { color: C.success }]}>✅ Bu günü oynadın: {myScore.toLocaleString('tr-TR')} puan</Text>
             </View>
-
-            {/* Progress bar */}
-            <View style={[s.progressTrack, { backgroundColor: C.bgTertiary }]}>
-              <Animated.View style={[s.progressFill, {
-                backgroundColor: met ? C.success : catColor,
-                width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-              }]} />
-            </View>
-
-            {/* Puan göstergesi */}
-            <View style={s.progressLabels}>
-              <Text style={[s.progressLeft, { color: C.textSecondary }]}>
-                {status?.score != null ? `${status.score.toLocaleString('tr-TR')} puan` : 'Henüz oynamadın'}
-              </Text>
-              <Text style={[s.progressRight, { color: C.textSecondary }]}>
-                {Math.round(pct)}%
-              </Text>
-            </View>
-
-            {/* Tamamlanma durumu */}
-            {met ? (
-              <View style={[s.completedBadge, { backgroundColor: C.success + '22', borderColor: C.success }]}>
-                <Text style={[s.completedText, { color: C.success }]}>
-                  ✅ Hedefi aştın! +{targetXP} XP kazandın
-                </Text>
-              </View>
-            ) : status?.score != null ? (
-              <View style={[s.completedBadge, { backgroundColor: C.accentYellow + '18', borderColor: C.accentYellow }]}>
-                <Text style={[s.completedText, { color: C.accentYellow }]}>
-                  🎯 {(challenge.target_score - status.score).toLocaleString('tr-TR')} puan daha — hedefi geç!
-                </Text>
-              </View>
-            ) : null}
-          </View>
-
-          {/* XP Ödülleri */}
-          <View style={[s.rewardRow, { backgroundColor: C.bgSecondary }]}>
-            <RewardBox
-              icon="⚡"
-              label="Oynayınca"
-              value={`+${bonusXP} XP`}
-              done={status?.score != null}
-              color={C.accentTeal}
-            />
-            <View style={[s.rewardDivider, { backgroundColor: C.border }]} />
-            <RewardBox
-              icon="🏆"
-              label="Hedefi Geçince"
-              value={`+${targetXP} XP`}
-              done={met}
-              color='#f0c040'
-            />
-            <View style={[s.rewardDivider, { backgroundColor: C.border }]} />
-            <RewardBox
-              icon="🔥"
-              label="Günlük Seri"
-              value={`${status?.streak ?? 0} gün`}
-              done={(status?.streak ?? 0) > 0}
-              color={C.accentRed}
-            />
-          </View>
-
-          {/* Oyna / Tekrar Oyna butonu */}
-          {status?.score == null ? (
-            <TouchableOpacity
-              style={[s.playBtn, { backgroundColor: catColor }]}
-              onPress={() => {
-                if (challenge) router.push({
-                  pathname: `/game/${challenge.mode}` as any,
-                  params: { challengeId: challenge.id },
-                });
-              }}
-            >
-              <Text style={s.playBtnText}>▶ Göreve Başla</Text>
-            </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={[s.playBtn, { backgroundColor: met ? C.success : catColor }]}
+              style={[s.playBtn, { backgroundColor: modeCfg?.color ?? C.accentRed }]}
               onPress={() => {
-                if (challenge) router.push({
-                  pathname: `/game/${challenge.mode}` as any,
-                  params: { challengeId: challenge.id },
-                });
-              }}
+              if (challenge) router.push({ pathname: `/game/${challenge.mode}` as any, params: { challengeId: challenge.id } });
+            }}
             >
-              <Text style={s.playBtnText}>
-                {met ? '🏅 Skoru İyileştir' : '🔄 Tekrar Oyna — Hedefi Geç!'}
-              </Text>
+              <Text style={s.playBtnText}>▶ Şimdi Oyna — {modeCfg?.shortName}</Text>
             </TouchableOpacity>
           )}
 
-          {/* Sıralama */}
+          {/* Liderlik */}
           <Text style={[s.lbTitle, { color: C.textPrimary }]}>🏆 Bugünkü Sıralama</Text>
-
-          {leaderboard.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingVertical: 32, gap: 8 }}>
-              <Text style={{ fontSize: 36 }}>🎯</Text>
-              <Text style={[s.emptyText, { color: C.textSecondary }]}>
-                Henüz kimse oynamadı.{'\n'}İlk sen ol!
+          {leaderboard.slice(0, 20).map((entry: any, i: number) => (
+            <View key={i} style={[s.lbRow, {
+              backgroundColor: entry.username === user.username ? C.accentRed + '15' : C.bgSecondary,
+              borderColor: entry.username === user.username ? C.accentRed : C.border,
+            }]}>
+              <Text style={[s.lbRank, { color: i < 3 ? C.accentYellow : C.textSecondary }]}>
+                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}
               </Text>
+              <Avatar avatarId={entry.avatarId} size={32} />
+              <Text style={[s.lbName, { color: C.textPrimary }]}>{entry.username}</Text>
+              <Text style={[s.lbScore, { color: C.accentYellow }]}>{entry.score.toLocaleString('tr-TR')}</Text>
             </View>
-          ) : (
-            leaderboard.slice(0, 20).map((entry, i) => {
-              const isMe = entry.username === user.username;
-              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
-              return (
-                <View key={i} style={[s.lbRow, {
-                  backgroundColor: isMe ? catColor + '18' : C.bgSecondary,
-                  borderWidth: isMe ? 1.5 : 0,
-                  borderColor: catColor,
-                }]}>
-                  <View style={s.lbRankBox}>
-                    {medal
-                      ? <Text style={{ fontSize: 20 }}>{medal}</Text>
-                      : <Text style={[s.lbRankNum, { color: C.textSecondary }]}>#{i + 1}</Text>
-                    }
-                  </View>
-                  <Avatar avatarId={entry.avatarId} size={30} />
-                  <Text style={[s.lbName, { color: C.textPrimary, fontFamily: isMe ? 'Nunito-Bold' : 'Nunito-Regular' }]} numberOfLines={1}>
-                    {entry.username}{isMe ? ' (Sen)' : ''}
-                  </Text>
-                  <Text style={[s.lbScore, { color: '#f0c040' }]}>
-                    {entry.score.toLocaleString('tr-TR')}
-                  </Text>
-                </View>
-              );
-            })
+          ))}
+          {leaderboard.length === 0 && (
+            <Text style={[s.empty, { color: C.textSecondary }]}>Henüz kimse oynamadı. İlk sen ol!</Text>
           )}
-
-          <View style={{ height: 24 }} />
+          <View style={{ height: 32 }} />
         </ScrollView>
       )}
     </SafeAreaView>
   );
 }
 
-function RewardBox({ icon, label, value, done, color }: {
-  icon: string; label: string; value: string; done: boolean; color: string;
-}) {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', gap: 4, paddingVertical: 12 }}>
-      <Text style={{ fontSize: done ? 22 : 18, opacity: done ? 1 : 0.4 }}>{icon}</Text>
-      <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 13, color: done ? color : '#888' }}>{value}</Text>
-      <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 10, color: '#888', textAlign: 'center' }}>{label}</Text>
-      {done && <View style={{ width: 20, height: 2, borderRadius: 1, backgroundColor: color }} />}
-    </View>
-  );
-}
-
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe:            { flex: 1, backgroundColor: C.bgPrimary },
-  header:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backIcon:        { fontSize: 22 },
-  pageTitle:       { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
-  streakBadge:     { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1.5 },
-  streakFire:      { fontSize: 14 },
-  streakCount:     { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#f0c040' },
-  dateText:        { fontFamily: 'Nunito-Regular', fontSize: 13, textTransform: 'capitalize' },
-
-  // Hero kart
-  heroCard:        { borderRadius: 18, borderWidth: 1.5, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  heroIcon:        { fontSize: 52 },
-  heroCategory:    { fontFamily: 'Nunito-Regular', fontSize: 11, marginBottom: 2 },
-  heroName:        { fontFamily: 'Nunito-ExtraBold', fontSize: 20, marginBottom: 4 },
-  heroDesc:        { fontFamily: 'Nunito-Regular', fontSize: 12, lineHeight: 18 },
-
-  // Hedef kartı
-  goalCard:        { borderRadius: 16, padding: 16, gap: 10 },
-  goalHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  goalLabel:       { fontFamily: 'Nunito-Regular', fontSize: 13 },
-  goalTarget:      { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
-  progressTrack:   { height: 10, borderRadius: 5, overflow: 'hidden' },
-  progressFill:    { height: '100%', borderRadius: 5 },
-  progressLabels:  { flexDirection: 'row', justifyContent: 'space-between' },
-  progressLeft:    { fontFamily: 'Nunito-Regular', fontSize: 12 },
-  progressRight:   { fontFamily: 'Nunito-Bold', fontSize: 12 },
-  completedBadge:  { borderRadius: 10, padding: 10, borderWidth: 1.5, alignItems: 'center' },
-  completedText:   { fontFamily: 'Nunito-Bold', fontSize: 13, textAlign: 'center' },
-
-  // Ödül kutusu
-  rewardRow:       { borderRadius: 16, flexDirection: 'row', alignItems: 'center' },
-  rewardDivider:   { width: 1, height: 50 },
-
-  // Buton
-  playBtn:         { borderRadius: 16, padding: 17, alignItems: 'center' },
-  playBtnText:     { color: '#fff', fontFamily: 'Nunito-ExtraBold', fontSize: 16 },
-
-  // Leaderboard
-  lbTitle:         { fontFamily: 'Nunito-ExtraBold', fontSize: 15, marginTop: 4 },
-  lbRow:           { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 10, gap: 10, marginBottom: 6 },
-  lbRankBox:       { width: 32, alignItems: 'center' },
-  lbRankNum:       { fontFamily: 'Nunito-Bold', fontSize: 13 },
-  lbName:          { flex: 1, fontSize: 14 },
-  lbScore:         { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
-  emptyText:       { fontFamily: 'Nunito-Regular', fontSize: 14, textAlign: 'center', lineHeight: 22 },
+  safe: { flex: 1, backgroundColor: C.bgPrimary },
+  back: { padding: 16, paddingBottom: 4 },
+  backText: { fontFamily: 'Nunito-Regular', fontSize: 15 },
+  title: { fontSize: 22, fontFamily: 'Nunito-ExtraBold', paddingHorizontal: 16 },
+  date: { fontFamily: 'Nunito-Regular', fontSize: 13, paddingHorizontal: 16, marginBottom: 16 },
+  modeCard: { marginHorizontal: 16, borderRadius: 16, padding: 16, flexDirection: 'row', gap: 14, borderWidth: 1.5, marginBottom: 12, alignItems: 'center' },
+  modeEmoji: { fontSize: 48 },
+  modeName: { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
+  modeTag: { fontFamily: 'Nunito-Regular', fontSize: 13, marginBottom: 4 },
+  target: { fontFamily: 'Nunito-Bold', fontSize: 14 },
+  myScore: { marginHorizontal: 16, borderRadius: 12, padding: 14, borderWidth: 1.5, marginBottom: 12, alignItems: 'center' },
+  myScoreText: { fontFamily: 'Nunito-Bold', fontSize: 15 },
+  playBtn: { marginHorizontal: 16, borderRadius: 16, padding: 18, alignItems: 'center', marginBottom: 20 },
+  playBtnText: { color: '#fff', fontFamily: 'Nunito-ExtraBold', fontSize: 17 },
+  lbTitle: { paddingHorizontal: 16, fontFamily: 'Nunito-Bold', fontSize: 16, marginBottom: 8 },
+  lbRow: { marginHorizontal: 16, marginBottom: 6, borderRadius: 12, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1 },
+  lbRank: { width: 32, fontFamily: 'Nunito-Bold', fontSize: 14, textAlign: 'center' },
+  lbName: { flex: 1, fontFamily: 'Nunito-Regular', fontSize: 14 },
+  lbScore: { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
+  empty: { textAlign: 'center', fontFamily: 'Nunito-Regular', fontSize: 14, marginTop: 24 },
 });

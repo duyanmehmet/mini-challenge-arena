@@ -1,6 +1,5 @@
-﻿import { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useGameStore } from '../src/store/gameStore';
@@ -23,7 +22,7 @@ type Phase = 'intro' | 'playing' | 'result';
 
 export default function ClassicTourScreen() {
   const { theme } = useSettingsStore();
-  const { startGame, endGame, loseLife } = useGameStore();
+  const { startGame, endGame } = useGameStore();
   const { addXP, addCoins, updateUser } = useUserStore();
   const C = Colors[theme];
 
@@ -177,7 +176,6 @@ export default function ClassicTourScreen() {
         lives={MAX_LIVES}
         onEnd={handleEnd}
         onAnswer={handleAnswer}
-        onLifeLost={loseLife}
       />
     </SafeAreaView>
   );
