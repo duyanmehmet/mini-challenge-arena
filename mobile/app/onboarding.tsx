@@ -1,8 +1,5 @@
 ﻿import { useState, useRef } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Animated,
-}
-import { SafeAreaView } from 'react-native-safe-area-context';
+r 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettingsStore } from '../src/store/settingsStore';

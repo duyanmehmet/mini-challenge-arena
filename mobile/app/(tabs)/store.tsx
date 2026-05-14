@@ -1,6 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert }
-import { SafeAreaView } from 'react-native-safe-area-context';
+r 'react-native-safe-area-context';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useUserStore } from '../../src/store/userStore';
 import { Colors } from '../../src/constants/colors';

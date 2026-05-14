@@ -1,6 +1,5 @@
 ﻿import { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, FlatList, ActivityIndicator, Alert, TextInput }
-import { SafeAreaView } from 'react-native-safe-area-context';
+r 'react-native-safe-area-context';
 
 import { router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
