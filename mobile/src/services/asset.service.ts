@@ -1,8 +1,8 @@
-import { useAudioPlayer } from 'expo-audio';
+import { Audio } from 'expo-av';
 import { Vibration } from 'react-native';
 import { useSettingsStore } from '../store/settingsStore';
 
-const SOUND_ASSETS: Record<string, any> = {
+const SOUNDS: Record<string, any> = {
   hit:       require('../../assets/sounds/hit.wav'),
   miss:      require('../../assets/sounds/miss.wav'),
   combo:     require('../../assets/sounds/combo.wav'),
@@ -12,22 +12,31 @@ const SOUND_ASSETS: Record<string, any> = {
   levelup:   require('../../assets/sounds/levelup.wav'),
 };
 
+const soundCache: Record<string, Audio.Sound> = {};
+
 class AssetService {
   async playSound(name: string) {
     const { soundEnabled } = useSettingsStore.getState();
     if (!soundEnabled) return;
 
-    const asset = SOUND_ASSETS[name];
+    const asset = SOUNDS[name];
     if (!asset) return;
 
     try {
-      const { createAudioPlayer } = await import('expo-audio');
-      const player = createAudioPlayer(asset);
-      player.play();
-      // Oynatma bitince otomatik serbest bırakır
-    } catch {
-      // Ses çalınamazsa sessizce devam et
-    }
+      if (soundCache[name]) {
+        await soundCache[name].setPositionAsync(0);
+        await soundCache[name].playAsync();
+        return;
+      }
+      const { sound } = await Audio.Sound.createAsync(asset, { shouldPlay: true });
+      soundCache[name] = sound;
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          delete soundCache[name];
+          sound.unloadAsync().catch(() => {});
+        }
+      });
+    } catch {}
   }
 
   vibrate(pattern: number | number[] = 50) {
