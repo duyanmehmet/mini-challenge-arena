@@ -1,11 +1,11 @@
 ﻿import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { User, Badge, PersonalBest, DailyTask } from '../types/user.types';
+import type { User, PersonalBest, DailyTask } from '../types/user.types';
 
 interface UserState {
   user: User | null;
   token: string | null;
-  badges: Badge[];
+  badges: string[];           // backend'den gelen badge ID listesi
   personalBests: PersonalBest[];
   dailyTasks: DailyTask[];
   isAuthenticated: boolean;
@@ -14,7 +14,7 @@ interface UserState {
   logout: () => Promise<void>;
   addCoins: (amount: number) => void;
   addXP: (amount: number) => void;
-  setBadges: (badges: Badge[]) => void;
+  setBadges: (badges: string[]) => void;
   setPersonalBests: (pbs: PersonalBest[]) => void;
   setDailyTasks: (tasks: DailyTask[]) => void;
   loadAuth: () => Promise<void>;

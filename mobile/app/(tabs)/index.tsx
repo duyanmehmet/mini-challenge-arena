@@ -15,7 +15,7 @@ import { userService } from '../../src/services/user.service';
 
 export default function HomeScreen() {
   const { theme, loadSettings } = useSettingsStore();
-  const { user, personalBests, setDailyTasks, setPersonalBests, updateUser, token } = useUserStore();
+  const { user, personalBests, setDailyTasks, setPersonalBests, updateUser, setBadges, token } = useUserStore();
   const C = Colors[theme];
 
   // Sayfa açılış animasyonu
@@ -45,9 +45,10 @@ export default function HomeScreen() {
 
   const refreshProfile = async () => {
     try {
-      const { user: fresh, personalBests: pbs } = await userService.getProfile();
+      const { user: fresh, personalBests: pbs, badges } = await userService.getProfile();
       if (fresh && token) updateUser(fresh);
       if (pbs) setPersonalBests(pbs);
+      if (badges) setBadges(badges as string[]);
     } catch {}
   };
 

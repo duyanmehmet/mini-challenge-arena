@@ -24,12 +24,13 @@ router.get("/global", async (req, res) => {
         .orderBy("score", "desc")
         .limit(limit);
     } else {
-      // alltime — en yüksek kişisel rekorlar
+      // alltime — kullanıcı başına toplam kişisel rekor puanı
       rows = await db("personal_bests")
         .join("users", "users.id", "personal_bests.user_id")
-        .select("users.id","users.username","users.avatar_id as avatarId",
-          "personal_bests.score","users.current_league as league")
-        .orderBy("personal_bests.score", "desc").limit(limit);
+        .select("users.id","users.username","users.avatar_id as avatarId","users.current_league as league")
+        .sum("personal_bests.score as score")
+        .groupBy("users.id","users.username","users.avatar_id","users.current_league")
+        .orderBy("score", "desc").limit(limit);
     }
     res.json(rows.map((r: any, i: number) => ({ ...r, rank: i + 1 })));
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }

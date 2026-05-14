@@ -220,7 +220,7 @@ export default function ProfileScreen() {
           <Text style={s.sectionTitle}>🎖 Rozetler ({badges.length}/{BADGES.length})</Text>
           <View style={s.badgeGrid}>
             {BADGES.map((b) => {
-              const owned = badges.some((ub) => ub.id === b.id);
+              const owned = badges.includes(b.id);
               return (
                 <View key={b.id} style={[s.badge, { backgroundColor: owned ? C.bgTertiary : C.bgSecondary, opacity: owned ? 1 : 0.3 }]}>
                   <Text style={{ fontSize: 28 }}>{b.icon}</Text>

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Mini Challenge Arena",
-    "slug": "mca",
+    "name": "Bil Bakalım",
+    "slug": "bilbakalim",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -14,9 +14,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#1a1a2e"
     },
+    "description": "Türkiye'nin bilgi yarışması uygulaması — Bil Bakalım!",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.minichallengearena.mca",
+      "bundleIdentifier": "com.bilbakalim.app",
       "buildNumber": "1"
     },
     "android": {
@@ -24,7 +25,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "com.minichallengearena.mca",
+      "package": "com.bilbakalim.app",
       "versionCode": 1,
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false

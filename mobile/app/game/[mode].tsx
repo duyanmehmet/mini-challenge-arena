@@ -16,7 +16,7 @@ const QUIZ_CATEGORIES: CategoryId[] = [
 ];
 
 export default function GameScreen() {
-  const { mode } = useLocalSearchParams<{ mode: string }>();
+  const { mode, challengeId } = useLocalSearchParams<{ mode: string; challengeId?: string }>();
   const { startGame, endGame, pauseGame, resumeGame, buyLife, lives } = useGameStore();
   const { user } = useUserStore();
   const { theme } = useSettingsStore();
@@ -44,7 +44,13 @@ export default function GameScreen() {
     const result = endGame();
     router.replace({
       pathname: '/game/result',
-      params: { mode: mode ?? '', score: String(result.score), maxCombo: String(result.maxCombo), duration: String(result.durationSeconds) },
+      params: {
+        mode: mode ?? '',
+        score: String(result.score),
+        maxCombo: String(result.maxCombo),
+        duration: String(result.durationSeconds),
+        ...(challengeId ? { challengeId } : {}),
+      },
     });
   };
 
