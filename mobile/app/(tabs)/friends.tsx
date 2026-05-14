@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, TextInput, Alert, ActivityIndicator } from 'react-native';
+﻿import { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, ActivityIndicator }
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { Colors } from '../../src/constants/colors';

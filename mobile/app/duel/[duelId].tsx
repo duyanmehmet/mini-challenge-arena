@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Animated } from 'react-native';
+﻿import { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Easing } `r
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useUserStore } from '../../src/store/userStore';
@@ -37,7 +38,9 @@ export default function DuelGameScreen() {
   const [result, setResult]       = useState<'win' | 'lose' | 'draw' | null>(null);
   const [finalScores, setFinalScores] = useState<{ me: number; opp: number } | null>(null);
 
-  const opponentScaleAnim = useRef(new Animated.Value(1)).current;
+  const opponentScaleAnim  = useRef(new Animated.Value(1)).current;
+  const oppAnswerAnim      = useRef(new Animated.Value(0)).current;  // rakip cevap pop-up
+  const [oppAnswerFlash, setOppAnswerFlash] = useState<{ correct: boolean; qNo: number } | null>(null);
   const started = useRef(false);
 
   useEffect(() => {
@@ -53,10 +56,21 @@ export default function DuelGameScreen() {
     // Rakibin canlı durumu
     socket.on('duel_opponent_update', (data: OpponentState) => {
       setOpponent(data);
+      // Skor animasyonu
       Animated.sequence([
         Animated.timing(opponentScaleAnim, { toValue: 1.2, duration: 120, useNativeDriver: true }),
         Animated.timing(opponentScaleAnim, { toValue: 1,   duration: 120, useNativeDriver: true }),
       ]).start();
+      // Cevap flash animasyonu
+      if (data.lastCorrect !== null) {
+        setOppAnswerFlash({ correct: data.lastCorrect, qNo: data.answered });
+        oppAnswerAnim.setValue(0);
+        Animated.sequence([
+          Animated.timing(oppAnswerAnim, { toValue: 1, duration: 200, useNativeDriver: true, easing: Easing.out(Easing.back(2)) }),
+          Animated.delay(1200),
+          Animated.timing(oppAnswerAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        ]).start(() => setOppAnswerFlash(null));
+      }
     });
 
     // Rakip bağlandı
@@ -217,14 +231,20 @@ export default function DuelGameScreen() {
         </View>
       </View>
 
-      {/* Rakibin soru ilerlemesi */}
-      {opponent && (
-        <View style={[s.oppProgress, { backgroundColor: C.bgSecondary }]}>
-          <Text style={[s.oppProgressText, { color: C.textSecondary }]}>
-            {opponent.username}: {opponent.answered}. soru
-            {opponent.lastCorrect === true ? ' ✅' : opponent.lastCorrect === false ? ' ❌' : ''}
+      {/* Rakip cevap pop-up */}
+      {oppAnswerFlash && (
+        <Animated.View style={[
+          s.oppFlash,
+          {
+            backgroundColor: oppAnswerFlash.correct ? C.success + 'ee' : C.danger + 'ee',
+            transform: [{ scale: oppAnswerAnim }],
+            opacity: oppAnswerAnim,
+          },
+        ]}>
+          <Text style={s.oppFlashText}>
+            {oppAnswerFlash.correct ? '✅' : '❌'} {opponent?.username}  •  {oppAnswerFlash.qNo}. soru
           </Text>
-        </View>
+        </Animated.View>
       )}
 
       {/* Quiz */}
@@ -266,8 +286,11 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   playerName: { fontFamily: 'Nunito-Bold', fontSize: 12, maxWidth: 110 },
   playerScore: { fontFamily: 'Nunito-ExtraBold', fontSize: 24 },
   vs: { fontFamily: 'Nunito-ExtraBold', fontSize: 16, marginHorizontal: 8 },
-  oppProgress: { paddingHorizontal: 16, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.border },
-  oppProgressText: { fontFamily: 'Nunito-Regular', fontSize: 12 },
+  oppFlash: {
+    position: 'absolute', top: 90, alignSelf: 'center', zIndex: 99,
+    borderRadius: 20, paddingHorizontal: 18, paddingVertical: 8,
+  },
+  oppFlashText: { fontFamily: 'Nunito-Bold', fontSize: 13, color: '#fff' },
   resultTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 30, marginBottom: 20 },
   resultCard: { width: '100%', borderRadius: 20, padding: 20, marginBottom: 16 },
   actionBtn: { width: '100%', borderRadius: 16, padding: 18, alignItems: 'center' },

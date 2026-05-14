@@ -235,7 +235,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
 
   return (
     <View style={s.container}>
-      <ScoreBar />
+      <ScoreBar showLives={isLiveMode} />
 
       {/* Session timer (timer modu) */}
       {!isLiveMode && (

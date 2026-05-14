@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Animated } from 'react-native';
+﻿import { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated }
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useUserStore } from '../../src/store/userStore';
@@ -8,7 +9,8 @@ import { CATEGORIES } from '../../src/constants/categories';
 import { gameService } from '../../src/services/game.service';
 import { assetService } from '../../src/services/asset.service';
 import api from '../../src/services/api';
-import { Share } from 'react-native';
+import { Share }
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ResultScreen() {
   const { mode, score, maxCombo, duration, challengeId } = useLocalSearchParams<{

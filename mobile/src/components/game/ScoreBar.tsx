@@ -5,7 +5,9 @@ import { Colors } from '../../constants/colors';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useGameStore } from '../../store/gameStore';
 
-export const ScoreBar: React.FC = () => {
+interface ScoreBarProps { showLives?: boolean; }
+
+export const ScoreBar: React.FC<ScoreBarProps> = ({ showLives = false }) => {
   const { theme } = useSettingsStore();
   const { score, combo, lives } = useGameStore();
   const colors = Colors[theme];
@@ -16,22 +18,24 @@ export const ScoreBar: React.FC = () => {
         <Typography variant="small" color={colors.textSecondary}>SKOR</Typography>
         <Typography variant="h2">{score}</Typography>
       </View>
-      
+
       <View style={styles.section}>
         <Typography variant="small" color={colors.textSecondary}>COMBO</Typography>
         <Typography variant="h2" color={colors.accentTeal}>x{combo}</Typography>
       </View>
 
-      <View style={styles.section}>
-        <Typography variant="small" color={colors.textSecondary}>CAN</Typography>
-        <View style={styles.livesRow}>
-          {[...Array(3)].map((_, i) => (
-            <Typography key={i} variant="h2" style={{ opacity: i < lives ? 1 : 0.2 }}>
-              ❤️
-            </Typography>
-          ))}
+      {showLives && (
+        <View style={styles.section}>
+          <Typography variant="small" color={colors.textSecondary}>CAN</Typography>
+          <View style={styles.livesRow}>
+            {[...Array(3)].map((_, i) => (
+              <Typography key={i} variant="h2" style={{ opacity: i < lives ? 1 : 0.2 }}>
+                ❤️
+              </Typography>
+            ))}
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 };

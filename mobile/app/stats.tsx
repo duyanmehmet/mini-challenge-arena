@@ -1,6 +1,8 @@
 ﻿import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { ScreenHeader } from '../src/components/ui/ScreenHeader';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
@@ -35,11 +37,8 @@ export default function StatsScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
+      <ScreenHeader title="📊 İstatistikler" />
       <ScrollView showsVerticalScrollIndicator={false}>
-        <TouchableOpacity onPress={() => router.back()} style={s.back}>
-          <Text style={[s.backText, { color: C.textSecondary }]}>← Geri</Text>
-        </TouchableOpacity>
-        <Text style={[s.title, { color: C.textPrimary }]}>📊 İstatistikler</Text>
 
         {/* Profil özeti */}
         <View style={[s.card, { backgroundColor: C.bgSecondary }]}>
@@ -121,9 +120,6 @@ export default function StatsScreen() {
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bgPrimary },
-  back: { padding: 16, paddingBottom: 4 },
-  backText: { fontFamily: 'Nunito-Regular', fontSize: 15 },
-  title: { fontSize: 22, fontFamily: 'Nunito-ExtraBold', paddingHorizontal: 16, marginBottom: 12 },
   card: { marginHorizontal: 16, borderRadius: 16, padding: 16, marginBottom: 12 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-around' },
   stat: { alignItems: 'center' },

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Modal, Alert } from 'react-native';
+﻿import { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert } `r
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useGameStore } from '../../src/store/gameStore';
 import { useSettingsStore } from '../../src/store/settingsStore';
@@ -17,7 +18,7 @@ const QUIZ_CATEGORIES: CategoryId[] = [
 
 export default function GameScreen() {
   const { mode, challengeId } = useLocalSearchParams<{ mode: string; challengeId?: string }>();
-  const { startGame, endGame, pauseGame, resumeGame, buyLife, loseLife, lives } = useGameStore();
+  const { startGame, endGame, pauseGame, resumeGame, buyLife } = useGameStore();
   const { user } = useUserStore();
   const { theme } = useSettingsStore();
   const C = Colors[theme];
@@ -36,11 +37,6 @@ export default function GameScreen() {
   }, [mode]);
 
   const handleEnd = () => {
-    if (lives <= 0 && user && user.coins >= REVIVE_COST && !showRevive) {
-      pauseGame();
-      setShowRevive(true);
-      return;
-    }
     const result = endGame();
     router.replace({
       pathname: '/game/result',
@@ -74,8 +70,6 @@ export default function GameScreen() {
       <QuizMode
         categoryId={mode as CategoryId}
         onEnd={handleEnd}
-        lives={lives}
-        onLifeLost={loseLife}
       />
     );
     return <Text style={{ color: C.textPrimary, textAlign: 'center', marginTop: 40 }}>Bilinmeyen kategori</Text>;
