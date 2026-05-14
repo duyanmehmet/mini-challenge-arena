@@ -16,6 +16,7 @@ import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
 import { socketService } from '../src/services/socket.service';
 import { Alert, View, Text, StyleSheet } from 'react-native';
+import { CATEGORIES } from '../src/constants/categories';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { notificationService } from '../src/services/notification.service';
 import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
@@ -67,14 +68,15 @@ export default function RootLayout() {
     if (isAuthenticated) {
       const socket = socketService.connect();
       if (socket) {
-        socket.on('duel_invited', (data: { challengerId: string; mode: string }) => {
+        socket.on('duel_invited', (data: { challengerId: string; mode: string; duelId: string }) => {
+          const catName = CATEGORIES.find(c => c.id === data.mode)?.name ?? data.mode;
           Alert.alert(
-            'Düello Daveti!',
-            `${data.mode} modunda bir düello daveti aldın. Kabul ediyor musun?`,
+            '⚔️ Düello Daveti!',
+            `${catName} kategorisinde bir düello daveti aldın. Kabul ediyor musun?`,
             [
-              { text: 'Reddet', style: 'cancel' },
+              { text: 'Reddet', style: 'cancel', onPress: () => socket.emit('duel_reject', { challengerId: data.challengerId }) },
               { text: 'Kabul Et', onPress: () => {
-                socket.emit('duel_accept', { challengerId: data.challengerId, mode: data.mode });
+                socket.emit('duel_accept', { challengerId: data.challengerId });
               }},
             ]
           );
@@ -181,6 +183,7 @@ export default function RootLayout() {
           <Stack.Screen name="challenge"  options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="clan"       options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="battlepass" options={{ animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="tasks"      options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="settings"   options={{ headerShown: true, title: 'Ayarlar', animation: 'slide_from_right', animationDuration: 260 }} />
         </Stack>
       </View>

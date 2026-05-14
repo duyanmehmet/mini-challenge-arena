@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Bil Bakalım",
-    "slug": "bilbakalim",
+    "name": "Zeka Meydanı",
+    "slug": "zekameydani",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -14,10 +14,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#1a1a2e"
     },
-    "description": "Türkiye'nin bilgi yarışması uygulaması — Bil Bakalım!",
+    "description": "Türkiye'nin en eğlenceli bilgi yarışması — Zeka Meydanı!",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.bilbakalim.app",
+      "bundleIdentifier": "com.zekameydani.app",
       "buildNumber": "1"
     },
     "android": {
@@ -25,7 +25,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
-      "package": "com.bilbakalim.app",
+      "package": "com.zekameydani.app",
       "versionCode": 1,
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false
