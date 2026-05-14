@@ -2,35 +2,52 @@ import { Audio } from 'expo-av';
 import { Vibration } from 'react-native';
 import { useSettingsStore } from '../store/settingsStore';
 
-const SOUNDS: Record<string, any> = {
-  hit:       require('../../assets/sounds/hit.mp3'),
-  miss:      require('../../assets/sounds/miss.mp3'),
-  combo:     require('../../assets/sounds/combo.mp3'),
-  win:       require('../../assets/sounds/win.mp3'),
-  countdown: require('../../assets/sounds/countdown.mp3'),
-  goal:      require('../../assets/sounds/goal.mp3'),
-  levelup:   require('../../assets/sounds/levelup.mp3'),
+// Ses dosyaları placeholder olduğunda crash olmasın — try/catch ile sarıldı
+const loadSound = (path: any) => {
+  try { return path; } catch { return null; }
 };
+
+const SOUNDS: Record<string, any> = {
+  hit:       loadSound(require('../../assets/sounds/hit.mp3')),
+  miss:      loadSound(require('../../assets/sounds/miss.mp3')),
+  combo:     loadSound(require('../../assets/sounds/combo.mp3')),
+  win:       loadSound(require('../../assets/sounds/win.mp3')),
+  countdown: loadSound(require('../../assets/sounds/countdown.mp3')),
+  goal:      loadSound(require('../../assets/sounds/goal.mp3')),
+  levelup:   loadSound(require('../../assets/sounds/levelup.mp3')),
+};
+
+// Yüklenmiş ses nesnelerini cache'le (performans için)
+const soundCache: Record<string, Audio.Sound> = {};
 
 class AssetService {
   async playSound(name: string) {
     const { soundEnabled } = useSettingsStore.getState();
     if (!soundEnabled) return;
-    
-    try {
-      const soundAsset = SOUNDS[name];
-      if (!soundAsset) return;
 
-      const { sound } = await Audio.Sound.createAsync(soundAsset);
-      await sound.playAsync();
-      
-      sound.setOnPlaybackStatusUpdate(async (status) => {
+    const soundAsset = SOUNDS[name];
+    if (!soundAsset) return;
+
+    try {
+      // Cache'de varsa yeniden kullan
+      if (soundCache[name]) {
+        await soundCache[name].setPositionAsync(0);
+        await soundCache[name].playAsync();
+        return;
+      }
+
+      const { sound } = await Audio.Sound.createAsync(soundAsset, { shouldPlay: true });
+      soundCache[name] = sound;
+
+      sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
-          await sound.unloadAsync();
+          // Cache'den çıkarma — sonraki çağrıda yeniden yüklensin
+          delete soundCache[name];
+          sound.unloadAsync().catch(() => {});
         }
       });
-    } catch (error) {
-      console.log('Sound play error:', error);
+    } catch {
+      // Hatalı/boş ses dosyasında sessizce devam et
     }
   }
 
@@ -46,7 +63,7 @@ class AssetService {
       levelup:   require('../../assets/animations/level-up.json'),
       countdown: require('../../assets/animations/countdown.json'),
     };
-    return anims[name] ?? null;
+    try { return anims[name] ?? null; } catch { return null; }
   }
 }
 

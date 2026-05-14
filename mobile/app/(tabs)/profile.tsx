@@ -121,6 +121,15 @@ export default function ProfileScreen() {
             </Text>
           )}
           <CoinDisplay amount={user.coins} size="lg" />
+          {/* Klan bilgisi */}
+          {(user as any).clanId && (
+            <TouchableOpacity
+              style={[s.clanBadge, { backgroundColor: C.accentTeal + '18', borderColor: C.accentTeal }]}
+              onPress={() => router.push('/clan' as any)}
+            >
+              <Text style={[s.clanBadgeText, { color: C.accentTeal }]}>🛡️ Klanım</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Avatar Selection Modal */}
@@ -266,5 +275,7 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   priceText: { color: '#fff', fontSize: 10, fontFamily: 'Nunito-Bold' },
   selectedDot: { position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, backgroundColor: C.success },
   closeBtn: { marginTop: 0, padding: 12, alignItems: 'center' },
+  clanBadge: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 6, borderWidth: 1.5 },
+  clanBadgeText: { fontFamily: 'Nunito-Bold', fontSize: 13 },
   nameInput: { borderRadius: 12, padding: 14, fontSize: 16, borderWidth: 1.5, fontFamily: 'Nunito-Regular', marginTop: 8 },
 });

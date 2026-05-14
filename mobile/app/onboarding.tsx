@@ -62,7 +62,7 @@ export default function OnboardingScreen() {
 
   const finish = async () => {
     await AsyncStorage.setItem('onboarding_complete', 'true');
-    router.replace('/(auth)/login');
+    router.replace('/(auth)/register'); // Yeni kullanıcıyı kayıt sayfasına gönder
   };
 
   const s = styles(C);

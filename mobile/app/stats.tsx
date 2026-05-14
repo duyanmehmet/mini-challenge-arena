@@ -66,15 +66,19 @@ export default function StatsScreen() {
           </View>
         </View>
 
-        {/* Haftalık sıra */}
-        {dailyRank && (
+        {/* Haftalık sıra — rank veya weeklyScore varsa göster */}
+        {(dailyRank || user.weeklyScore > 0) && (
           <View style={[s.rankCard, { backgroundColor: C.accentRed + '15', borderColor: C.accentRed }]}>
             <Text style={[s.rankIcon]}>🏆</Text>
             <View>
-              <Text style={[s.rankTitle, { color: C.textPrimary }]}>Bu Hafta #{dailyRank}</Text>
+              <Text style={[s.rankTitle, { color: C.textPrimary }]}>
+                {dailyRank ? `Bu Hafta #${dailyRank}` : 'Haftalık Puan'}
+              </Text>
               <Text style={[s.rankSub, { color: C.textSecondary }]}>Haftalık sıralama</Text>
             </View>
-            <Text style={[s.weekScore, { color: C.accentYellow }]}>{user.weeklyScore.toLocaleString('tr-TR')}</Text>
+            <Text style={[s.weekScore, { color: C.accentYellow }]}>
+              {user.weeklyScore.toLocaleString('tr-TR')}
+            </Text>
           </View>
         )}
 

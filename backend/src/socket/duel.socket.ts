@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import db from '../database';
 import { v4 as uuidv4 } from 'uuid';
+import { getSeedQuestions } from '../data/questions';
 
 interface DuelRoom {
   duelId: string;
@@ -57,11 +58,19 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
 
     if (!room) {
       // İlk oyuncu odayı oluşturuyor
+      // Sunucu tarafında seed-based soru seçimi — her iki oyuncu aynı soruları alır
+      const category = (userId && questions?.length === 0) ? 'general' : 'general';
+      const serverQuestions = getSeedQuestions(
+        (questions as any)?.[0]?.category ?? 'general',
+        Math.floor(Date.now() / 86400000), // günlük seed
+        10
+      );
+
       room = {
         duelId,
-        category: 'general',
+        category,
         players: [],
-        questions: questions ?? [],
+        questions: serverQuestions,
         startedAt: Date.now(),
       };
       rooms.set(duelId, room);
@@ -74,16 +83,15 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
       socket.join(duelId);
     }
 
-    // İkinci oyuncu katıldığında — soruları her iki tarafa da gönder
+    // İkinci oyuncu katıldığında — sunucu sorularını her iki tarafa da gönder
     if (room.players.length === 2) {
-      // Eğer ikinci oyuncu sorular göndermediyse, birinci oyuncunun sorularını kullan
-      const finalQuestions = room.questions.length > 0 ? room.questions : questions ?? [];
-      room.questions = finalQuestions;
+      const finalQuestions = room.questions;
 
       // Her iki oyuncuya rakip bilgisi ve sorular
       const [p1, p2] = room.players;
       io.to(p1.socketId).emit('duel_opponent_joined', { username: p2.userId, avatarId: 0 });
       io.to(p2.socketId).emit('duel_opponent_joined', { username: p1.userId, avatarId: 0 });
+      // Her iki oyuncuya aynı soruları gönder
       io.to(duelId).emit('duel_questions', { questions: finalQuestions });
     }
   });

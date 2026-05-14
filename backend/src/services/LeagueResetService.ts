@@ -44,6 +44,10 @@ export class LeagueResetService {
       }
     }
 
+    // Klan haftalık puanlarını sıfırla
+    await db("clans").update({ weekly_score: 0 });
+    console.log("[LeagueReset] Klan haftalık skorları sıfırlandı.");
+
     console.log("[LeagueReset] Tamamlandı.");
   }
 }
