@@ -79,8 +79,8 @@ export default function RootLayout() {
           );
         });
 
-        socket.on('duel_accepted', (data: { duelId: string }) => {
-          router.push(`/duel/${data.duelId}` as any);
+        socket.on('duel_accepted', (data: { duelId: string; category?: string }) => {
+          router.push(`/duel/${data.duelId}?cat=${data.category ?? 'general'}` as any);
         });
 
         // Canlı yarışma bildirimleri

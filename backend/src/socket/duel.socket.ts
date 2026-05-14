@@ -37,9 +37,9 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
     if (!invite || invite.challengerId !== challengerId) return;
     pendingInvites.delete(userId);
 
-    // İki oyuncuya da duelId ve oda bilgisini gönder
-    io.to(challengerId).emit('duel_accepted', { duelId: invite.duelId });
-    socket.emit('duel_accepted', { duelId: invite.duelId });
+    // İki oyuncuya da duelId + kategori bilgisini gönder
+    io.to(challengerId).emit('duel_accepted', { duelId: invite.duelId, category: invite.category });
+    socket.emit('duel_accepted', { duelId: invite.duelId, category: invite.category });
   });
 
   // ── Daveti Reddet ────────────────────────────────────────────────────

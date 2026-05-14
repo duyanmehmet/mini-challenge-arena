@@ -63,7 +63,12 @@ class AssetService {
       levelup:   require('../../assets/animations/level-up.json'),
       countdown: require('../../assets/animations/countdown.json'),
     };
-    try { return anims[name] ?? null; } catch { return null; }
+    try {
+      const anim = anims[name];
+      // Boş/placeholder animasyonsa (layers dizisi yoksa) null döndür
+      if (!anim || !anim.layers || anim.layers.length === 0) return null;
+      return anim;
+    } catch { return null; }
   }
 }
 

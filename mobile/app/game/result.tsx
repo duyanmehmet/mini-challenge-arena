@@ -60,17 +60,26 @@ export default function ResultScreen() {
       api.post('/challenge/submit', { challengeId, score: numScore }).catch(() => {});
     }
 
-    // Backend'e skor gönder
-    gameService.submitResult({
-      mode: mode ?? '',
-      score: numScore,
-      duration_seconds: numDuration,
-      combo_max: numCombo,
-    }).then((res) => {
-      if (res?.streakCount !== undefined) updateUser({ streakCount: res.streakCount });
-      if (res?.newLevel)                  updateUser({ level: res.newLevel });
-      if (res?.badgesUnlocked?.length)    assetService.playSound('win');
-    }).catch(() => {});
+    // Backend'e skor gönder — başarısız olursa 2 kez daha dene
+    const submitWithRetry = async (retries = 3): Promise<void> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await gameService.submitResult({
+            mode: mode ?? '',
+            score: numScore,
+            duration_seconds: numDuration,
+            combo_max: numCombo,
+          });
+          if (res?.streakCount !== undefined) updateUser({ streakCount: res.streakCount });
+          if (res?.newLevel)                  updateUser({ level: res.newLevel });
+          if (res?.badgesUnlocked?.length)    assetService.playSound('win');
+          return;
+        } catch {
+          if (i < retries - 1) await new Promise(r => setTimeout(r, 2000 * (i + 1)));
+        }
+      }
+    };
+    submitWithRetry();
 
     return () => counterAnim.removeListener(listenerId);
   }, []);

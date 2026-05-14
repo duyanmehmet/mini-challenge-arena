@@ -40,9 +40,9 @@ export default function DuelLobbyScreen() {
     loadFriends();
     const socket = socketService.getSocket();
     if (socket) {
-      socket.on('duel_accepted', (data: { duelId: string }) => {
+      socket.on('duel_accepted', (data: { duelId: string; category?: string }) => {
         setWaiting(false);
-        router.replace(`/duel/${data.duelId}?cat=${selectedCat}` as any);
+        router.replace(`/duel/${data.duelId}?cat=${data.category ?? selectedCat}` as any);
       });
       socket.on('duel_rejected', () => {
         setWaiting(false);
