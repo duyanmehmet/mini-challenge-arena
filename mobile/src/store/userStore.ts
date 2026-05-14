@@ -5,10 +5,11 @@ import type { User, PersonalBest, DailyTask } from '../types/user.types';
 interface UserState {
   user: User | null;
   token: string | null;
-  badges: string[];           // backend'den gelen badge ID listesi
+  badges: string[];
   personalBests: PersonalBest[];
   dailyTasks: DailyTask[];
   isAuthenticated: boolean;
+  categoryPlayCounts: Record<string, number>; // kaç kez oynandı → rotasyon için
   setUser: (user: User, token: string) => Promise<void>;
   updateUser: (partial: Partial<User>) => void;
   logout: () => Promise<void>;
@@ -18,6 +19,7 @@ interface UserState {
   setPersonalBests: (pbs: PersonalBest[]) => void;
   setDailyTasks: (tasks: DailyTask[]) => void;
   loadAuth: () => Promise<void>;
+  incrementCategoryPlayCount: (categoryId: string) => void;
 }
 
 const XP_THRESHOLDS = [0,100,250,500,1000,1500,2500,4000,6000,10000,15000,25000,40000,60000,80000,100000];
@@ -54,6 +56,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   personalBests: [],
   dailyTasks: [],
   isAuthenticated: false,
+  categoryPlayCounts: {},
 
   setUser: async (user, token) => {
     const normalized = normalizeUser(user);
@@ -102,11 +105,22 @@ export const useUserStore = create<UserState>((set, get) => ({
   setPersonalBests: (pbs) => set({ personalBests: pbs }),
   setDailyTasks: (tasks) => set({ dailyTasks: tasks }),
 
+  incrementCategoryPlayCount: (categoryId) => {
+    const counts = { ...get().categoryPlayCounts };
+    counts[categoryId] = (counts[categoryId] ?? 0) + 1;
+    set({ categoryPlayCounts: counts });
+    AsyncStorage.setItem('categoryPlayCounts', JSON.stringify(counts));
+  },
+
   loadAuth: async () => {
     const [token, userJson] = await Promise.all([
       AsyncStorage.getItem('token'),
       AsyncStorage.getItem('user'),
     ]);
+    const countsJson = await AsyncStorage.getItem('categoryPlayCounts');
+    if (countsJson) {
+      try { set({ categoryPlayCounts: JSON.parse(countsJson) }); } catch {}
+    }
     if (token && userJson) {
       try {
         const raw = JSON.parse(userJson);

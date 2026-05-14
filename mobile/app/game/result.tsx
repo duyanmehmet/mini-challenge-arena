@@ -16,7 +16,7 @@ export default function ResultScreen() {
     mode: string; score: string; maxCombo: string; duration: string; challengeId?: string;
   }>();
   const { theme } = useSettingsStore();
-  const { personalBests, setPersonalBests, addXP, addCoins, updateUser } = useUserStore();
+  const { personalBests, setPersonalBests, addXP, addCoins, updateUser, incrementCategoryPlayCount } = useUserStore();
   const C = Colors[theme];
 
   const numScore    = parseInt(score    ?? '0');
@@ -48,6 +48,9 @@ export default function ResultScreen() {
     // XP & coin ekle
     addXP(xpEarned);
     addCoins(coinsEarned);
+
+    // Kategori rotasyonu için oyun sayacını artır
+    if (mode) incrementCategoryPlayCount(mode);
 
     // Kişisel rekor güncelle
     if (isNewRecord) {

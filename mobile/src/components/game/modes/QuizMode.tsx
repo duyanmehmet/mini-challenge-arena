@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useGameStore } from '../../../store/gameStore';
 import { useSettingsStore } from '../../../store/settingsStore';
+import { useUserStore } from '../../../store/userStore';
 import { Colors } from '../../../constants/colors';
 import type { CategoryId } from '../../../constants/categories';
 import type { QuizQuestion } from '../../../types/quiz';
-import { getShuffledQuestions } from '../../../data/questions/index';
+import { getAdaptiveQuestions } from '../../../data/questions/index';
 import { assetService } from '../../../services/asset.service';
 import { TimerBar } from '../TimerBar';
 import { ScoreBar } from '../ScoreBar';
@@ -44,13 +45,13 @@ export interface Props {
 export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, onLifeLost, onAnswer }: Props) {
   const { addScore, combo } = useGameStore();
   const { theme } = useSettingsStore();
+  const { categoryPlayCounts } = useUserStore();
   const C = Colors[theme];
 
   const [pool] = useState<QuizQuestion[]>(() => {
     if (externalPool) return externalPool;
-    // Kolaydan zora sırala, aynı zorluk içinde karıştır
-    const raw = getShuffledQuestions(categoryId);
-    return [...raw].sort((a, b) => (a.d ?? 2) - (b.d ?? 2));
+    const playCount = categoryPlayCounts[categoryId] ?? 0;
+    return getAdaptiveQuestions(categoryId, playCount);
   });
 
   const [qIndex, setQIndex]     = useState(0);
