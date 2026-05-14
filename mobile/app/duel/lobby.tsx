@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
-r 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { Colors } from '../../src/constants/colors';
