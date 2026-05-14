@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { useUserStore } from '../../src/store/userStore';

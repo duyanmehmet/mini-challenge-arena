@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
+  View, Text, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';

@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';

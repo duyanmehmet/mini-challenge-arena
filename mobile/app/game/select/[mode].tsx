@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSettingsStore } from '../../../src/store/settingsStore';
 import { useUserStore } from '../../../src/store/userStore';
