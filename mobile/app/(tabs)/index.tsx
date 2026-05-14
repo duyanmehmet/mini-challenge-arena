@@ -98,10 +98,11 @@ export default function HomeScreen() {
 
         {/* Satır 2: Özellikler */}
         <View style={[s.actionRow, { marginTop: -4 }]}>
-          <ActionBtn icon="📊" label="İstatistik" color={C.accentTeal} onPress={() => router.push('/stats' as any)} />
-          <ActionBtn icon="🛡️" label="Klan" color={C.accentTeal} onPress={() => router.push('/clan' as any)} />
-          <ActionBtn icon="⭐" label="Battle Pass" color="#f0c040" onPress={() => router.push('/battlepass' as any)} />
-          <ActionBtn icon="⚡" label="Challenge" color="#f0c040" onPress={() => router.push('/challenge' as any)} />
+          <ActionBtn icon="📊" label="İstatistik"  color={C.accentTeal}   onPress={() => router.push('/stats'      as any)} />
+          <ActionBtn icon="🛡️" label="Klan"        color={C.accentTeal}   onPress={() => router.push('/clan'       as any)} />
+          <ActionBtn icon="📋" label="Görevler"    color={C.accentPurple} onPress={() => router.push('/tasks'      as any)} />
+          <ActionBtn icon="⭐" label="Battle Pass" color="#f0c040"        onPress={() => router.push('/battlepass' as any)} />
+          <ActionBtn icon="⚡" label="Challenge"   color="#f0c040"        onPress={() => router.push('/challenge'  as any)} />
         </View>
 
         {/* Kategoriler — gruplu */}
@@ -178,7 +179,9 @@ function DailyTasksSection({ C, s }: any) {
     <View style={s.section}>
       <View style={s.sectionHeader}>
         <Text style={[s.sectionTitle, { color: C.textPrimary }]}>📋 Günlük Görevler</Text>
-        <Text style={[s.sectionSub, { color: C.textSecondary }]}>{done}/{dailyTasks.length} tamamlandı</Text>
+        <TouchableOpacity onPress={() => router.push('/tasks' as any)}>
+          <Text style={[s.sectionSub, { color: C.accentTeal }]}>{done}/{dailyTasks.length} • Tümünü Gör →</Text>
+        </TouchableOpacity>
       </View>
       {dailyTasks.length === 0 ? (
         <Text style={[s.emptyText, { color: C.textSecondary }]}>Görevler yükleniyor...</Text>

@@ -8,13 +8,13 @@ const loadSound = (path: any) => {
 };
 
 const SOUNDS: Record<string, any> = {
-  hit:       loadSound(require('../../assets/sounds/hit.mp3')),
-  miss:      loadSound(require('../../assets/sounds/miss.mp3')),
-  combo:     loadSound(require('../../assets/sounds/combo.mp3')),
-  win:       loadSound(require('../../assets/sounds/win.mp3')),
-  countdown: loadSound(require('../../assets/sounds/countdown.mp3')),
-  goal:      loadSound(require('../../assets/sounds/goal.mp3')),
-  levelup:   loadSound(require('../../assets/sounds/levelup.mp3')),
+  hit:       loadSound(require('../../assets/sounds/hit.wav')),
+  miss:      loadSound(require('../../assets/sounds/miss.wav')),
+  combo:     loadSound(require('../../assets/sounds/combo.wav')),
+  win:       loadSound(require('../../assets/sounds/win.wav')),
+  countdown: loadSound(require('../../assets/sounds/countdown.wav')),
+  goal:      loadSound(require('../../assets/sounds/goal.wav')),
+  levelup:   loadSound(require('../../assets/sounds/levelup.wav')),
 };
 
 // Yüklenmiş ses nesnelerini cache'le (performans için)
