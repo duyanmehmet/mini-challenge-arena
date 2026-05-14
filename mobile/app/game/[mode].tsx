@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert } `r
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useGameStore } from '../../src/store/gameStore';
