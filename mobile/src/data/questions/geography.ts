@@ -72,7 +72,29 @@ const questions: QuizQuestion[] = [
   { q: '"Kapadokya" bölgesi UNESCO listesine hangi özelliğiyle girdi?', a: ['Tarihi kaleler', 'Peri bacaları ve yeraltı şehirleriyle', 'Antik tiyatrolar', 'Roma köprüleri'], c: 1, e: 'Kapadokya\'nın UNESCO Dünya Mirası statüsü; benzersiz kaya oluşumları (peri bacaları), yer altı şehirleri ve Hristiyan kiliselerine dayanır.' },
   { q: 'Türkiye\'de zeytin üretimi hangi bölgede yoğunlaşır?', a: ['Karadeniz', 'İç Anadolu', 'Ege ve Akdeniz', 'Doğu Anadolu'], c: 2, e: 'Türkiye\'nin zeytin üretiminin %90\'ı Ege ve Akdeniz kıyılarında gerçekleşir; Ayvalık, Edremit ve Gemlik meşhur zeytin merkezleridir.' },
   { q: 'Türkiye hangi iki ülke arasında coğrafi köprü işlevi görür?', a: ['Rusya-İran', 'Avrupa-Asya', 'Afrika-Asya', 'Orta Doğu-Afrika'], c: 1, e: 'Türkiye hem Avrupa\'ya hem Asya\'ya kıyısı olan ve iki kıtayı birbirine bağlayan stratejik bir köprü konumundadır.' },
-  { q: '"Konya Havzası" hangi nehirle beslenir?', a: ['Kızılırmak', 'Seyhan', 'Çarşamba Çayı', 'Çarşamba ve Meram'], c: 3, e: 'Konya Kapalı Havzası dışa akmaz; Çarşamba Çayı ve Meram Deresi başlıca kollarıdır. Büyüklük açısından Türkiye\'nin en geniş kapalı havzasıdır.' },
+  { q: '"Konya Havzası" hangi nehirle beslenir?', a: ['Kızılırmak', 'Seyhan', 'Çarşamba Çayı', 'Çarşamba ve Meram'], c: 3, e: 'Konya Kapalı Havzası dışa akmaz; Çarşamba Çayı ve Meram Deresi başlıca kollarıdır.' },
+
+  // ── YENİ SORULAR ──────────────────────────────────────────────────
+  { q: 'Japonya\'nın başkenti neresidir?', a: ['Osaka', 'Kyoto', 'Tokyo', 'Hiroshima'], c: 2, e: 'Tokyo, 37 milyonu aşan metropolitan nüfusuyla dünyanın en kalabalık şehir aglomerasyonudur.', d: 1 },
+  { q: 'Kanada\'nın başkenti neresidir?', a: ['Toronto', 'Vancouver', 'Montreal', 'Ottawa'], c: 3, e: 'Ottawa, ülkenin en büyük şehri Toronto\'ya rağmen 1857\'de başkent seçilmiştir.', d: 1 },
+  { q: 'Afrika\'nın yüzölçümü bakımından en büyük ülkesi hangisidir?', a: ['Sudan', 'Libya', 'Cezayir', 'Kongo'], c: 2, e: 'Cezayir, 2,38 milyon km² ile Afrika\'nın en büyük ülkesidir.', d: 1 },
+  { q: 'Avrupa kıtasının en küçük ülkesi hangisidir?', a: ['Liechtenstein', 'Monaco', 'San Marino', 'Vatikan'], c: 3, e: 'Vatikan, 0,44 km² ile dünyanın en küçük bağımsız devletidir.', d: 1 },
+  { q: 'Amazon nehrinin ağzı hangi ülkededir?', a: ['Peru', 'Kolombiya', 'Brezilya', 'Venezuela'], c: 2, e: 'Amazon, Peru\'da doğarak Brezilya üzerinden Atlantik Okyanusu\'na dökülür.', d: 1 },
+  { q: 'Afrika\'nın en yüksek dağı hangisidir?', a: ['Kenya Dağı', 'Kilimanjaro', 'Ruwenzori', 'Atlas Dağları'], c: 1, e: 'Kilimanjaro, 5895 m ile Afrika\'nın en yüksek noktasıdır; Tanzanya\'da yer alır.', d: 1 },
+  { q: 'Büyük Mercan Resifi hangi ülkenin kıyılarında yer alır?', a: ['Yeni Zelanda', 'Endonezya', 'Avustralya', 'Filipinler'], c: 2, e: 'Büyük Mercan Resifi, Avustralya\'nın kuzeydoğu kıyısında yaklaşık 2.300 km uzunluğuyla dünyanın en büyük mercan resif sistemidir.', d: 1 },
+  { q: 'Dünyanın en kurak yeri neresidir?', a: ['Sahra Çölü', 'Gobi Çölü', 'Atacama Çölü', 'Arabistan Çölü'], c: 2, e: 'Atacama Çölü (Şili), yüzyıllardır hiç yağış kaydedilmemiş noktaları olan dünyanın en kurak yeridir.', d: 2 },
+  { q: 'Süveyş Kanalı hangi iki su kütlesini birbirine bağlar?', a: ['Atlantik-Pasifik', 'Akdeniz-Kızıldeniz', 'Ege-Karadeniz', 'Hazar-Aral'], c: 1, e: 'Süveyş Kanalı, Akdeniz\'i Kızıldeniz\'e bağlayarak Avrupa ile Asya arası deniz yolunu kısaltır.', d: 1 },
+  { q: 'Avrupa\'nın en yüksek dağı hangisidir?', a: ['Mont Blanc', 'Matterhorn', 'Elbrus', 'Gran Paradiso'], c: 2, e: 'Elbrus Dağı (5642 m), Kafkasya\'da Rusya sınırında bulunur ve Avrupa\'nın en yüksek noktasıdır.', d: 2 },
+  { q: 'Dünyanın en büyük yüzey alanına sahip tatlı su gölü hangisidir?', a: ['Baykal', 'Huron', 'Süperior', 'Victoria'], c: 2, e: 'Süperior Gölü, yaklaşık 82.000 km² ile dünyanın en büyük yüzey alanına sahip tatlı su gölüdür.', d: 2 },
+  { q: 'Güney Amerika\'da en fazla ülkeyle sınır paylaşan ülke hangisidir?', a: ['Arjantin', 'Kolombiya', 'Peru', 'Brezilya'], c: 3, e: 'Brezilya, 9 komşusuyla Güney Amerika\'da en fazla ülkeyle sınır paylaşan ülkedir.', d: 2 },
+  { q: 'Dünyanın tuzluluk oranı en yüksek gölü hangisidir?', a: ['Ölü Deniz', 'Hazar Denizi', 'Büyük Tuz Gölü', 'Van Gölü'], c: 0, e: 'Ölü Deniz, %33\'ü aşan tuzlulukla dünyanın en tuzlu doğal su kütlesidir.', d: 2 },
+  { q: '"Ozon deliği" en belirgin hangi kutbun üzerinde gözlemlenir?', a: ['Kuzey Kutbu', 'Güney Kutbu (Antarktika)', 'Ekvator', 'Her iki kutup eşit'], c: 1, e: 'Ozon incelmesi Antarktika üzerinde en belirgindir; soğuk stratosferdeki kimyasal reaksiyonlar ozon tabakasını inceltir.', d: 2 },
+  { q: 'Victoria Çağlayanları hangi iki ülke arasındadır?', a: ['Kenya-Tanzanya', 'Zambiya-Zimbabwe', 'Mozambik-Malawi', 'Botsvana-Namibya'], c: 1, e: 'Victoria Çağlayanları, Zambezi Nehri üzerinde Zambiya-Zimbabwe sınırında yer alır.', d: 2 },
+  { q: 'Tamamen başka bir ülkenin topraklarıyla çevrili olan "enclave" ülke hangisidir?', a: ['San Marino', 'Lesotho', 'Vatikan', 'Monaco'], c: 1, e: 'Lesotho, tamamen Güney Afrika Cumhuriyeti topraklarıyla çevrili bir iç (enclave) devletidir.', d: 3 },
+  { q: 'Dünyanın en yüksek şelalesi hangisidir?', a: ['Niagara', 'Iguazu', 'Angel Şelalesi', 'Victoria'], c: 2, e: 'Venezuela\'daki Angel Şelalesi, 979 m yüksekliğiyle dünyanın en yüksek şelalesıdır.', d: 2 },
+  { q: 'Hangi kıta tamamen Güney Yarımküre\'de yer alır?', a: ['Asya', 'Afrika', 'Antarktika', 'Avustralya'], c: 2, e: 'Antarktika, tamamen Güney Yarımküre\'de ve Güney Kutbu\'nun çevresinde yer alan tek kıtadır.', d: 2 },
+  { q: 'Türkiye\'nin 7 coğrafi bölgesinden hangisi en büyüktür?', a: ['İç Anadolu', 'Doğu Anadolu', 'Karadeniz', 'Marmara'], c: 1, e: 'Doğu Anadolu Bölgesi, yaklaşık 163.000 km² ile Türkiye\'nin en büyük coğrafi bölgesidir.', d: 2 },
+  { q: 'Güney Afrika Cumhuriyeti\'nin kaç başkenti vardır?', a: ['1', '2', '3', '4'], c: 2, e: 'GAC\'ın 3 başkenti vardır: yürütme (Pretoria), yasama (Cape Town) ve yargı (Bloemfontein).', d: 2 },
 ];
 
 export default questions;

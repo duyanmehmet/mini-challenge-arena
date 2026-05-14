@@ -67,6 +67,29 @@ const questions: QuizQuestion[] = [
   { q: 'Dünya\'da en çok İzlenen spor karşılaşması hangisidir?', a: ['Super Bowl', 'Champions League Final', 'FIFA Dünya Kupası Finali', 'Tour de France'], c: 2, e: 'FIFA Dünya Kupası Finali, yaklaşık 1 milyar izleyiciyle dünyanın en çok izlenen tek spor karşılaşmasıdır.' },
   { q: '"Badminton" sporu hangi ülkede en çok oynanır?', a: ['İngiltere', 'Hindistan', 'Çin ve Endonezya', 'Danimarka'], c: 2, e: 'Çin ve Endonezya, badmintonda küresel egemenliği paylaşır; olimpiyat ve dünya şampiyonluklarında sürekli zirvededir.' },
   { q: 'Türkiye\'nin ilk olimpiyat madalyası hangi yılda ve branşta kazanıldı?', a: ['1936 Güreş', '1948 Atletizm', '1928 Halter', '1952 Güreş'], c: 0, e: 'Türkiye, 1936 Berlin Olimpiyatları\'nda güreşte Yaşar Erkan ile ilk olimpiyat altın madalyasını kazandı.' },
+
+  // ── YENİ SORULAR ──────────────────────────────────────────────────
+  { q: 'Futbolda bir maç kaç dakika sürer?', a: ['80 dakika', '90 dakika', '100 dakika', '120 dakika'], c: 1, e: 'Normal futbol maçı 2×45 dakika, toplamda 90 dakikadır.', d: 1 },
+  { q: 'Hangi ülke 2018 FIFA Dünya Kupası\'nı kazandı?', a: ['Hırvatistan', 'Belçika', 'Fransa', 'İngiltere'], c: 2, e: 'Fransa, 2018 Rusya Dünya Kupası finalinde Hırvatistan\'ı 4-2 yenerek şampiyon oldu.', d: 1 },
+  { q: 'NBA\'de hangi şehrin takımı "Lakers" olarak bilinir?', a: ['Chicago', 'Boston', 'Los Angeles', 'Miami'], c: 2, e: 'Los Angeles Lakers, NBA tarihinin en çok şampiyonluk kazanan takımlarından biridir.', d: 1 },
+  { q: 'Olimpiyat ateşi ilk olarak hangi ülkeden yakılır?', a: ['Fransa', 'İtalya', 'Yunanistan', 'İsviçre'], c: 2, e: 'Olimpiyat meşalesi her zaman Yunanistan\'ın Olympia kentinde güneş ışığıyla yakılır.', d: 1 },
+  { q: 'Formula 1\'de bir yarışı birinci bitiren pilot kaç puan alır?', a: ['10 puan', '15 puan', '25 puan', '30 puan'], c: 2, e: 'F1\'de birinci gelen pilot 25 puan, ikinci 18, üçüncü 15 puan alır.', d: 1 },
+  { q: 'Hangi Türk boksör profesyonel arenada dünya şampiyonluğu kazanmıştır?', a: ['Sefer Seferoğlu', 'Sinan Şamil Sam', 'Burak Can Madenci', 'Hüseyin Tosun'], c: 1, e: 'Sinan Şamil Sam, 2004\'te WBA ağır sıklet dünya şampiyonu oldu.', d: 1 },
+  { q: 'Türkiye Kadın Milli Voleybol Takımı hangi yıl Avrupa şampiyonu oldu?', a: ['2003', '2010', '2015', '2019'], c: 2, e: 'Türkiye, 2015 Avrupa Şampiyonası\'nda Hollanda\'yı finalde yenerek şampiyon oldu.', d: 1 },
+  { q: '"Penaltı vuruşu" futbolda kaç metreden atılır?', a: ['9 metre', '11 metre', '13 metre', '16.5 metre'], c: 1, e: 'Penaltı noktası kale çizgisine tam 11 metre uzaklıktadır.', d: 1 },
+  { q: 'Tenis\'te "deuce" ne anlama gelir?', a: ['Maç bitti', 'Her iki oyuncu 40-40 eşitliğe ulaştı', 'İkinci set', 'Çift hata'], c: 1, e: 'Deuce, her iki oyuncunun da 40-40\'a ulaştığı ve birinin 2 ardışık sayı kazanması gereken durumdur.', d: 1 },
+  { q: 'Golf\'te "birdie" ne demektir?', a: ['Par\'ın 2 üstü', 'Par\'ın 1 altı', 'Par\'ın 1 üstü', 'Par\'ın 3 altı'], c: 1, e: 'Birdie, bir deliği par sayısının 1 altında tamamlamaktır.', d: 1 },
+  { q: 'Formula 1\'de "DRS" ne anlama gelir?', a: ['Çift Yol Sistemi', 'Sürükleme Azaltma Sistemi', 'Dinamik Direksiyon Sistemi', 'Direkt Fren Sistemi'], c: 1, e: 'DRS (Drag Reduction System) pilot belirlenen bölgelerde arka kanat açıklığını artırarak hızlanma sağlar.', d: 2 },
+  { q: 'Anadolu Efes hangi yıl EuroLeague şampiyonu oldu?', a: ['2018', '2021', '2022', '2023'], c: 1, e: 'Anadolu Efes, 2021 EuroLeague finalinde Barcelona\'yı yenerek şampiyon oldu.', d: 2 },
+  { q: '"Yüksek atlama"da hangi teknik dünya rekoru için kullanılmaktadır?', a: ['Makas tekniği', 'Merdiven tekniği', 'Fosbury Flop', 'Yan yatış'], c: 2, e: 'Fosbury Flop, 1968 Olimpiyatları\'nda Dick Fosbury\'nin uyguladığı sırt üstü geçiş tekniğidir.', d: 2 },
+  { q: 'Türk güreşçi Taha Akgül kaç kez serbest güreş dünya şampiyonu oldu?', a: ['2', '3', '4', '5'], c: 3, e: 'Taha Akgül, 125 kg serbest güreş kategorisinde 5 kez dünya şampiyonu oldu.', d: 2 },
+  { q: 'Türk güreşçi Rıza Kayaalp kaç kez Grekoromen güreş dünya şampiyonu oldu?', a: ['3', '4', '5', '7'], c: 3, e: 'Rıza Kayaalp, 130 kg Grekoromen güreşte 7 kez dünya şampiyonu oldu.', d: 2 },
+  { q: 'Türkiye\'de "Kırkpınar" güreşlerinde birinci gelen pehlivan ne kazanır?', a: ['Para ödülü', 'Altın kemer', 'Arazi', 'Kupa ve madalya'], c: 1, e: 'Kırkpınar başpehlivanı Altın Kemer\'e layık görülür; 3 yıl üst üste kazanana kalıcı olarak verilir.', d: 2 },
+  { q: 'Hangi Türk halterci 2000 Sidney Olimpiyatları\'nda altın madalya kazandı?', a: ['Naim Süleymanoğlu', 'Halil Mutlu', 'Taner Sağır', 'Hüseyin Tavmanlı'], c: 1, e: 'Halil Mutlu, 2000 Sidney Olimpiyatları\'nda 56 kg kategorisinde altın madalya kazandı.', d: 2 },
+  { q: 'Fenerbahçe Beko\'nun EuroLeague\'deki başarısı nedir?', a: ['Şampiyon (2x)', 'Finalist', 'Yarı finalist', 'Çeyrek finalist'], c: 0, e: 'Fenerbahçe Beko, 2017 ve 2023\'te EuroLeague şampiyonu oldu.', d: 2 },
+  { q: 'Michael Schumacher ilk F1 şampiyonluğunu hangi takımla kazandı?', a: ['Ferrari', 'Mercedes', 'Benetton', 'McLaren'], c: 2, e: 'Schumacher ilk iki şampiyonluğunu (1994, 1995) Benetton\'la kazandı.', d: 3 },
+  { q: 'F1\'de "undercut stratejisi" ne demektir?', a: ['Rakipten önce pit stop yapıp hız avantajı kazanmak', 'Ağırlık azaltmak', 'Geç frenleme', 'Düşük basınçlı lastik'], c: 0, e: 'Undercut; rakipten 1-2 tur önce pit stop yaparak taze lastikle hızlanmak ve önde çıkmak stratejisidir.', d: 3 },
+  { q: 'Toprak Razgatlıoğlu hangi şampiyonayı kazanarak Türkiye\'nin ilk dünya şampiyonu oldu?', a: ['Kenan Sofuoğlu', 'Ali Sofuoğlu', 'Toprak Razgatlıoğlu', 'Deniz Öncü'], c: 2, e: 'Toprak Razgatlıoğlu, 2021\'de Superbike Dünya Şampiyonası\'nı kazandı.', d: 3 },
 ];
 
 export default questions;

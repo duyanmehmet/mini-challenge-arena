@@ -99,6 +99,23 @@ const questions: QuizQuestion[] = [
   { q: 'Türk hamam geleneği kaç yüzyıllık bir geçmişe sahiptir?', a: ['3', '5', '7', '10'], c: 2, e: 'Türk hamamı, Bizans ve Roma hamam geleneğinden evrilmiştir; 7 yüzyıllık geçmişiyle hem temizlik hem sosyal bir buluşma mekânı olmuştur.' },
   { q: 'Türkiye\'nin hangi şehri "Türkiye\'nin mutfağı" olarak bilinir?', a: ['İstanbul', 'Adana', 'Gaziantep', 'Konya'], c: 2, e: 'Gaziantep, 400\'den fazla tescilli yemeğiyle "Türkiye\'nin mutfağı" unvanını taşır; UNESCO Gastronomi Şehirleri Ağı\'nın ilk Türk üyesidir.' },
   { q: '"Gastronomi şehri" unvanını UNESCO\'dan alan ilk Türk şehri hangisidir?', a: ['İstanbul', 'Adana', 'Gaziantep', 'Hatay'], c: 2, e: 'Gaziantep 2015\'te UNESCO Yaratıcı Şehirler Ağı\'na Gastronomi Şehri olarak kabul edildi; baklava ve kebabıyla dünyaca tanınır.' },
+
+  // ── YENİ SORULAR ──────────────────────────────────────────────────
+  { q: '"Pamukkale" hangi ile bağlıdır?', a: ['Muğla', 'Denizli', 'Aydın', 'Afyonkarahisar'], c: 1, e: 'Pamukkale Denizli iline bağlıdır; beyaz travertenler ve antik Hierapolis ile UNESCO Dünya Mirası\'ndadır.', d: 1 },
+  { q: 'Türk edebiyatından Nobel Edebiyat Ödülü\'nü kazanan yazar kimdir?', a: ['Yaşar Kemal', 'Nazım Hikmet', 'Orhan Pamuk', 'Ahmet Hamdi Tanpınar'], c: 2, e: 'Orhan Pamuk, 2006\'da Nobel Edebiyat Ödülü\'nü kazanan ilk ve tek Türk yazarıdır.', d: 1 },
+  { q: 'Türkiye\'nin milli muharip uçağının adı nedir?', a: ['Bayraktar TB2', 'HÜRKUŞ', 'KAAN', 'Akıncı'], c: 2, e: 'KAAN, TUSAŞ tarafından geliştirilen Türkiye\'nin ilk milli muharip uçağıdır; 2023\'te ilk uçuşunu yaptı.', d: 2 },
+  { q: '"Bayraktar TB2" insansız hava aracını hangi şirket üretmektedir?', a: ['ROKETSAN', 'ASELSAN', 'Baykar Teknoloji', 'TUSAŞ'], c: 2, e: 'Baykar Teknoloji, dünyada en çok satılan silahlı insansız hava araçlarından olan TB2\'yi üretmektedir.', d: 1 },
+  { q: '"Mesnevi" eserini kim yazmıştır?', a: ['Yunus Emre', 'Hacı Bektaş Veli', 'Mevlana Celaleddin Rumi', 'Fuzuli'], c: 2, e: 'Mesnevi, 13. yüzyılda Mevlana Celaleddin Rumi tarafından Farsça yazılmış 25.700 beyitten oluşan mistik şiir külliyatıdır.', d: 2 },
+  { q: 'TBMM\'de kaç milletvekili görev yapar?', a: ['450', '500', '550', '600'], c: 3, e: '2017 anayasa referandumuyla TBMM\'nin sandalye sayısı 550\'den 600\'e çıkarıldı.', d: 2 },
+  { q: 'Türkiye\'nin ilk kadın savaş pilotu kimdir?', a: ['Sabiha Gökçen', 'Halide Edip Adıvar', 'Afet İnan', 'Latife Uşaklıgil'], c: 0, e: 'Sabiha Gökçen, Atatürk\'ün manevi kızı olup 1937\'de savaş pilotluğu sertifikası alan ilk Türk ve dünya kadınlarından biridir.', d: 2 },
+  { q: '"Karagöz ve Hacivat" hangi gösteri türünü temsil eder?', a: ['Tiyatro', 'Gölge oyunu', 'Kukla tiyatrosu', 'Opera'], c: 1, e: 'Karagöz ve Hacivat, UNESCO Somut Olmayan Kültürel Miras Listesi\'ndeki geleneksel Türk gölge oyunudur.', d: 1 },
+  { q: 'Türkiye\'nin en uzun nehri olan Kızılırmak nereye dökülür?', a: ['Ege Denizi', 'Marmara Denizi', 'Karadeniz', 'Akdeniz'], c: 2, e: 'Kızılırmak, 1355 km uzunluğuyla Türkiye\'nin en uzun nehri olup Karadeniz\'e dökülür.', d: 2 },
+  { q: 'Göbekli Tepe hangi ilde yer alır?', a: ['Gaziantep', 'Adıyaman', 'Şanlıurfa', 'Diyarbakır'], c: 2, e: 'Göbekli Tepe, Şanlıurfa\'da bulunan MÖ 10.000\'e tarihlenen dünyanın en eski tapınak kompleksidir.', d: 2 },
+  { q: 'Galatasaray\'ın UEFA Kupası\'nı kazandığı yıl hangisidir?', a: ['1998', '1999', '2000', '2001'], c: 2, e: 'Galatasaray 2000\'de UEFA Kupası\'nı kazandı; aynı yıl UEFA Süper Kupası\'nı da elde etti.', d: 2 },
+  { q: 'Türk ressam Osman Hamdi Bey\'in en ünlü tablosunun adı nedir?', a: ['Mihrimah Sultan', 'Kaplumbağa Terbiyecisi', 'Sultanın Dansçıları', 'Şeyh Sadi\'yi Ziyaret'], c: 1, e: '"Kaplumbağa Terbiyecisi" (1906), Osman Hamdi Bey\'in en ünlü tablosudur.', d: 2 },
+  { q: 'Çanakkale Savaşı hangi yıllar arasında gerçekleşti?', a: ['1912-1913', '1914', '1915-1916', '1918'], c: 2, e: 'Çanakkale Savaşı 1915-1916 yılları arasında gerçekleşti; Mustafa Kemal\'in önderliği tarihe geçti.', d: 1 },
+  { q: 'Mimar Sinan\'ın kendi şaheseri olarak adlandırdığı yapı hangisidir?', a: ['Süleymaniye Camii', 'Şehzade Camii', 'Selimiye Camii', 'Rüstem Paşa Camii'], c: 2, e: 'Mimar Sinan, Edirne\'deki Selimiye Camii\'ni "üstün eser" olarak nitelendirmiştir; 71 yaşında tamamlamıştır.', d: 2 },
+  { q: 'Türkiye\'nin ilk yerli gözlem uydusu hangisidir?', a: ['GOKTURK-1', 'İMECE', 'BILSAT', 'RASAT'], c: 1, e: 'İMECE, 2023\'te SpaceX roketi ile uzaya fırlatılan Türkiye\'nin ilk yerli gözlem uydusudur.', d: 2 },
 ];
 
 export default questions;
