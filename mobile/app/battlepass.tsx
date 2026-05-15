@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { ScreenHeader } from '../src/components/ui/ScreenHeader';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
@@ -86,13 +87,7 @@ export default function BattlePassScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={[s.back, { color: C.textSecondary }]}>← Geri</Text>
-        </TouchableOpacity>
-        <Text style={[s.title, { color: C.textPrimary }]}>⭐ Battle Pass</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="⭐ Battle Pass" />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Sezon kartı */}
