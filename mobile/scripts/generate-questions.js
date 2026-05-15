@@ -178,8 +178,8 @@ async function main() {
     console.error(`Geçerli kategoriler:\n  ${VALID_CATEGORIES.join(', ')}\n`);
     process.exit(1);
   }
-  if (isNaN(count) || count < 1 || count > 300) {
-    console.error('❌ --count 1-300 arasında olmalı');
+  if (isNaN(count) || count < 1 || count > 5000) {
+    console.error('❌ --count 1-5000 arasında olmalı');
     process.exit(1);
   }
 
@@ -217,7 +217,7 @@ async function main() {
         break;
       } catch (err) {
         console.warn(`  ⚠️  Deneme ${attempt}/3: ${err.message.slice(0, 80)}`);
-        if (attempt < 3) { await sleep(3000 * attempt); }
+        if (attempt < 3) { await sleep(8000 * attempt); }
         else { console.error('  ❌ 3 denemeden sonra bu batch atlandı'); }
       }
     }
@@ -231,7 +231,7 @@ async function main() {
     totalSkipped += result.skipped.length;
     remaining    -= result.valid.length;
 
-    if (remaining > 0) await sleep(800); // rate limit
+    if (remaining > 0) await sleep(3000); // rate limit bekleme
   }
 
   if (allValid.length === 0) {
