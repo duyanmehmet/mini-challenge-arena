@@ -13,6 +13,10 @@ import kids      from './kids';
 import license   from './license';
 import medical   from './medical';
 import economy   from './economy';
+import arabic    from './arabic';
+import french    from './french';
+import german    from './german';
+import spanish   from './spanish';
 
 const QUESTION_BANKS: Record<CategoryId, QuizQuestion[]> = {
   history,
@@ -27,6 +31,10 @@ const QUESTION_BANKS: Record<CategoryId, QuizQuestion[]> = {
   license,
   medical,
   economy,
+  arabic,
+  french,
+  german,
+  spanish,
 };
 
 export function getQuestions(categoryId: CategoryId): QuizQuestion[] {

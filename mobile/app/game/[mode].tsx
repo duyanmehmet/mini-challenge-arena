@@ -14,6 +14,7 @@ const REVIVE_COST = 50;
 const QUIZ_CATEGORIES: CategoryId[] = [
   'history','geography','science','general','art','cinema','sports','turkey',
   'kids','license','medical','economy',
+  'arabic','french','german','spanish',
 ];
 
 export default function GameScreen() {

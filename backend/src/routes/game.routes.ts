@@ -10,6 +10,8 @@ const VALID_MODES = [
   "history","geography","science","general","art","cinema","sports","turkey",
   // Özel
   "kids","license","medical","economy",
+  // Dil
+  "arabic","french","german","spanish",
   // Eski (geriye dönük uyumluluk)
   "reflex","memory","football","word","attention","escape","math","english",
 ];
