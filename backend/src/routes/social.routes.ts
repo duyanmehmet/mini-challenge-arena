@@ -30,10 +30,10 @@ router.get("/friends", authMiddleware, async (req: AuthRequest, res) => {
       f.requester_id === uid ? f.receiver_id : f.requester_id);
     const friends = await db("users")
       .whereIn("id", friendIds)
-      .select("id","username","avatar_id","weekly_score","current_league");
+      .select("id","username","avatar_id","weekly_score","current_league","level");
     res.json(friends.map((f: any) => ({
-      userId: f.id, username: f.username, avatarId: f.avatar_id,
-      weeklyScore: f.weekly_score, league: f.current_league,
+      id: f.id, userId: f.id, username: f.username, avatarId: f.avatar_id,
+      weeklyScore: f.weekly_score, league: f.current_league, level: f.level ?? 1,
     })));
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });

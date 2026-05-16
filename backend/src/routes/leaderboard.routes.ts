@@ -53,4 +53,31 @@ router.get("/friends", authMiddleware, async (req: AuthRequest, res) => {
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
+router.get("/my-rank", authMiddleware, async (req: AuthRequest, res) => {
+  const period = (req.query.period as string) ?? "weekly";
+  const uid = req.userId!;
+  try {
+    let rows: any[];
+    if (period === "weekly") {
+      rows = await db("users").select("id").orderBy("weekly_score", "desc");
+    } else if (period === "daily") {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      rows = await db("game_results")
+        .where("played_at", ">=", since)
+        .groupBy("user_id")
+        .sum("score as total")
+        .orderBy("total", "desc")
+        .select("user_id as id");
+    } else {
+      rows = await db("personal_bests")
+        .groupBy("user_id")
+        .sum("score as total")
+        .orderBy("total", "desc")
+        .select("user_id as id");
+    }
+    const rank = rows.findIndex((r: any) => r.id === uid) + 1;
+    res.json({ rank: rank > 0 ? rank : null, total: rows.length });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
 export default router;

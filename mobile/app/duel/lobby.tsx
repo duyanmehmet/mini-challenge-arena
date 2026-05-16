@@ -18,12 +18,12 @@ interface Friend {
 }
 
 const DUEL_CATEGORIES = [
-  { id: 'general',   label: 'Genel Kültür', icon: '💡' },
-  { id: 'history',   label: 'Tarih',        icon: '🏺' },
-  { id: 'science',   label: 'Bilim',        icon: '🔬' },
-  { id: 'sports',    label: 'Spor',         icon: '⚽' },
-  { id: 'english',   label: 'İngilizce',    icon: '🇬🇧' },
-  { id: 'cinema',    label: 'Sinema',       icon: '🎬' },
+  { id: 'general',  label: 'Genel Kültür', icon: '💡' },
+  { id: 'history',  label: 'Tarih',        icon: '🏺' },
+  { id: 'science',  label: 'Bilim',        icon: '🔬' },
+  { id: 'sports',   label: 'Spor',         icon: '⚽' },
+  { id: 'cinema',   label: 'Sinema',       icon: '🎬' },
+  { id: 'geography',label: 'Coğrafya',     icon: '🌍' },
 ];
 
 export default function DuelLobbyScreen() {
@@ -68,13 +68,21 @@ export default function DuelLobbyScreen() {
   };
 
   const sendChallenge = () => {
+    if (!user?.emailVerified) {
+      Alert.alert('E-posta Doğrulanmamış', 'Düello için e-postanı doğrulaman gerekiyor.', [
+        { text: 'Kapat', style: 'cancel' },
+        { text: 'Doğrula', onPress: () => router.push({ pathname: '/(auth)/verify-email', params: { email: user?.email } } as any) },
+      ]);
+      return;
+    }
     if (!selectedFriend) {
       Alert.alert('Arkadaş Seç', 'Düello için bir arkadaş seç!');
       return;
     }
     const socket = socketService.getSocket();
     if (!socket) { Alert.alert('Bağlantı yok'); return; }
-    socket.emit('duel_invite', { targetId: selectedFriend.id, mode: selectedCat });
+    const duelId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    socket.emit('duel_invite', { friendId: selectedFriend.id, mode: selectedCat, duelId });
     setWaiting(true);
   };
 

@@ -7,17 +7,17 @@ const config: { [key: string]: Knex.Config } = {
     client: "sqlite3",
     connection: { filename: "./mca.sqlite" },
     useNullAsDefault: true,
-    migrations: { directory: "./migrations" },
+    migrations: { directory: "./migrations", loadExtensions: ['.ts'] },
     seeds: { directory: "./seeds" },
   },
   production: {
     client: "pg",
     connection: {
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }, // Railway/Render için
+      ssl: { rejectUnauthorized: false },
     },
     pool: { min: 2, max: 10 },
-    migrations: { directory: "./migrations" },
+    migrations: { directory: "./migrations", loadExtensions: ['.ts'] },
     seeds: { directory: "./seeds" },
   },
 };

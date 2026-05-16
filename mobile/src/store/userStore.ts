@@ -46,6 +46,7 @@ function normalizeUser(raw: any): User {
     streakCount: raw.streak_count ?? raw.streakCount ?? 0,
     maxStreak: raw.max_streak ?? raw.maxStreak ?? 0,
     unlockedAvatars: raw.unlockedAvatars ?? [1, 2, 3],
+    emailVerified: Boolean(raw.email_verified ?? raw.emailVerified ?? false),
   };
 }
 

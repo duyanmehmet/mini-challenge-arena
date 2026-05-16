@@ -33,7 +33,7 @@ function calcTier(seasonXp: number): number {
 router.get('/status', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const user = await db('users').where('id', req.userId).first();
-    const seasonXp = user?.xp ?? 0;
+    const seasonXp = user?.season_xp ?? user?.xp ?? 0;
     const currentTier = calcTier(seasonXp);
 
     // Hangi tier'lar talep edildi?

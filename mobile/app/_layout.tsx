@@ -184,7 +184,10 @@ export default function RootLayout() {
           <Stack.Screen name="clan"       options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="battlepass" options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="tasks"      options={{ animation: 'slide_from_right', animationDuration: 260 }} />
-          <Stack.Screen name="settings"   options={{ headerShown: true, title: 'Ayarlar', animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="settings"       options={{ headerShown: true, title: 'Ayarlar', animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="reset-password"   options={{ animation: 'fade', animationDuration: 300 }} />
+          <Stack.Screen name="privacy-policy"   options={{ animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="terms-of-service" options={{ animation: 'slide_from_right', animationDuration: 260 }} />
         </Stack>
       </View>
     </ErrorBoundary>

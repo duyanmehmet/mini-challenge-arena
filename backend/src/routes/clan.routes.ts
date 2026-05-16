@@ -110,6 +110,25 @@ router.get("/my", authMiddleware, async (req: AuthRequest, res) => {
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
+// Klan sohbeti — mesaj gönder
+router.post("/chat/:clanId", authMiddleware, async (req: AuthRequest, res) => {
+  const { message } = req.body;
+  if (!message || String(message).trim().length === 0)
+    return res.status(400).json({ message: "Mesaj boş olamaz." });
+  if (String(message).length > 300)
+    return res.status(400).json({ message: "Mesaj 300 karakterden uzun olamaz." });
+  try {
+    const user = await db("users").where({ id: req.userId, clan_id: req.params.clanId }).first();
+    if (!user) return res.status(403).json({ message: "Bu klanın üyesi değilsin." });
+    await db("clan_messages").insert({
+      id: uuidv4(), clan_id: req.params.clanId,
+      user_id: req.userId, username: user.username,
+      message: String(message).trim(),
+    });
+    res.json({ ok: true });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
 // Klan sohbeti — son 50 mesaj
 router.get("/chat/:clanId", authMiddleware, async (req: AuthRequest, res) => {
   try {

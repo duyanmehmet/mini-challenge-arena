@@ -21,6 +21,7 @@ router.get("/profile", authMiddleware, async (req: AuthRequest, res) => {
         avatarId: user.avatar_id, coins: user.coins, xp: user.xp, level: user.level,
         currentLeague: user.current_league, weeklyScore: user.weekly_score, isPremium: user.is_premium,
         streakCount: user.streak_count ?? 0, maxStreak: user.max_streak ?? 0,
+        emailVerified: user.email_verified ?? false,
       },
       badges,
       personalBests: pbs.map((p: any) => ({ mode: p.mode, score: p.score, achievedAt: p.achieved_at })),

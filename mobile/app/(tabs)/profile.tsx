@@ -122,6 +122,15 @@ export default function ProfileScreen() {
             </Text>
           )}
           <CoinDisplay amount={user.coins} size="lg" />
+          {/* E-posta doğrulama durumu */}
+          {!user.emailVerified && (
+            <TouchableOpacity
+              style={[s.verifyBanner, { backgroundColor: '#f39c1220', borderColor: '#f39c12' }]}
+              onPress={() => router.push({ pathname: '/(auth)/verify-email', params: { email: user.email } } as any)}
+            >
+              <Text style={[s.verifyText, { color: '#f39c12' }]}>⚠️ E-posta doğrulanmamış — doğrulamak için dokun</Text>
+            </TouchableOpacity>
+          )}
           {/* Klan bilgisi */}
           {(user as any).clanId && (
             <TouchableOpacity
@@ -278,5 +287,7 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   closeBtn: { marginTop: 0, padding: 12, alignItems: 'center' },
   clanBadge: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 6, borderWidth: 1.5 },
   clanBadgeText: { fontFamily: 'Nunito-Bold', fontSize: 13 },
+  verifyBanner: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1.5, marginTop: 4 },
+  verifyText: { fontFamily: 'Nunito-Bold', fontSize: 12, textAlign: 'center' },
   nameInput: { borderRadius: 12, padding: 14, fontSize: 16, borderWidth: 1.5, fontFamily: 'Nunito-Regular', marginTop: 8 },
 });

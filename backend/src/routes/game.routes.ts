@@ -70,6 +70,7 @@ router.post("/result", authMiddleware, async (req: AuthRequest, res) => {
     const currentMaxStreak = user.max_streak ?? 0;
     await db("users").where("id", userId).update({
       xp: newXP, level: newLevel,
+      season_xp: db.raw("COALESCE(season_xp, 0) + ?", [xpGained]),
       coins: db.raw("coins + ?", [coinsGained]),
       weekly_score: db.raw("weekly_score + ?", [score]),
       streak_count: newStreak,

@@ -14,6 +14,7 @@ export interface User {
   streakCount: number;
   maxStreak: number;
   unlockedAvatars: number[];
+  emailVerified: boolean;
 }
 
 

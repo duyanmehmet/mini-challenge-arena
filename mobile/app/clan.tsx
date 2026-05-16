@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, TextInput, ActivityIndicator, Alert, FlatList,
+  ScrollView, TextInput, ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -26,7 +26,15 @@ interface ClanMember {
   weekly_score: number;
 }
 
-type Tab = 'my' | 'search' | 'leaderboard';
+interface ChatMessage {
+  id: string;
+  user_id: string;
+  username: string;
+  message: string;
+  created_at: string;
+}
+
+type Tab = 'my' | 'chat' | 'search' | 'leaderboard';
 
 export default function ClanScreen() {
   const { theme } = useSettingsStore();
@@ -45,9 +53,16 @@ export default function ClanScreen() {
   const [newTag, setNewTag]         = useState('');
   const [newDesc, setNewDesc]       = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatSending, setChatSending] = useState(false);
+  const chatListRef = useRef<FlatList>(null);
 
   useEffect(() => { loadMyClan(); }, []);
   useEffect(() => { if (tab === 'leaderboard') loadLeaderboard(); }, [tab]);
+  useEffect(() => {
+    if (tab === 'chat' && myClan) loadChat();
+  }, [tab, myClan]);
 
   const loadMyClan = async () => {
     try {
@@ -75,6 +90,13 @@ export default function ClanScreen() {
   };
 
   const handleJoin = async (clanId: number) => {
+    if (!user?.emailVerified) {
+      Alert.alert('E-posta Doğrulanmamış', 'Klana katılmak için e-postanı doğrulaman gerekiyor.', [
+        { text: 'Kapat', style: 'cancel' },
+        { text: 'Doğrula', onPress: () => router.push({ pathname: '/(auth)/verify-email', params: { email: user?.email } } as any) },
+      ]);
+      return;
+    }
     try {
       await api.post(`/clan/join/${clanId}`);
       Alert.alert('✅ Başarılı', 'Klana katıldın!');
@@ -85,7 +107,35 @@ export default function ClanScreen() {
     }
   };
 
+  const loadChat = async () => {
+    if (!myClan) return;
+    try {
+      const res = await api.get(`/clan/chat/${myClan.id}`);
+      setChatMessages(res.data ?? []);
+      setTimeout(() => chatListRef.current?.scrollToEnd({ animated: false }), 100);
+    } catch {}
+  };
+
+  const handleSendChat = async () => {
+    if (!chatInput.trim() || !myClan) return;
+    setChatSending(true);
+    try {
+      await api.post(`/clan/chat/${myClan.id}`, { message: chatInput.trim() });
+      setChatInput('');
+      await loadChat();
+    } catch (e: any) {
+      Alert.alert('Hata', e.response?.data?.message ?? 'Mesaj gönderilemedi.');
+    } finally { setChatSending(false); }
+  };
+
   const handleCreate = async () => {
+    if (!user?.emailVerified) {
+      Alert.alert('E-posta Doğrulanmamış', 'Klan kurmak için e-postanı doğrulaman gerekiyor.', [
+        { text: 'Kapat', style: 'cancel' },
+        { text: 'Doğrula', onPress: () => router.push({ pathname: '/(auth)/verify-email', params: { email: user?.email } } as any) },
+      ]);
+      return;
+    }
     if (!newName.trim() || !newTag.trim()) {
       Alert.alert('Eksik Bilgi', 'Klan adı ve etiketi zorunludur.');
       return;
@@ -123,14 +173,14 @@ export default function ClanScreen() {
 
       {/* Tab Bar */}
       <View style={[s.tabBar, { backgroundColor: C.bgSecondary }]}>
-        {(['my', 'search', 'leaderboard'] as Tab[]).map((t) => (
+        {(['my', 'chat', 'search', 'leaderboard'] as Tab[]).map((t) => (
           <TouchableOpacity
             key={t}
             style={[s.tab, tab === t && { borderBottomColor: C.accentTeal, borderBottomWidth: 2 }]}
             onPress={() => setTab(t)}
           >
             <Text style={[s.tabText, { color: tab === t ? C.accentTeal : C.textSecondary }]}>
-              {t === 'my' ? 'Klanım' : t === 'search' ? 'Ara' : 'Sıralama'}
+              {t === 'my' ? 'Klanım' : t === 'chat' ? '💬' : t === 'search' ? 'Ara' : 'Sıralama'}
             </Text>
           </TouchableOpacity>
         ))}
@@ -233,6 +283,70 @@ export default function ClanScreen() {
             </View>
           )}
         </ScrollView>
+      )}
+
+      {/* CHAT */}
+      {tab === 'chat' && (
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          {!myClan ? (
+            <View style={s.emptyBox}>
+              <Text style={{ fontSize: 40 }}>💬</Text>
+              <Text style={[s.emptySub, { color: C.textSecondary }]}>Sohbet için önce bir klana katıl.</Text>
+            </View>
+          ) : (
+            <>
+              <FlatList
+                ref={chatListRef}
+                data={chatMessages}
+                keyExtractor={(m) => m.id}
+                contentContainerStyle={{ padding: 12, gap: 8 }}
+                ListEmptyComponent={
+                  <Text style={[s.emptySub, { color: C.textSecondary, textAlign: 'center', marginTop: 40 }]}>
+                    Henüz mesaj yok. İlk mesajı sen gönder!
+                  </Text>
+                }
+                renderItem={({ item }) => {
+                  const isMe = item.user_id === user?.id;
+                  return (
+                    <View style={[s.bubble, isMe ? s.bubbleMe : s.bubbleOther,
+                      { backgroundColor: isMe ? C.accentTeal : C.bgSecondary }]}>
+                      {!isMe && (
+                        <Text style={[s.bubbleUser, { color: C.accentTeal }]}>{item.username}</Text>
+                      )}
+                      <Text style={[s.bubbleText, { color: isMe ? '#fff' : C.textPrimary }]}>{item.message}</Text>
+                      <Text style={[s.bubbleTime, { color: isMe ? '#ffffff88' : C.textSecondary }]}>
+                        {new Date(item.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </View>
+                  );
+                }}
+                onContentSizeChange={() => chatListRef.current?.scrollToEnd({ animated: true })}
+              />
+              <View style={[s.chatInputRow, { backgroundColor: C.bgSecondary, borderTopColor: C.border }]}>
+                <TextInput
+                  style={[s.chatInput, { color: C.textPrimary, backgroundColor: C.bgTertiary }]}
+                  placeholder="Mesaj yaz..."
+                  placeholderTextColor={C.textSecondary}
+                  value={chatInput}
+                  onChangeText={setChatInput}
+                  maxLength={300}
+                  multiline
+                  returnKeyType="send"
+                  onSubmitEditing={handleSendChat}
+                />
+                <TouchableOpacity
+                  style={[s.sendBtn, { backgroundColor: C.accentTeal, opacity: chatSending ? 0.6 : 1 }]}
+                  onPress={handleSendChat}
+                  disabled={chatSending}
+                >
+                  {chatSending
+                    ? <ActivityIndicator color="#fff" size="small" />
+                    : <Text style={{ color: '#fff', fontSize: 18 }}>➤</Text>}
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </KeyboardAvoidingView>
       )}
 
       {/* SEARCH */}
@@ -362,4 +476,13 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   lbName: { fontFamily: 'Nunito-Bold', fontSize: 15 },
   lbSub: { fontFamily: 'Nunito-Regular', fontSize: 12 },
   lbScore: { fontFamily: 'Nunito-ExtraBold', fontSize: 16 },
+  bubble: { maxWidth: '80%', borderRadius: 16, padding: 10, gap: 2 },
+  bubbleMe: { alignSelf: 'flex-end', borderBottomRightRadius: 4 },
+  bubbleOther: { alignSelf: 'flex-start', borderBottomLeftRadius: 4 },
+  bubbleUser: { fontFamily: 'Nunito-Bold', fontSize: 11, marginBottom: 2 },
+  bubbleText: { fontFamily: 'Nunito-Regular', fontSize: 14, lineHeight: 20 },
+  bubbleTime: { fontFamily: 'Nunito-Regular', fontSize: 10, alignSelf: 'flex-end', marginTop: 2 },
+  chatInputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: 8, gap: 8, borderTopWidth: 1 },
+  chatInput: { flex: 1, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, fontFamily: 'Nunito-Regular', maxHeight: 100 },
+  sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

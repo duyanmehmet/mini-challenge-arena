@@ -14,19 +14,25 @@ const transporter = nodemailer.createTransport({
 
 export const emailService = {
   async sendPasswordReset(to: string, token: string): Promise<void> {
-    const resetUrl = `${process.env.APP_URL ?? "https://minichallengearena.com"}/reset-password?token=${token}`;
+    // Deep link — uygulamayı doğrudan reset-password ekranında açar
+    const deepLink = `zekameydani://reset-password?token=${token}`;
+    const webFallback = `${process.env.APP_URL ?? "https://zekameydani.com"}/reset-password?token=${token}`;
     await transporter.sendMail({
-      from: `"Mini Challenge Arena" <${process.env.EMAIL_USER}>`,
+      from: `"Zeka Meydanı" <${process.env.EMAIL_USER}>`,
       to,
       subject: "Şifre Sıfırlama",
       html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:auto">
-          <h2>⚡ Mini Challenge Arena</h2>
-          <p>Şifrenizi sıfırlamak için aşağıdaki bağlantıya tıklayın:</p>
-          <a href="${resetUrl}" style="display:inline-block;background:#e94560;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
-            Şifremi Sıfırla
+        <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
+          <h2 style="color:#e94560">🧠 Zeka Meydanı</h2>
+          <p>Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
+          <a href="${deepLink}" style="display:inline-block;background:#e94560;color:#fff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:16px">
+            🔑 Şifremi Sıfırla
           </a>
-          <p style="color:#888;font-size:12px;margin-top:16px">Bu bağlantı 1 saat geçerlidir. Siz talep etmediyseniz bu e-postayı görmezden gelin.</p>
+          <p style="color:#888;font-size:12px;margin-top:16px">
+            Buton çalışmazsa şu bağlantıyı kopyalayın:<br>
+            <a href="${webFallback}" style="color:#e94560">${webFallback}</a>
+          </p>
+          <p style="color:#888;font-size:12px">Bu bağlantı <strong>1 saat</strong> geçerlidir. Siz talep etmediyseniz bu e-postayı görmezden gelin.</p>
         </div>
       `,
     });

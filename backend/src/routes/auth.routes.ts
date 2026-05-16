@@ -17,6 +17,7 @@ function mapUser(u: any) {
     avatarId: u.avatar_id, coins: u.coins, xp: u.xp, level: u.level,
     currentLeague: u.current_league, weeklyScore: u.weekly_score, isPremium: u.is_premium,
     streakCount: u.streak_count ?? 0,
+    emailVerified: u.email_verified ?? false,
   };
 }
 
@@ -151,7 +152,7 @@ router.post("/verify-email", authLimiter, async (req, res) => {
   }
 });
 
-// ── Şifre sıfırlama ──
+// ── Şifre sıfırlama isteği ──
 router.post("/forgot-password", authLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "E-posta gerekli." });
@@ -160,13 +161,37 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
     const user = await db("users").where("email", email.toLowerCase()).first();
     if (user) {
       const resetToken = uuidv4();
-      // Token'ı kaydet (gerçek uygulamada ayrı tablo veya Redis)
-      await db("users").where("id", user.id).update({ reset_token: resetToken });
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 saat
+      await db("users").where("id", user.id).update({
+        reset_token: resetToken,
+        reset_token_expires: expiresAt.toISOString(),
+      });
       const { emailService } = await import("../services/email.service");
       await emailService.sendPasswordReset(email, resetToken).catch(() => {});
     }
     // Kullanıcı var olsa da olmasa da aynı yanıt (güvenlik)
     res.json({ message: "E-posta gönderildi (eğer hesap mevcutsa)." });
+  } catch {
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
+// ── Şifre sıfırlama onay ──
+router.post("/reset-password", authLimiter, async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword || newPassword.length < 6)
+    return res.status(400).json({ message: "Token ve en az 6 karakterli şifre gerekli." });
+
+  try {
+    const user = await db("users").where("reset_token", token).first();
+    if (!user) return res.status(400).json({ message: "Geçersiz veya süresi dolmuş token." });
+    if (user.reset_token_expires && new Date(user.reset_token_expires) < new Date())
+      return res.status(400).json({ message: "Token süresi dolmuş. Lütfen yeni bir sıfırlama isteği gönderin." });
+
+    const hash = await bcrypt.hash(newPassword, 12);
+    await db("users").where("id", user.id).update({ password_hash: hash, reset_token: null });
+
+    res.json({ message: "Şifreniz başarıyla güncellendi." });
   } catch {
     res.status(500).json({ message: "Sunucu hatası." });
   }

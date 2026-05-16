@@ -47,9 +47,9 @@ export default function DuelGameScreen() {
     const socket = socketService.getSocket();
     if (!socket) return;
 
-    // Sunucu her iki oyuncuya aynı soru havuzunu gönderir
-    socket.on('duel_questions', (data: { questions: QuizQuestion[] }) => {
-      setSharedPool(data.questions);
+    // Sunucu her iki oyuncuya start sinyali gönderir (questions null → her oyuncu kendi havuzunu kullanır)
+    socket.on('duel_questions', (data: { questions: QuizQuestion[] | null }) => {
+      if (data.questions && data.questions.length > 0) setSharedPool(data.questions);
       startCountdown();
     });
 
