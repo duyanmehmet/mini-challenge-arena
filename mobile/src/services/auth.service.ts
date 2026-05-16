@@ -16,6 +16,18 @@ export const authService = {
     return response.data;
   },
 
+  sendVerification: async (email: string) => {
+    const response = await api.post("/auth/send-verification", { email });
+    return response.data;
+  },
+
+  verifyEmail: async (email: string, code: string) => {
+    const response = await api.post("/auth/verify-email", { email, code });
+    const { user, token } = response.data;
+    await useUserStore.getState().setUser(user, token);
+    return response.data;
+  },
+
   logout: async () => {
     await useUserStore.getState().logout();
   },

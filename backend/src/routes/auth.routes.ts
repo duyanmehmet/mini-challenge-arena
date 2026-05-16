@@ -41,10 +41,16 @@ router.post("/register", authLimiter, async (req, res) => {
     const { DailyTaskService } = await import("../services/DailyTaskService");
     await DailyTaskService.ensureTasksForToday(userId);
 
-    // Hoş geldin e-postası (sessiz hata)
-    import("../services/email.service").then(({ emailService }) =>
-      emailService.sendWelcome(email, username).catch(() => {})
-    );
+    // Doğrulama kodu gönder (sessiz hata — network hatası kayıt akışını engellemesin)
+    import("../services/email.service").then(async ({ emailService }) => {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      await db("email_verifications").insert({
+        id: uuidv4(), user_id: userId, code,
+        expires_at: expiresAt.toISOString(), used: false,
+      });
+      emailService.sendVerificationCode(email.toLowerCase(), username, code).catch(() => {});
+    }).catch(() => {});
 
     res.status(201).json({ user: mapUser(user), token: signToken(userId) });
   } catch (err) {
@@ -83,6 +89,62 @@ router.post("/login", authLimiter, async (req, res) => {
 
     const updated = await db("users").where("id", user.id).first();
     res.json({ user: mapUser(updated), token: signToken(user.id) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
+// ── E-posta doğrulama kodu gönder ──
+router.post("/send-verification", authLimiter, async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "E-posta gerekli." });
+
+  try {
+    const user = await db("users").where("email", email.toLowerCase()).first();
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+    if (user.email_verified) return res.status(400).json({ message: "E-posta zaten doğrulanmış." });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 dakika
+
+    await db("email_verifications").where("user_id", user.id).delete();
+    await db("email_verifications").insert({
+      id: uuidv4(), user_id: user.id, code,
+      expires_at: expiresAt.toISOString(), used: false,
+    });
+
+    const { emailService } = await import("../services/email.service");
+    await emailService.sendVerificationCode(user.email, user.username, code).catch(() => {});
+
+    res.json({ message: "Doğrulama kodu e-posta adresinize gönderildi." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
+// ── E-posta doğrulama kodunu onayla ──
+router.post("/verify-email", authLimiter, async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) return res.status(400).json({ message: "E-posta ve kod gerekli." });
+
+  try {
+    const user = await db("users").where("email", email.toLowerCase()).first();
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+
+    const record = await db("email_verifications")
+      .where({ user_id: user.id, code, used: false })
+      .where("expires_at", ">", new Date().toISOString())
+      .first();
+
+    if (!record) return res.status(400).json({ message: "Kod hatalı veya süresi dolmuş." });
+
+    await db("email_verifications").where("id", record.id).update({ used: true });
+    await db("users").where("id", user.id).update({ email_verified: true });
+
+    const updated = await db("users").where("id", user.id).first();
+    res.json({ message: "E-posta doğrulandı.", user: mapUser(updated), token: signToken(user.id) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Sunucu hatası." });

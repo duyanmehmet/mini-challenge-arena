@@ -32,6 +32,25 @@ export const emailService = {
     });
   },
 
+  async sendVerificationCode(to: string, username: string, code: string): Promise<void> {
+    await transporter.sendMail({
+      from: `"Zeka Meydanı" <${process.env.EMAIL_USER}>`,
+      to,
+      subject: `${code} — E-posta Doğrulama Kodu`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
+          <h2 style="color:#e94560">🧠 Zeka Meydanı</h2>
+          <p>Merhaba <strong>${username}</strong>,</p>
+          <p>E-posta adresinizi doğrulamak için aşağıdaki 6 haneli kodu kullanın:</p>
+          <div style="background:#f4f4f4;border-radius:12px;padding:20px;text-align:center;margin:16px 0">
+            <span style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#333">${code}</span>
+          </div>
+          <p style="color:#888;font-size:13px">Bu kod <strong>10 dakika</strong> geçerlidir. Siz talep etmediyseniz bu e-postayı görmezden gelin.</p>
+        </div>
+      `,
+    });
+  },
+
   async sendWelcome(to: string, username: string): Promise<void> {
     await transporter.sendMail({
       from: `"Mini Challenge Arena" <${process.env.EMAIL_USER}>`,
