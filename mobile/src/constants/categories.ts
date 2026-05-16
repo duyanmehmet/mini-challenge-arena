@@ -1,6 +1,5 @@
 export type CategoryId =
   | 'history' | 'geography' | 'science' | 'general' | 'art' | 'cinema' | 'sports'
-  | 'turkey'
   | 'kids' | 'license' | 'medical' | 'economy'
   | 'arabic' | 'french' | 'german' | 'spanish';
 
@@ -37,8 +36,7 @@ export const CATEGORIES: CategoryConfig[] = [
   { id: 'general',   name: 'Genel Kültür',    shortName: 'Genel',    icon: '💡', color: '#8e44ad', group: 'culture',  description: 'Her konudan karışık sorular — klasik bilgi yarışması tarzı!',       questionCount: 202 },
   { id: 'art',       name: 'Sanat',           shortName: 'Sanat',    icon: '🎨', color: '#e67e22', group: 'culture',  description: 'Resim, müzik, edebiyat ve mimariden sorular.',                       questionCount: 200 },
   { id: 'cinema',    name: 'Sinema & TV',     shortName: 'Sinema',   icon: '🎬', color: '#e91e8c', group: 'culture',  description: 'Türk dizileri, dünya filmleri, Oscar ödülleri ve aktörler.',         questionCount: 500 },
-  { id: 'sports',    name: 'Spor',            shortName: 'Spor',     icon: '⚽', color: '#16a085', group: 'culture',  description: 'Futbol, olimpiyatlar, Türk sporcular ve dünya rekorları.',           questionCount: 400 },
-  { id: 'turkey',    name: 'Türkiye',         shortName: 'Türkiye',  icon: '🇹🇷', color: '#e74c3c', group: 'culture',  description: 'Şehirler, kültür, mutfak, tarih ve Türkiye\'ye özgü bilgiler!',    questionCount: 200 },
+  { id: 'sports',    name: 'Spor',            shortName: 'Spor',     icon: '⚽', color: '#16a085', group: 'culture',  description: 'Futbol, olimpiyatlar, Türk sporcular ve dünya rekorları.',           questionCount: 450 },
 
   // Özel Kategoriler
   { id: 'kids',      name: 'Çocuklar İçin',  shortName: 'Çocuk',   icon: '🧒', color: '#ff6b9d', group: 'special',  description: 'Eğlenceli ve kolay sorular — 8-14 yaş için!',                        questionCount: 200 },

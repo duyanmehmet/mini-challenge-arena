@@ -8,7 +8,6 @@ import general   from './general';
 import art       from './art';
 import cinema    from './cinema';
 import sports    from './sports';
-import turkey    from './turkey';
 import kids      from './kids';
 import license   from './license';
 import medical   from './medical';
@@ -26,7 +25,6 @@ const QUESTION_BANKS: Record<CategoryId, QuizQuestion[]> = {
   art,
   cinema,
   sports,
-  turkey,
   kids,
   license,
   medical,
