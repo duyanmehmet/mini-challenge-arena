@@ -19,6 +19,17 @@ interface DuelRoom {
 
 const duelRooms = new Map<string, DuelRoom>();
 
+// ── Matchmaking kuyruğu ───────────────────────────────────────────
+interface QueuedPlayer {
+  socketId: string;
+  userId: string;
+  username: string;
+  avatarId: number;
+  duelRank: number;
+  category: string;
+}
+const matchQueue = new Map<string, QueuedPlayer[]>(); // category → players
+
 export function setupSocket(io: Server): void {
   // JWT doğrulama middleware
   io.use((socket, next) => {
@@ -140,6 +151,95 @@ export function setupSocket(io: Server): void {
 
       const allDone = room.players.length >= 2 && room.players.every((p) => p.done);
       if (allDone) finishDuel(io, duelId, room);
+    });
+
+    // ── Rastgele Matchmaking ─────────────────────────────────────────────
+    socket.on("mm_join", async ({ category }: { category: string }) => {
+      console.log(`[MM] mm_join: userId=${userId} category=${category} socketId=${socket.id}`);
+
+      const user = await db("users").where("id", userId)
+        .select("username", "avatar_id").first().catch(() => null);
+
+      const me: QueuedPlayer = {
+        socketId: socket.id, userId,
+        username: user?.username ?? "Oyuncu",
+        avatarId: user?.avatar_id ?? 1,
+        duelRank: 0,
+        category,
+      };
+
+      // Rastgele eşleşmede TÜM kategorilerdeki oyuncularla eşleş
+      let foundOpponent: QueuedPlayer | null = null;
+      let foundCategory = category;
+
+      // Önce aynı kategoride ara
+      const sameQueue = matchQueue.get(category) ?? [];
+      const sameIdx   = sameQueue.findIndex(p => p.userId !== userId);
+      if (sameIdx >= 0) {
+        foundOpponent = sameQueue.splice(sameIdx, 1)[0];
+        matchQueue.set(category, sameQueue);
+        foundCategory = category;
+      } else {
+        // Farklı kategorilerde de ara (rastgele eşleşme)
+        for (const [cat, queue] of matchQueue.entries()) {
+          const idx = queue.findIndex(p => p.userId !== userId);
+          if (idx >= 0) {
+            foundOpponent = queue.splice(idx, 1)[0];
+            matchQueue.set(cat, queue);
+            foundCategory = cat;
+            break;
+          }
+        }
+      }
+
+      if (foundOpponent) {
+        const duelId    = `mm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        const oppSocket = io.sockets.sockets.get(foundOpponent.socketId);
+
+        console.log(`[MM] Eşleşme: ${me.username} vs ${foundOpponent.username} | duelId=${duelId}`);
+
+        socket.emit("mm_matched", {
+          duelId, category: foundCategory,
+          opponent: { username: foundOpponent.username, avatarId: foundOpponent.avatarId, duelRank: foundOpponent.duelRank },
+        });
+        oppSocket?.emit("mm_matched", {
+          duelId, category: foundCategory,
+          opponent: { username: me.username, avatarId: me.avatarId, duelRank: me.duelRank },
+        });
+      } else {
+        // Kuyruğa ekle
+        const q = matchQueue.get(category) ?? [];
+        // Aynı kullanıcı zaten kuyruktaysa ekleme
+        if (!q.find(p => p.userId === userId)) {
+          q.push(me);
+          matchQueue.set(category, q);
+        }
+        socket.emit("mm_queued");
+        console.log(`[MM] Kuyruğa eklendi: ${me.username} | kuyruk boyutu: ${q.length}`);
+      }
+    });
+
+    socket.on("mm_leave", ({ category }: { category: string }) => {
+      // Tüm kategorilerden çıkar
+      for (const [cat, queue] of matchQueue.entries()) {
+        matchQueue.set(cat, queue.filter(p => p.userId !== userId));
+      }
+    });
+
+    // ── Düello: Rank güncelle ────────────────────────────────────────────
+    socket.on("duel_rank_update", async ({ win }: { win: boolean }) => {
+      const delta = win ? 25 : -15;
+      await db("users").where("id", userId).update({
+        duel_rank: db.raw("GREATEST(0, COALESCE(duel_rank, 0) + ?)", [delta]),
+      }).catch(() => {});
+    });
+
+    // ── Zeka Arenası ─────────────────────────────────────────────────────
+    socket.on("arena_join", ({ arenaId }: { arenaId: string }) => {
+      socket.join(`arena:${arenaId}`);
+    });
+    socket.on("arena_score", ({ arenaId, score, username }: { arenaId: string; score: number; username: string }) => {
+      io.to(`arena:${arenaId}`).emit("arena_score_update", { username, score, ts: Date.now() });
     });
 
     // ── Canlı Turnuva ───────────────────────────────────────────────────

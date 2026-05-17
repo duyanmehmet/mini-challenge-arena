@@ -4,26 +4,50 @@ import {
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useSettingsStore } from '../../src/store/settingsStore';
-import { Colors } from '../../src/constants/colors';
 import { authService } from '../../src/services/auth.service';
+
+const BG    = '#0d0d1a';
+const CARD  = '#13132a';
+const PURP  = '#6c3aed';
+const PURP2 = '#8b5cf6';
+const TEXT  = '#ffffff';
+const MUTED = '#7c7aaa';
+const BORDER= '#2e2b5a';
 
 export default function VerifyEmailScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
-  const { theme } = useSettingsStore();
-  const C = Colors[theme];
-  const s = styles(C);
 
-  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [code,    setCode]    = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(60); // Kayıt sırasında backend zaten gönderdi
+  const [sending, setSending] = useState(false);
+  const [cooldown, setCooldown] = useState(0); // Profil'den gelince 0'dan başla
   const inputs = useRef<(TextInput | null)[]>([]);
 
+  // Mount olunca otomatik kod gönder
   useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    if (!email) return;
+    sendCode();
+  }, []);
+
+  // Cooldown sayacı
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown(c => c - 1), 1000);
     return () => clearTimeout(t);
-  }, [resendCooldown]);
+  }, [cooldown]);
+
+  const sendCode = async () => {
+    if (!email || cooldown > 0) return;
+    setSending(true);
+    try {
+      await authService.sendVerification(email);
+      setCooldown(60);
+    } catch {
+      Alert.alert('Hata', 'Kod gönderilemedi. E-posta adresini kontrol et.');
+    } finally {
+      setSending(false);
+    }
+  };
 
   const handleCodeChange = (val: string, idx: number) => {
     if (!/^\d*$/.test(val)) return;
@@ -48,7 +72,9 @@ export default function VerifyEmailScreen() {
     setLoading(true);
     try {
       await authService.verifyEmail(email, fullCode);
-      router.replace('/(tabs)');
+      Alert.alert('✅ Doğrulandı!', 'E-posta adresin başarıyla doğrulandı.', [
+        { text: 'Harika!', onPress: () => router.replace('/(tabs)') },
+      ]);
     } catch (e: any) {
       Alert.alert('Hata', e.response?.data?.message ?? 'Kod hatalı veya süresi dolmuş.');
       setCode(['', '', '', '', '', '']);
@@ -58,44 +84,42 @@ export default function VerifyEmailScreen() {
     }
   };
 
-  const handleResend = async () => {
-    if (resendCooldown > 0) return;
-    try {
-      await authService.sendVerification(email);
-      setResendCooldown(60);
-      Alert.alert('Gönderildi', 'Yeni doğrulama kodu e-postanıza gönderildi.');
-    } catch {
-      Alert.alert('Hata', 'Kod gönderilemedi. Lütfen tekrar deneyin.');
-    }
-  };
-
-  const handleSkip = () => {
-    router.replace('/(tabs)');
-  };
-
   return (
     <KeyboardAvoidingView
-      style={[s.root, { backgroundColor: C.bgPrimary }]}
+      style={s.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={s.inner}>
+        {/* Geri */}
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Text style={s.backTxt}>← Geri</Text>
+        </TouchableOpacity>
+
         <Text style={s.emoji}>📧</Text>
         <Text style={s.title}>E-posta Doğrulama</Text>
-        <Text style={s.sub}>
-          <Text style={{ color: C.accent }}>{email}</Text>
-          {'\n'}adresine 6 haneli bir kod gönderdik.
-        </Text>
 
-        {/* Code inputs */}
+        {sending ? (
+          <View style={s.sendingRow}>
+            <ActivityIndicator color={PURP2} size="small" />
+            <Text style={s.sendingTxt}>Kod gönderiliyor...</Text>
+          </View>
+        ) : (
+          <Text style={s.sub}>
+            <Text style={{ color: PURP2 }}>{email}</Text>
+            {'\n'}adresine 6 haneli kod gönderdik.
+          </Text>
+        )}
+
+        {/* 6 kutucuk */}
         <View style={s.codeRow}>
           {code.map((digit, idx) => (
             <TextInput
               key={idx}
-              ref={(r) => { inputs.current[idx] = r; }}
+              ref={r => { inputs.current[idx] = r; }}
               style={[s.codeInput, digit ? s.codeInputFilled : null]}
               value={digit}
-              onChangeText={(v) => handleCodeChange(v, idx)}
-              onKeyPress={(e) => handleKeyPress(e, idx)}
+              onChangeText={v => handleCodeChange(v, idx)}
+              onKeyPress={e => handleKeyPress(e, idx)}
               keyboardType="number-pad"
               maxLength={1}
               selectTextOnFocus
@@ -104,6 +128,7 @@ export default function VerifyEmailScreen() {
           ))}
         </View>
 
+        {/* Doğrula Butonu */}
         <TouchableOpacity
           style={[s.btn, loading && { opacity: 0.6 }]}
           onPress={handleVerify}
@@ -111,19 +136,24 @@ export default function VerifyEmailScreen() {
         >
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={s.btnText}>Doğrula</Text>
-          }
+            : <Text style={s.btnText}>Doğrula</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleResend} disabled={resendCooldown > 0} style={s.resend}>
-          <Text style={[s.resendText, resendCooldown > 0 && { color: C.textMuted }]}>
-            {resendCooldown > 0
-              ? `Yeniden gönder (${resendCooldown}s)`
+        {/* Tekrar Gönder */}
+        <TouchableOpacity
+          onPress={sendCode}
+          disabled={cooldown > 0 || sending}
+          style={s.resend}
+        >
+          <Text style={[s.resendText, cooldown > 0 && { color: MUTED }]}>
+            {cooldown > 0
+              ? `Tekrar gönder (${cooldown}s)`
               : 'Kodu almadım, tekrar gönder'}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleSkip} style={s.skip}>
+        {/* Atla */}
+        <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={s.skip}>
           <Text style={s.skipText}>Şimdi değil, atla</Text>
         </TouchableOpacity>
       </View>
@@ -131,28 +161,38 @@ export default function VerifyEmailScreen() {
   );
 }
 
-const styles = (C: ReturnType<typeof Colors[keyof typeof Colors]>) => StyleSheet.create({
-  root: { flex: 1 },
+const s = StyleSheet.create({
+  root:  { flex: 1, backgroundColor: BG },
   inner: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+
+  backBtn: { position: 'absolute', top: 16, left: 16 },
+  backTxt: { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
+
   emoji: { fontSize: 64, marginBottom: 16 },
-  title: { fontSize: 26, fontWeight: '800', color: C.textPrimary, marginBottom: 10 },
-  sub: { fontSize: 15, color: C.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+  title: { fontFamily: 'Nunito-ExtraBold', fontSize: 26, color: TEXT, marginBottom: 12 },
+  sub:   { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+  sendingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 32 },
+  sendingTxt: { fontFamily: 'Nunito-Regular', fontSize: 14, color: MUTED },
+
   codeRow: { flexDirection: 'row', gap: 10, marginBottom: 32 },
   codeInput: {
-    width: 46, height: 56, borderRadius: 12,
-    borderWidth: 2, borderColor: C.border,
-    backgroundColor: C.bgCard,
-    fontSize: 24, fontWeight: '700', color: C.textPrimary,
+    width: 48, height: 58, borderRadius: 14,
+    borderWidth: 2, borderColor: BORDER,
+    backgroundColor: CARD,
+    fontSize: 24, fontFamily: 'Nunito-ExtraBold', color: TEXT,
   },
-  codeInputFilled: { borderColor: C.accent },
+  codeInputFilled: { borderColor: PURP2 },
+
   btn: {
-    backgroundColor: C.accent, borderRadius: 14,
-    paddingVertical: 16, paddingHorizontal: 40,
-    width: '100%', alignItems: 'center', marginBottom: 16,
+    backgroundColor: PURP, borderRadius: 14,
+    paddingVertical: 17, width: '100%', alignItems: 'center', marginBottom: 16,
+    shadowColor: PURP2, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 10, elevation: 6,
   },
-  btnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  btnText: { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: '#fff' },
+
   resend: { marginBottom: 12 },
-  resendText: { fontSize: 14, color: C.accent, textDecorationLine: 'underline' },
+  resendText: { fontFamily: 'Nunito-Regular', fontSize: 14, color: PURP2, textDecorationLine: 'underline' },
+
   skip: { marginTop: 4 },
-  skipText: { fontSize: 13, color: C.textMuted },
+  skipText: { fontFamily: 'Nunito-Regular', fontSize: 13, color: MUTED },
 });

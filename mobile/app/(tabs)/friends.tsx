@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { Colors } from '../../src/constants/colors';
 import { Avatar } from '../../src/components/ui/Avatar';
@@ -136,29 +137,30 @@ export default function FriendsScreen() {
           {friends.map((item, index) => {
             const league = LEAGUES.find((l) => l.id === item.league);
             return (
-              <View key={item.userId} style={[s.row, { backgroundColor: C.bgSecondary, borderColor: C.border }]}>
+              <TouchableOpacity
+                key={item.userId}
+                style={[s.row, { backgroundColor: C.bgSecondary, borderColor: C.border }]}
+                onPress={() => router.push({
+                  pathname: '/friend/[userId]',
+                  params: {
+                    userId: item.userId ?? item.id,
+                    username: item.username,
+                    avatarId: String(item.avatarId ?? 1),
+                    level: String(item.level ?? 1),
+                    weeklyScore: String(item.weeklyScore ?? 0),
+                  },
+                } as any)}
+                activeOpacity={0.8}
+              >
                 <Text style={[s.rank, { color: C.textSecondary }]}>#{index + 1}</Text>
                 <Avatar avatarId={item.avatarId} size={40} />
                 <View style={{ flex: 1 }}>
                   <Text style={[s.username, { color: C.textPrimary }]}>{item.username}</Text>
                   <Text style={[s.leagueText, { color: C.textSecondary }]}>{league?.icon} {league?.name}</Text>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[s.score, { color: C.accentYellow }]}>{item.weeklyScore.toLocaleString('tr-TR')}</Text>
-                  <TouchableOpacity
-                    style={[s.duelBtn, { backgroundColor: C.accentRed + '22', borderColor: C.accentRed }]}
-                    onPress={() => {
-                      const socket = socketService.getSocket();
-                      if (socket) {
-                        socket.emit('duel_invite', { opponentId: item.userId, mode: 'reflex' });
-                        Alert.alert('Davet Gönderildi', `${item.username} oyuncusuna düello daveti gönderildi.`);
-                      }
-                    }}
-                  >
-                    <Text style={[s.duelText, { color: C.accentRed }]}>⚔ Düello</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+                <Text style={[s.score, { color: C.accentYellow }]}>{item.weeklyScore.toLocaleString('tr-TR')}</Text>
+                <Text style={{ color: C.textSecondary, fontSize: 18 }}>›</Text>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -166,9 +168,6 @@ export default function FriendsScreen() {
     </SafeAreaView>
   );
 }
-
-// styles update
-import { ScrollView } from 'react-native-gesture-handler';
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bgPrimary },

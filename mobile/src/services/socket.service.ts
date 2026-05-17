@@ -1,34 +1,88 @@
-﻿import { io, Socket } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace('/v1', '') ?? 'http://localhost:3000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace('/v1', '') ?? 'http://192.168.1.103:3000';
 
 class SocketService {
   private socket: Socket | null = null;
+  private connecting = false;
 
-  connect(): Socket | null {
+  async connectAsync(): Promise<Socket | null> {
+    // Zaten bağlıysa döndür
     if (this.socket?.connected) return this.socket;
 
-    AsyncStorage.getItem('token').then((token) => {
-      if (!token) return;
+    // Bağlantı devam ediyorsa bekle
+    if (this.connecting) {
+      return new Promise((resolve) => {
+        const check = setInterval(() => {
+          if (this.socket?.connected) {
+            clearInterval(check);
+            resolve(this.socket);
+          } else if (!this.connecting) {
+            clearInterval(check);
+            resolve(this.socket);
+          }
+        }, 200);
+        setTimeout(() => { clearInterval(check); resolve(this.socket); }, 8000);
+      });
+    }
+
+    this.connecting = true;
+
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) { this.connecting = false; return null; }
+
+      // Eski socket varsa kapat
+      if (this.socket) {
+        this.socket.disconnect();
+        this.socket = null;
+      }
+
       this.socket = io(API_URL, {
         auth: { token },
         transports: ['websocket'],
         reconnection: true,
         reconnectionDelay: 2000,
+        timeout: 10000,
       });
 
-      this.socket.on('connect', () => console.log('Socket bağlandı'));
-      this.socket.on('disconnect', () => console.log('Socket koptu'));
-      this.socket.on('connect_error', (err) => console.warn('Socket hatası:', err.message));
-    });
+      // Bağlantı tamamlanana kadar bekle
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Bağlantı zaman aşımı')), 8000);
+        this.socket!.once('connect', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+        this.socket!.once('connect_error', (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+      });
 
+      this.socket.on('connect',       () => console.log(`✅ Socket bağlandı: ${API_URL}`));
+      this.socket.on('disconnect',    () => console.log('🔌 Socket koptu'));
+      this.socket.on('connect_error', (err) => console.warn('❌ Socket hatası:', err.message));
+
+      this.connecting = false;
+      return this.socket;
+    } catch (err: any) {
+      console.warn('Socket bağlanamadı:', err.message);
+      this.connecting = false;
+      return null;
+    }
+  }
+
+  // Eski sync API — geriye dönük uyumluluk
+  connect(): Socket | null {
+    this.connectAsync().catch(() => {});
     return this.socket;
   }
 
   disconnect() {
     this.socket?.disconnect();
     this.socket = null;
+    this.connecting = false;
   }
 
   emit(event: string, data?: any) {

@@ -1,161 +1,220 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Dimensions, ScrollView, Animated,
+  Dimensions, FlatList, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSettingsStore } from '../src/store/settingsStore';
-import { Colors } from '../src/constants/colors';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
+const BG    = '#0d0d1a';
+const CARD  = '#13132a';
+const PURP  = '#6c3aed';
+const PURP2 = '#8b5cf6';
 
 const SLIDES = [
   {
-    emoji: '🏆',
-    title: 'Bil Bakalım\'a Hoş Geldin!',
-    subtitle: '1.000\'den fazla soru, 12 kategori.\nHer cevap seni bir adım öteye taşır.',
-    color: '#e94560',
-    details: ['🏺 Tarih  🌍 Coğrafya  🔬 Bilim', '🎬 Sinema  ⚽ Spor  🇹🇷 Türkiye', '🩺 Tıp  🚗 Ehliyet  📈 Ekonomi'],
+    icon:     '🏆',
+    glow:     '#f59e0b',
+    title:    'Bilgini Test Et',
+    subtitle: 'Yüzlerce soru ile kendini geliştir.',
   },
   {
-    emoji: '⚡',
-    title: 'Hız = Puan',
-    subtitle: 'Ne kadar hızlı cevap verirsen\no kadar çok puan kazanırsın!',
-    color: '#f0c040',
-    details: ['⚡ 2 saniyede → 30 puan', '🔥 6 saniyede → 20 puan', '⏱️ 12+ saniyede → 6 puan'],
+    icon:     '⚔️',
+    glow:     '#8b5cf6',
+    title:    'Düello Modu',
+    subtitle: 'Arkadaşlarınla yarış, zirveye çık.',
   },
   {
-    emoji: '⚔️',
-    title: 'Arkadaşına Meydan Oku',
-    subtitle: 'Aynı soruları aynı anda cevapla.\nKim daha hızlı ve doğru?',
-    color: '#8e44ad',
-    details: ['🔴 Her gece 21:00 Canlı Yarışma', '🏆 Klasik Tur — 10 soru, 3 can', '✂️ Jokerler: 50/50, Geç, +60 saniye'],
+    icon:     '📋',
+    glow:     '#3b82f6',
+    title:    'Görevleri Tamamla',
+    subtitle: 'Her gün görevlerini yap, ödüller kazan.',
   },
   {
-    emoji: '💡',
-    title: 'Sadece Puan Değil — Bilgi',
-    subtitle: 'Her doğru ya da yanlış cevaptan sonra\nkısa bir açıklama görürsün.',
-    color: '#1abc9c',
-    details: ['📖 Her sorudan bir şey öğren', '🧠 Hafızan güçlendikçe puanın artar', '🇹🇷 Türkiye\'ye özgü içerikler seni şaşırtacak'],
+    icon:     '📊',
+    glow:     '#10b981',
+    title:    'İstatistiklerini Gör',
+    subtitle: 'Performansını takip et, gelişimini izle.',
   },
 ];
 
 export default function OnboardingScreen() {
-  const { theme } = useSettingsStore();
-  const C = Colors[theme];
-  const [slide, setSlide] = useState(0);
-  const scrollRef = useRef<ScrollView>(null);
-  const dotAnims = useRef(SLIDES.map((_, i) => new Animated.Value(i === 0 ? 1 : 0))).current;
-
-  const animateDots = (idx: number) => {
-    dotAnims.forEach((anim, i) => {
-      Animated.spring(anim, { toValue: i === idx ? 1 : 0, useNativeDriver: false }).start();
-    });
-  };
+  const flatRef   = useRef<FlatList>(null);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const currentIdx = useRef(0);
 
   const goTo = (idx: number) => {
-    scrollRef.current?.scrollTo({ x: idx * width, animated: true });
-    setSlide(idx);
-    animateDots(idx);
+    flatRef.current?.scrollToIndex({ index: idx, animated: true });
+    Animated.timing(slideAnim, {
+      toValue: idx, duration: 300, useNativeDriver: false,
+    }).start();
+    currentIdx.current = idx;
   };
 
   const finish = async () => {
     await AsyncStorage.setItem('onboarding_complete', 'true');
-    router.replace('/(auth)/register'); // Yeni kullanıcıyı kayıt sayfasına gönder
+    router.replace('/(auth)/login');
   };
 
-  const s = styles(C);
-  const current = SLIDES[slide];
+  const handleNext = () => {
+    const next = currentIdx.current + 1;
+    if (next < SLIDES.length) goTo(next);
+    else finish();
+  };
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: C.bgPrimary }]}>
-      <ScrollView
-        ref={scrollRef}
+    <SafeAreaView style={s.root}>
+      {/* Slaytlar */}
+      <FlatList
+        ref={flatRef}
+        data={SLIDES}
+        keyExtractor={(_, i) => String(i)}
         horizontal
         pagingEnabled
-        showsHorizontalScrollIndicator={false}
         scrollEnabled={false}
-        style={{ flex: 1 }}
-      >
-        {SLIDES.map((sl, i) => (
-          <View key={i} style={[s.slide, { width }]}>
-            <View style={[s.emojiBg, { backgroundColor: sl.color + '20' }]}>
-              <Text style={s.emoji}>{sl.emoji}</Text>
+        showsHorizontalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={s.slide}>
+            {/* İkon */}
+            <View style={[s.iconRing, { shadowColor: item.glow }]}>
+              <View style={[s.iconInner, { backgroundColor: item.glow + '22', borderColor: item.glow + '55' }]}>
+                <Text style={s.iconEmoji}>{item.icon}</Text>
+              </View>
             </View>
-            <Text style={[s.title, { color: C.textPrimary }]}>{sl.title}</Text>
-            <Text style={[s.subtitle, { color: C.textSecondary }]}>{sl.subtitle}</Text>
-            <View style={[s.detailCard, { backgroundColor: C.bgSecondary }]}>
-              {sl.details.map((d, j) => (
-                <Text key={j} style={[s.detail, { color: C.textPrimary }]}>{d}</Text>
-              ))}
-            </View>
+
+            {/* Başlık */}
+            <Text style={s.title}>{item.title}</Text>
+
+            {/* Subtitle */}
+            <Text style={s.subtitle}>{item.subtitle}</Text>
           </View>
-        ))}
-      </ScrollView>
+        )}
+      />
 
       {/* Dot göstergesi */}
-      <View style={s.dots}>
-        {SLIDES.map((sl, i) => (
-          <Animated.View
-            key={i}
-            style={[
-              s.dot,
-              {
-                backgroundColor: dotAnims[i].interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [C.bgTertiary, sl.color],
-                }),
-                width: dotAnims[i].interpolate({ inputRange: [0, 1], outputRange: [8, 24] }),
-              },
-            ]}
-          />
-        ))}
+      <View style={s.dotsRow}>
+        {SLIDES.map((_, i) => {
+          const dotWidth = slideAnim.interpolate({
+            inputRange: SLIDES.map((__, j) => j),
+            outputRange: SLIDES.map((__, j) => (j === i ? 24 : 8)),
+            extrapolate: 'clamp',
+          });
+          const dotColor = slideAnim.interpolate({
+            inputRange: SLIDES.map((__, j) => j),
+            outputRange: SLIDES.map((__, j) => (j === i ? '#fff' : '#3d2d7a')),
+            extrapolate: 'clamp',
+          });
+          return (
+            <Animated.View
+              key={i}
+              style={[s.dot, { width: dotWidth, backgroundColor: dotColor }]}
+            />
+          );
+        })}
       </View>
 
-      {/* Butonlar */}
-      <View style={s.btnRow}>
-        {slide > 0 ? (
-          <TouchableOpacity style={[s.backBtn, { borderColor: C.border }]} onPress={() => goTo(slide - 1)}>
-            <Text style={[s.backBtnText, { color: C.textSecondary }]}>← Geri</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={s.skipBtn} onPress={finish}>
-            <Text style={[s.skipText, { color: C.textSecondary }]}>Atla</Text>
-          </TouchableOpacity>
-        )}
-
-        {slide < SLIDES.length - 1 ? (
-          <TouchableOpacity style={[s.nextBtn, { backgroundColor: current.color }]} onPress={() => goTo(slide + 1)}>
-            <Text style={s.nextBtnText}>İleri →</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={[s.nextBtn, { backgroundColor: current.color }]} onPress={finish}>
-            <Text style={s.nextBtnText}>Başlayalım! 🚀</Text>
-          </TouchableOpacity>
-        )}
+      {/* İleri Butonu */}
+      <View style={s.btnArea}>
+        <TouchableOpacity style={s.btn} onPress={handleNext} activeOpacity={0.85}>
+          <Text style={s.btnText}>İleri</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe: { flex: 1 },
-  slide: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 16 },
-  emojiBg: { width: 140, height: 140, borderRadius: 70, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  emoji: { fontSize: 72 },
-  title: { fontFamily: 'Nunito-ExtraBold', fontSize: 26, textAlign: 'center' },
-  subtitle: { fontFamily: 'Nunito-Regular', fontSize: 15, textAlign: 'center', lineHeight: 24 },
-  detailCard: { width: '100%', borderRadius: 18, padding: 20, gap: 10 },
-  detail: { fontFamily: 'Nunito-Bold', fontSize: 14, textAlign: 'center' },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginVertical: 20 },
-  dot: { height: 8, borderRadius: 4 },
-  btnRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 32, gap: 12 },
-  backBtn: { flex: 1, borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1.5 },
-  backBtnText: { fontFamily: 'Nunito-Bold', fontSize: 15 },
-  skipBtn: { flex: 1, padding: 16, alignItems: 'center' },
-  skipText: { fontFamily: 'Nunito-Regular', fontSize: 14 },
-  nextBtn: { flex: 2, borderRadius: 16, padding: 18, alignItems: 'center' },
-  nextBtnText: { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#fff' },
+const s = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: BG,
+  },
+
+  slide: {
+    width,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    gap: 24,
+  },
+
+  // İkon halkası
+  iconRing: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 50,
+    elevation: 20,
+    marginBottom: 12,
+  },
+  iconInner: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+  },
+  iconEmoji: {
+    fontSize: 90,
+  },
+
+  title: {
+    fontFamily: 'Nunito-ExtraBold',
+    fontSize: 28,
+    color: '#ffffff',
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+
+  subtitle: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 16,
+    color: '#a78bfa',
+    textAlign: 'center',
+    lineHeight: 26,
+  },
+
+  // Dot'lar
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 20,
+  },
+  dot: {
+    height: 8,
+    borderRadius: 4,
+  },
+
+  // Buton alanı
+  btnArea: {
+    paddingHorizontal: 32,
+    paddingBottom: 40,
+  },
+  btn: {
+    backgroundColor: PURP,
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    shadowColor: PURP2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  btnText: {
+    fontFamily: 'Nunito-ExtraBold',
+    fontSize: 18,
+    color: '#ffffff',
+    letterSpacing: 0.5,
+  },
 });

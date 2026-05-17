@@ -72,22 +72,19 @@ export default function GameScreen() {
 
   const renderContent = () => {
     if (paused || showRevive) return null;
-    if (isQuizMode) return <QuizMode categoryId={mode as CategoryId} onEnd={handleEnd} />;
-    return <Text style={{ color: C.textPrimary, textAlign: 'center', marginTop: 40 }}>Bilinmeyen kategori</Text>;
+    if (isQuizMode) return (
+      <QuizMode
+        categoryId={mode as CategoryId}
+        onEnd={handleEnd}
+        onPause={handlePause}
+        catIcon={catCfg?.icon}
+      />
+    );
+    return <Text style={{ color: '#fff', textAlign: 'center', marginTop: 40 }}>Bilinmeyen kategori</Text>;
   };
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: C.bgPrimary }]}>
-      <View style={s.topBar}>
-        <View style={s.topLeft}>
-          <Text style={s.catIcon}>{catCfg?.icon}</Text>
-          <Text style={[s.modeName, { color: C.textPrimary }]}>{catCfg?.name}</Text>
-        </View>
-        <TouchableOpacity style={[s.pauseBtn, { backgroundColor: C.bgSecondary }]} onPress={handlePause}>
-          <Text style={{ fontSize: 18 }}>⏸</Text>
-        </TouchableOpacity>
-      </View>
-
+    <SafeAreaView style={[s.safe, { backgroundColor: '#0d0d1a' }]}>
       <View style={{ flex: 1 }}>{renderContent()}</View>
 
       <Modal visible={paused} transparent animationType="fade">

@@ -1,39 +1,68 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
-  Animated, ScrollView, Dimensions,
+  ScrollView, Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useSettingsStore } from '../../src/store/settingsStore';
-import { Colors } from '../../src/constants/colors';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
 import { authService } from '../../src/services/auth.service';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_CLIENT_ID = '74921537013-lr1636vf8ljjho8t63alr6dcolm4pg1o.apps.googleusercontent.com';
+
+const { width } = Dimensions.get('window');
+
+const BG     = '#0d0d1a';
+const CARD   = '#13132a';
+const INPUT  = '#1c1b3a';
+const BORDER = '#2e2b5a';
+const PURP   = '#6c3aed';
+const PURP2  = '#8b5cf6';
+const TEXT   = '#ffffff';
+const MUTED  = '#7c7aaa';
+const LAVAND = '#a78bfa';
+
 const AVATARS = ['🐺', '🦊', '🐯', '🦁', '🐻', '🐼', '🦝', '🐨', '🦄', '🐲'];
 
-type Mode = 'welcome' | 'login' | 'register';
+type Mode = 'login' | 'register';
 
 export default function AuthScreen() {
-  const { theme } = useSettingsStore();
-  const C = Colors[theme];
-
-  const [mode, setMode] = useState<Mode>('welcome');
-  const [email, setEmail] = useState('');
+  const [mode, setMode]         = useState<Mode>('login');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [avatarId, setAvatarId] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  // Google OAuth
+  const redirectUri = AuthSession.makeRedirectUri({
+    useProxy: true,
+    projectNameForProxy: '@duyanmehmet/zekameydani',
+  } as any);
 
-  const goTo = (next: Mode) => {
-    Animated.timing(slideAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
-      setMode(next);
-      Animated.spring(slideAnim, { toValue: 1, tension: 70, friction: 9, useNativeDriver: true }).start();
-    });
-  };
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId:     GOOGLE_CLIENT_ID,
+    androidClientId: GOOGLE_CLIENT_ID,
+    iosClientId:     GOOGLE_CLIENT_ID,
+    redirectUri,
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      if (authentication?.accessToken) {
+        handleGoogleSuccess(authentication.accessToken);
+      }
+    } else if (response?.type === 'error') {
+      Alert.alert('Hata', 'Google ile giriş başarısız.');
+    }
+  }, [response]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -51,300 +80,388 @@ export default function AuthScreen() {
 
   const handleRegister = async () => {
     if (!username.trim() || !email.trim() || !password) {
-      Alert.alert('Eksik Bilgi', 'Tüm alanlar zorunludur.');
-      return;
+      Alert.alert('Eksik Bilgi', 'Tüm alanlar zorunludur.'); return;
     }
     if (username.trim().length < 3) {
-      Alert.alert('Hata', 'Kullanıcı adı en az 3 karakter olmalı.');
-      return;
+      Alert.alert('Hata', 'Kullanıcı adı en az 3 karakter olmalı.'); return;
     }
     if (password.length < 6) {
-      Alert.alert('Hata', 'Şifre en az 6 karakter olmalı.');
-      return;
+      Alert.alert('Hata', 'Şifre en az 6 karakter olmalı.'); return;
     }
     setLoading(true);
     try {
       await authService.register(username.trim(), email.trim().toLowerCase(), password, avatarId);
-      // Email doğrulama ekranına yönlendir
       router.replace({ pathname: '/(auth)/verify-email', params: { email: email.trim().toLowerCase() } });
     } catch (e: any) {
       Alert.alert('Kayıt Başarısız', e.response?.data?.message ?? 'Tekrar dene.');
     } finally { setLoading(false); }
   };
 
-  const s = styles(C);
+  const handleGoogleSuccess = async (accessToken: string) => {
+    setGoogleLoading(true);
+    try {
+      await authService.googleLogin(accessToken);
+      router.replace('/(tabs)');
+    } catch (e: any) {
+      Alert.alert('Hata', e.response?.data?.message ?? 'Google ile giriş başarısız.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
-  // ── KARŞILAMA ─────────────────────────────────────────────────────
-  if (mode === 'welcome') {
-    return (
-      <View style={[s.root, { backgroundColor: C.bgPrimary }]}>
-        {/* Üst dekorasyon */}
-        <View style={[s.topBlob, { backgroundColor: '#e94560' }]} />
+  const switchMode = () => {
+    setMode(m => m === 'login' ? 'register' : 'login');
+    setEmail(''); setPassword(''); setUsername('');
+  };
 
-        <Animated.View style={[s.welcomeContent, { opacity: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) ?? 1 }]}>
-          {/* Logo + İsim */}
-          <View style={s.logoRow}>
-            <Text style={s.logoEmoji}>🏆</Text>
-          </View>
-          <Text style={[s.appName, { color: C.textPrimary }]}>Bil Bakalım</Text>
-          <Text style={[s.tagline, { color: C.textSecondary }]}>
-            Türkiye'nin bilgi yarışması uygulaması
-          </Text>
-
-          {/* Kategoriler önizleme */}
-          <View style={s.catRow}>
-            {['🏺 Tarih', '🌍 Coğrafya', '🔬 Bilim', '🇹🇷 Türkiye', '🎬 Sinema', '⚽ Spor'].map((c) => (
-              <View key={c} style={[s.catChip, { backgroundColor: C.bgSecondary }]}>
-                <Text style={[s.catChipText, { color: C.textPrimary }]}>{c}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Butonlar */}
-          <View style={s.btnGroup}>
-            <TouchableOpacity
-              style={[s.primaryBtn, { backgroundColor: '#e94560' }]}
-              onPress={() => goTo('register')}
-              activeOpacity={0.85}
-            >
-              <Text style={s.primaryBtnText}>🚀 Hesap Oluştur</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[s.secondaryBtn, { borderColor: C.border, backgroundColor: C.bgSecondary }]}
-              onPress={() => goTo('login')}
-              activeOpacity={0.85}
-            >
-              <Text style={[s.secondaryBtnText, { color: C.textPrimary }]}>Giriş Yap</Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </View>
-    );
-  }
-
-  // ── GİRİŞ FORMU ────────────────────────────────────────────────────
-  if (mode === 'login') {
-    return (
+  return (
+    <View style={s.root}>
       <KeyboardAvoidingView
-        style={[s.root, { backgroundColor: C.bgPrimary }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={s.formScroll}
+          contentContainerStyle={s.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Geri */}
-          <TouchableOpacity onPress={() => goTo('welcome')} style={s.backBtn}>
-            <Text style={[s.backText, { color: C.textSecondary }]}>← Geri</Text>
-          </TouchableOpacity>
+          {/* ── Header: Beyin + Marka ── */}
+          <View style={s.header}>
+            <View style={s.iconRing}>
+              <Text style={s.iconEmoji}>🧠</Text>
+            </View>
+            <Text style={s.brandTitle}>ZEKA MEYDANI</Text>
+            <Text style={s.welcome}>
+              {mode === 'login' ? 'Hoş Geldin!' : 'Hesap Oluştur'}
+            </Text>
+            <Text style={s.sub}>
+              {mode === 'login'
+                ? 'Devam etmek için giriş yap.'
+                : 'Ücretsiz, 1 dakikada hazır.'}
+            </Text>
+          </View>
 
-          <Text style={s.logoEmoji}>🏆</Text>
-          <Text style={[s.formTitle, { color: C.textPrimary }]}>Tekrar Hoş Geldin!</Text>
-          <Text style={[s.formSub, { color: C.textSecondary }]}>Hesabına giriş yap</Text>
+          {/* ── Form Alanı ── */}
+          <View style={s.form}>
 
-          <View style={s.fieldGroup}>
-            <Text style={[s.fieldLabel, { color: C.textSecondary }]}>E-posta</Text>
+            {/* Kullanıcı adı (yalnızca kayıt) */}
+            {mode === 'register' && (
+              <TextInput
+                style={s.input}
+                placeholder="Kullanıcı Adı"
+                placeholderTextColor={MUTED}
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={20}
+              />
+            )}
+
+            {/* E-posta */}
             <TextInput
-              style={[s.input, { backgroundColor: C.bgSecondary, color: C.textPrimary, borderColor: C.border }]}
-              placeholder="ornek@mail.com"
-              placeholderTextColor={C.textSecondary}
+              style={s.input}
+              placeholder="E-posta"
+              placeholderTextColor={MUTED}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              returnKeyType="next"
             />
-          </View>
 
-          <View style={s.fieldGroup}>
-            <Text style={[s.fieldLabel, { color: C.textSecondary }]}>Şifre</Text>
-            <View style={[s.passwordRow, { backgroundColor: C.bgSecondary, borderColor: C.border }]}>
+            {/* Şifre */}
+            <View style={s.passRow}>
               <TextInput
-                style={[s.passwordInput, { color: C.textPrimary }]}
-                placeholder="••••••••"
-                placeholderTextColor={C.textSecondary}
+                style={s.passInput}
+                placeholder="Şifre"
+                placeholderTextColor={MUTED}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPass}
                 returnKeyType="done"
-                onSubmitEditing={handleLogin}
+                onSubmitEditing={mode === 'login' ? handleLogin : handleRegister}
               />
-              <TouchableOpacity onPress={() => setShowPass(!showPass)} style={s.eyeBtn}>
+              <TouchableOpacity onPress={() => setShowPass(v => !v)} style={s.eyeBtn}>
                 <Text style={{ fontSize: 18 }}>{showPass ? '🙈' : '👁️'}</Text>
               </TouchableOpacity>
             </View>
+
+            {/* Şifremi Unuttum */}
+            {mode === 'login' && (
+              <TouchableOpacity
+                onPress={() => router.push('/(auth)/forgot-password')}
+                style={s.forgotRow}
+              >
+                <Text style={s.forgotText}>Şifremi Unuttum?</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Avatar seçimi (kayıt) */}
+            {mode === 'register' && (
+              <>
+                <Text style={s.avatarLabel}>Avatar Seç</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+                  {AVATARS.map((emoji, i) => {
+                    const selected = avatarId === i + 1;
+                    return (
+                      <TouchableOpacity
+                        key={i}
+                        style={[s.avatarItem, selected && s.avatarSelected]}
+                        onPress={() => setAvatarId(i + 1)}
+                      >
+                        <Text style={{ fontSize: 28 }}>{emoji}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            )}
+
+            {/* Ana Buton */}
+            <TouchableOpacity
+              style={[s.primaryBtn, loading && { opacity: 0.7 }]}
+              onPress={mode === 'login' ? handleLogin : handleRegister}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              {loading
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={s.primaryBtnText}>
+                    {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+                  </Text>}
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={s.divider}>
+              <View style={s.divLine} />
+              <Text style={s.divText}>veya</Text>
+              <View style={s.divLine} />
+            </View>
+
+            {/* Sosyal Giriş */}
+            <TouchableOpacity
+              style={[s.socialBtn, (!request || googleLoading) && { opacity: 0.6 }]}
+              onPress={() => promptAsync()}
+              disabled={!request || googleLoading}
+              activeOpacity={0.8}
+            >
+              {googleLoading
+                ? <ActivityIndicator color={TEXT} size="small" />
+                : <>
+                    <Text style={s.socialIcon}>G</Text>
+                    <Text style={s.socialText}>Google ile Devam Et</Text>
+                  </>
+              }
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={s.socialBtn}
+              onPress={() => Alert.alert('Yakında', 'Apple ile giriş çok yakında!')}
+              activeOpacity={0.8}
+            >
+              <Text style={s.socialIcon}></Text>
+              <Text style={s.socialText}>Apple ile Devam Et</Text>
+            </TouchableOpacity>
+
+            {/* Geçiş */}
+            <TouchableOpacity onPress={switchMode} style={s.switchRow}>
+              <Text style={s.switchText}>
+                {mode === 'login' ? 'Hesabın yok mu? ' : 'Zaten hesabın var mı? '}
+                <Text style={s.switchLink}>
+                  {mode === 'login' ? 'Kayıt Ol!' : 'Giriş Yap!'}
+                </Text>
+              </Text>
+            </TouchableOpacity>
+
           </View>
-
-          <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')} style={{ alignSelf: 'flex-end', marginBottom: 20 }}>
-            <Text style={[s.forgotText, { color: '#e94560' }]}>Şifremi unuttum</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[s.primaryBtn, { backgroundColor: '#e94560', opacity: loading ? 0.7 : 1 }]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={s.primaryBtnText}>Giriş Yap</Text>}
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => goTo('register')} style={{ marginTop: 20, alignItems: 'center' }}>
-            <Text style={[s.switchText, { color: C.textSecondary }]}>
-              Hesabın yok mu? <Text style={{ color: '#e94560', fontFamily: 'Nunito-Bold' }}>Kayıt ol</Text>
-            </Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    );
-  }
-
-  // ── KAYIT FORMU ─────────────────────────────────────────────────────
-  return (
-    <KeyboardAvoidingView
-      style={[s.root, { backgroundColor: C.bgPrimary }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
-    >
-      <ScrollView
-        contentContainerStyle={s.formScroll}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <TouchableOpacity onPress={() => goTo('welcome')} style={s.backBtn}>
-          <Text style={[s.backText, { color: C.textSecondary }]}>← Geri</Text>
-        </TouchableOpacity>
-
-        <Text style={s.logoEmoji}>🏆</Text>
-        <Text style={[s.formTitle, { color: C.textPrimary }]}>Hesap Oluştur</Text>
-        <Text style={[s.formSub, { color: C.textSecondary }]}>Ücretsiz, 1 dakikada hazır</Text>
-
-        <View style={s.fieldGroup}>
-          <Text style={[s.fieldLabel, { color: C.textSecondary }]}>Kullanıcı Adı</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: C.bgSecondary, color: C.textPrimary, borderColor: C.border }]}
-            placeholder="bilge_kus42"
-            placeholderTextColor={C.textSecondary}
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            autoCorrect={false}
-            maxLength={20}
-            returnKeyType="next"
-          />
-        </View>
-
-        <View style={s.fieldGroup}>
-          <Text style={[s.fieldLabel, { color: C.textSecondary }]}>E-posta</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: C.bgSecondary, color: C.textPrimary, borderColor: C.border }]}
-            placeholder="ornek@mail.com"
-            placeholderTextColor={C.textSecondary}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="next"
-          />
-        </View>
-
-        <View style={s.fieldGroup}>
-          <Text style={[s.fieldLabel, { color: C.textSecondary }]}>Şifre</Text>
-          <View style={[s.passwordRow, { backgroundColor: C.bgSecondary, borderColor: C.border }]}>
-            <TextInput
-              style={[s.passwordInput, { color: C.textPrimary }]}
-              placeholder="En az 6 karakter"
-              placeholderTextColor={C.textSecondary}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPass}
-              returnKeyType="done"
-            />
-            <TouchableOpacity onPress={() => setShowPass(!showPass)} style={s.eyeBtn}>
-              <Text style={{ fontSize: 18 }}>{showPass ? '🙈' : '👁️'}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Avatar seçimi */}
-        <Text style={[s.fieldLabel, { color: C.textSecondary, marginBottom: 8 }]}>Avatar Seç</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24 }}>
-          {AVATARS.map((emoji, i) => {
-            const selected = avatarId === i + 1;
-            return (
-              <TouchableOpacity
-                key={i}
-                style={[s.avatarItem, {
-                  borderColor: selected ? '#e94560' : C.border,
-                  backgroundColor: selected ? '#e9456022' : C.bgSecondary,
-                }]}
-                onPress={() => setAvatarId(i + 1)}
-              >
-                <Text style={{ fontSize: 30 }}>{emoji}</Text>
-                {selected && <View style={s.avatarDot} />}
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        <TouchableOpacity
-          style={[s.primaryBtn, { backgroundColor: '#e94560', opacity: loading ? 0.7 : 1 }]}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={s.primaryBtnText}>🚀 Hesap Oluştur</Text>}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => goTo('login')} style={{ marginTop: 20, alignItems: 'center' }}>
-          <Text style={[s.switchText, { color: C.textSecondary }]}>
-            Zaten hesabın var mı? <Text style={{ color: '#e94560', fontFamily: 'Nunito-Bold' }}>Giriş yap</Text>
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
-const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  root: { flex: 1 },
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: BG },
 
-  // Karşılama
-  topBlob: { position: 'absolute', top: -80, right: -80, width: 250, height: 250, borderRadius: 125, opacity: 0.15 },
-  welcomeContent: { flex: 1, justifyContent: 'center', paddingHorizontal: 28, paddingTop: 60, paddingBottom: 40 },
-  logoRow: { alignItems: 'center', marginBottom: 12 },
-  logoEmoji: { fontSize: 72, textAlign: 'center', marginBottom: 8 },
-  appName: { fontSize: 32, fontFamily: 'Nunito-ExtraBold', textAlign: 'center', marginBottom: 8 },
-  tagline: { fontSize: 15, fontFamily: 'Nunito-Regular', textAlign: 'center', marginBottom: 28, lineHeight: 22 },
-  catRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: 36 },
-  catChip: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  catChipText: { fontFamily: 'Nunito-Bold', fontSize: 12 },
-  btnGroup: { gap: 12 },
-  primaryBtn: { borderRadius: 16, padding: 18, alignItems: 'center' },
-  primaryBtnText: { color: '#fff', fontFamily: 'Nunito-ExtraBold', fontSize: 17 },
-  secondaryBtn: { borderRadius: 16, padding: 18, alignItems: 'center', borderWidth: 1.5 },
-  secondaryBtnText: { fontFamily: 'Nunito-Bold', fontSize: 16 },
+  scroll: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
 
-  // Form
-  formScroll: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 56, paddingBottom: 40 },
-  backBtn: { marginBottom: 24 },
-  backText: { fontFamily: 'Nunito-Regular', fontSize: 15 },
-  formTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 28, marginBottom: 6 },
-  formSub: { fontFamily: 'Nunito-Regular', fontSize: 15, marginBottom: 28 },
-  fieldGroup: { marginBottom: 16 },
-  fieldLabel: { fontFamily: 'Nunito-Bold', fontSize: 13, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { borderRadius: 14, padding: 16, fontSize: 16, borderWidth: 1.5, fontFamily: 'Nunito-Regular' },
-  passwordRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1.5, paddingRight: 12 },
-  passwordInput: { flex: 1, padding: 16, fontSize: 16, fontFamily: 'Nunito-Regular' },
+  // ── Header ──
+  header: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 28,
+  },
+  iconRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#1a1040',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 24,
+    elevation: 12,
+    borderWidth: 1.5,
+    borderColor: '#4c1d95',
+  },
+  iconEmoji: { fontSize: 52 },
+  brandTitle: {
+    fontFamily: 'Nunito-ExtraBold',
+    fontSize: 22,
+    color: TEXT,
+    letterSpacing: 4,
+    marginBottom: 6,
+  },
+  welcome: {
+    fontFamily: 'Nunito-ExtraBold',
+    fontSize: 20,
+    color: TEXT,
+    marginBottom: 6,
+  },
+  sub: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    color: MUTED,
+  },
+
+  // ── Form ──
+  form: {
+    paddingHorizontal: 28,
+  },
+  input: {
+    backgroundColor: INPUT,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    color: TEXT,
+    fontFamily: 'Nunito-Regular',
+    fontSize: 15,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    marginBottom: 14,
+  },
+  passRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: INPUT,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    marginBottom: 8,
+    paddingRight: 12,
+  },
+  passInput: {
+    flex: 1,
+    color: TEXT,
+    fontFamily: 'Nunito-Regular',
+    fontSize: 15,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
   eyeBtn: { padding: 4 },
-  forgotText: { fontFamily: 'Nunito-Regular', fontSize: 14 },
-  switchText: { fontFamily: 'Nunito-Regular', fontSize: 14 },
-  avatarItem: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', borderWidth: 2, marginRight: 10 },
-  avatarDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: '#e94560', borderWidth: 2, borderColor: '#fff' },
+
+  forgotRow: { alignSelf: 'flex-end', marginBottom: 22, marginTop: 4 },
+  forgotText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 13,
+    color: LAVAND,
+  },
+
+  avatarLabel: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 13,
+    color: MUTED,
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  avatarItem: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: INPUT,
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    marginRight: 10,
+  },
+  avatarSelected: {
+    borderColor: PURP2,
+    backgroundColor: PURP + '33',
+  },
+
+  // ── Butonlar ──
+  primaryBtn: {
+    backgroundColor: PURP,
+    borderRadius: 14,
+    paddingVertical: 17,
+    alignItems: 'center',
+    shadowColor: PURP2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 8,
+    marginBottom: 20,
+  },
+  primaryBtnText: {
+    fontFamily: 'Nunito-ExtraBold',
+    fontSize: 17,
+    color: '#fff',
+  },
+
+  // ── Divider ──
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 10,
+  },
+  divLine: { flex: 1, height: 1, backgroundColor: BORDER },
+  divText: { fontFamily: 'Nunito-Regular', fontSize: 13, color: MUTED },
+
+  // ── Sosyal ──
+  socialBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: CARD,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingVertical: 15,
+    marginBottom: 12,
+    gap: 10,
+  },
+  socialIcon: {
+    fontSize: 18,
+    color: TEXT,
+    fontFamily: 'Nunito-ExtraBold',
+    width: 24,
+    textAlign: 'center',
+  },
+  socialText: {
+    fontFamily: 'Nunito-Bold',
+    fontSize: 15,
+    color: TEXT,
+  },
+
+  // ── Geçiş ──
+  switchRow: { alignItems: 'center', marginTop: 8 },
+  switchText: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 14,
+    color: MUTED,
+  },
+  switchLink: {
+    fontFamily: 'Nunito-ExtraBold',
+    color: LAVAND,
+  },
 });

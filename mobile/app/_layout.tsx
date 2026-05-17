@@ -16,6 +16,7 @@ import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
 import { socketService } from '../src/services/socket.service';
 import { Alert, View, Text, StyleSheet } from 'react-native';
+import { SplashScreenView } from '../src/components/ui/SplashScreenView';
 import { CATEGORIES } from '../src/constants/categories';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { notificationService } from '../src/services/notification.service';
@@ -66,8 +67,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const socket = socketService.connect();
-      if (socket) {
+      socketService.connectAsync().then(socket => {
+        if (!socket) return;
+
         socket.on('duel_invited', (data: { challengerId: string; mode: string; duelId: string }) => {
           const catName = CATEGORIES.find(c => c.id === data.mode)?.name ?? data.mode;
           Alert.alert(
@@ -75,9 +77,7 @@ export default function RootLayout() {
             `${catName} kategorisinde bir düello daveti aldın. Kabul ediyor musun?`,
             [
               { text: 'Reddet', style: 'cancel', onPress: () => socket.emit('duel_reject', { challengerId: data.challengerId }) },
-              { text: 'Kabul Et', onPress: () => {
-                socket.emit('duel_accept', { challengerId: data.challengerId });
-              }},
+              { text: 'Kabul Et', onPress: () => socket.emit('duel_accept', { challengerId: data.challengerId }) },
             ]
           );
         });
@@ -86,7 +86,6 @@ export default function RootLayout() {
           router.push(`/duel/${data.duelId}?cat=${data.category ?? 'general'}` as any);
         });
 
-        // Canlı yarışma bildirimleri
         socket.on('live_tournament_soon', (data: { message: string; minutesLeft: number }) => {
           Alert.alert('🏟️ Canlı Yarışma!', data.message, [
             { text: 'Tamam' },
@@ -95,12 +94,12 @@ export default function RootLayout() {
         });
 
         socket.on('live_tournament_start', () => {
-          Alert.alert('🔴 Yarışma Başladı!', 'Canlı yarışma şu an aktif! Katılmak ister misin?', [
+          Alert.alert('🔴 Yarışma Başladı!', 'Katılmak ister misin?', [
             { text: 'Sonra' },
             { text: 'Katıl!', onPress: () => router.push('/live' as any) },
           ]);
         });
-      }
+      });
     } else {
       socketService.disconnect();
     }
@@ -142,7 +141,11 @@ export default function RootLayout() {
 
 
   if (!loaded || !authLoaded) {
-    return null;
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SplashScreenView />
+      </GestureHandlerRootView>
+    );
   }
 
   const C = Colors[theme];
@@ -175,8 +178,9 @@ export default function RootLayout() {
           <Stack.Screen name="live"       options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', animationDuration: 350 }} />
 
           {/* Düello — rakiple karşılaşma anı */}
-          <Stack.Screen name="duel/lobby"    options={{ animation: 'slide_from_right', animationDuration: 280 }} />
-          <Stack.Screen name="duel/[duelId]" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', animationDuration: 400 }} />
+          <Stack.Screen name="duel/lobby"       options={{ animation: 'slide_from_right', animationDuration: 280 }} />
+          <Stack.Screen name="duel/matchmaking" options={{ presentation: 'fullScreenModal', animation: 'fade', animationDuration: 300 }} />
+          <Stack.Screen name="duel/[duelId]"    options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', animationDuration: 400 }} />
 
           {/* İçerik ekranları — sağdan kayma */}
           <Stack.Screen name="stats"      options={{ animation: 'slide_from_right', animationDuration: 260 }} />
@@ -186,6 +190,8 @@ export default function RootLayout() {
           <Stack.Screen name="tasks"      options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="settings"       options={{ headerShown: true, title: 'Ayarlar', animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="reset-password"   options={{ animation: 'fade', animationDuration: 300 }} />
+          <Stack.Screen name="kategoriler"      options={{ animation: 'slide_from_bottom', animationDuration: 300 }} />
+          <Stack.Screen name="friend/[userId]"  options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="privacy-policy"   options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="terms-of-service" options={{ animation: 'slide_from_right', animationDuration: 260 }} />
         </Stack>

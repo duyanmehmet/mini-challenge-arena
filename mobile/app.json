@@ -5,14 +5,14 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mca",
+    "scheme": "zekameydani",
 
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#0d0d1a"
     },
     "description": "Türkiye'nin en eğlenceli bilgi yarışması — Zeka Meydanı!",
     "ios": {

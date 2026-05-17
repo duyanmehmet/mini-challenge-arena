@@ -152,6 +152,55 @@ router.post("/verify-email", authLimiter, async (req, res) => {
   }
 });
 
+// ── Google ile Giriş ──
+router.post("/google", authLimiter, async (req, res) => {
+  const { accessToken } = req.body;
+  if (!accessToken) return res.status(400).json({ message: "Access token gerekli." });
+
+  try {
+    // Google'dan kullanıcı bilgilerini al
+    const gRes = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`);
+    if (!gRes.ok) return res.status(401).json({ message: "Geçersiz Google token." });
+
+    const gUser = await gRes.json() as { id: string; email: string; name: string; picture: string };
+
+    if (!gUser.email) return res.status(400).json({ message: "Google hesabından e-posta alınamadı." });
+
+    // Mevcut kullanıcı var mı?
+    let user = await db("users").where("email", gUser.email.toLowerCase()).first();
+
+    if (!user) {
+      // Yeni kullanıcı oluştur
+      const userId = uuidv4();
+      const username = gUser.name?.replace(/\s+/g, "_").slice(0, 20) || `user_${userId.slice(0, 6)}`;
+
+      // Benzersiz kullanıcı adı garantile
+      const exists = await db("users").where("username", username).first();
+      const finalUsername = exists ? `${username}_${userId.slice(0, 4)}` : username;
+
+      await db("users").insert({
+        id: userId,
+        username: finalUsername,
+        email: gUser.email.toLowerCase(),
+        password_hash: uuidv4(), // Google giriş — şifre kullanılmaz
+        avatar_id: 1,
+        email_verified: true,   // Google e-postası doğrulanmış kabul edilir
+      });
+
+      user = await db("users").where("id", userId).first();
+
+      // Günlük görevleri oluştur
+      const { DailyTaskService } = await import("../services/DailyTaskService");
+      await DailyTaskService.ensureTasksForToday(userId).catch(() => {});
+    }
+
+    res.json({ user: mapUser(user), token: signToken(user.id) });
+  } catch (err) {
+    console.error("Google auth error:", err);
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
 // ── Şifre sıfırlama isteği ──
 router.post("/forgot-password", authLimiter, async (req, res) => {
   const { email } = req.body;

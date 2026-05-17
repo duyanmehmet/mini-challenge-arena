@@ -1,18 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
 import { useGameStore } from '../../../store/gameStore';
-import { useSettingsStore } from '../../../store/settingsStore';
 import { useUserStore } from '../../../store/userStore';
-import { Colors } from '../../../constants/colors';
 import type { CategoryId } from '../../../constants/categories';
 import type { QuizQuestion } from '../../../types/quiz';
 import { getAdaptiveQuestions } from '../../../data/questions/index';
 import { assetService } from '../../../services/asset.service';
-import { TimerBar } from '../TimerBar';
-import { ScoreBar } from '../ScoreBar';
-import { ComboBar } from '../ComboBar';
 
-/** Cevap hızına göre puan hesapla (0-15 saniye içinde) */
+const { width } = Dimensions.get('window');
+
+const BG      = '#0d0d1a';
+const CARD    = '#13132a';
+const BORDER  = '#2e2b5a';
+const PURP    = '#6c3aed';
+const GREEN   = '#22c55e';
+const RED     = '#ef4444';
+const TEXT    = '#ffffff';
+const MUTED   = '#7c7aaa';
+const LETTERS = ['A', 'B', 'C', 'D'];
+
 function speedScore(elapsedMs: number): number {
   const s = elapsedMs / 1000;
   if (s <= 2)  return 30;
@@ -23,12 +29,12 @@ function speedScore(elapsedMs: number): number {
   return 6;
 }
 
-const QUESTION_TIME = 15; // saniye / soru
-const SESSION_TIME  = 60; // genel süre (timer modu)
-
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
+
+const QUESTION_TIME = 15;
+const SESSION_TIME  = 60;
 
 interface Jokers { half: boolean; skip: boolean; time: boolean }
 
@@ -38,15 +44,14 @@ export interface Props {
   externalPool?: QuizQuestion[];
   lives?: number;
   onLifeLost?: () => void;
-  /** Düello modunda rakibin seçimini yayınlamak için */
   onAnswer?: (correct: boolean, pts: number, qIndex: number) => void;
+  onPause?: () => void;
+  catIcon?: string;
 }
 
-export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, onLifeLost, onAnswer }: Props) {
-  const { addScore, combo } = useGameStore();
-  const { theme } = useSettingsStore();
+export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, onLifeLost, onAnswer, onPause, catIcon }: Props) {
+  const { addScore, score, combo } = useGameStore();
   const { categoryPlayCounts } = useUserStore();
-  const C = Colors[theme];
 
   const [pool] = useState<QuizQuestion[]>(() => {
     if (externalPool) return externalPool;
@@ -54,30 +59,46 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     return getAdaptiveQuestions(categoryId, playCount);
   });
 
-  const [qIndex, setQIndex]     = useState(0);
-  const [feedback, setFeedback] = useState<{ text: string; correct: boolean } | null>(null);
-  const [streak, setStreak]     = useState(0);
-  const [answered, setAnswered] = useState(0);
-  const [lives, setLives]       = useState(initialLives ?? 999);
-  const [jokers, setJokers]     = useState<Jokers>({ half: true, skip: true, time: true });
-  const [eliminated, setElim]   = useState<number[]>([]);
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null); // seçilen şık highlight için
-  const [sessionKey, setSessionKey] = useState(0); // session timer reset
-  // Hız ölçümü
-  const [qTimeLeft, setQTimeLeft] = useState(QUESTION_TIME);
-  const qStartRef = useRef(Date.now());
-  const qTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [qIndex, setQIndex]           = useState(0);
+  const [feedback, setFeedback]       = useState<{ correct: boolean; explanation?: string } | null>(null);
+  const [streak, setStreak]           = useState(0);
+  const [answered, setAnswered]       = useState(0);
+  const [lives, setLives]             = useState(initialLives ?? 999);
+  const [jokers, setJokers]           = useState<Jokers>({ half: true, skip: true, time: true });
+  const [eliminated, setElim]         = useState<number[]>([]);
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [qTimeLeft, setQTimeLeft]     = useState(QUESTION_TIME);
+  const [sessionLeft, setSessionLeft] = useState(SESSION_TIME);
 
-  const endCalled    = useRef(false);
-  const feedbackAnim = useRef(new Animated.Value(0)).current;
-  const cardAnim     = useRef(new Animated.Value(1)).current;
-  const cardSlide    = useRef(new Animated.Value(0)).current; // sağdan slide için
-  const timerAnim    = useRef(new Animated.Value(1)).current;
+  const qStartRef  = useRef(Date.now());
+  const qTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sesTimerRef= useRef<ReturnType<typeof setInterval> | null>(null);
+  const endCalled  = useRef(false);
+  const cardAnim   = useRef(new Animated.Value(1)).current;
+  const cardSlide  = useRef(new Animated.Value(0)).current;
+  const timerAnim  = useRef(new Animated.Value(1)).current;
 
   const isLiveMode = initialLives !== undefined;
   const current    = pool[qIndex];
+  const total      = isLiveMode ? pool.length : 10;
 
-  // ── Soru başına 15 sn sayaç — qIndex değişince yeniden başlar ────────
+  // Session timer (genel süre)
+  useEffect(() => {
+    if (isLiveMode) return;
+    sesTimerRef.current = setInterval(() => {
+      setSessionLeft(t => {
+        if (t <= 1) {
+          clearInterval(sesTimerRef.current!);
+          if (!endCalled.current) { endCalled.current = true; onEnd(); }
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(sesTimerRef.current!);
+  }, []);
+
+  // Soru sayacı
   useEffect(() => {
     qStartRef.current = Date.now();
     setQTimeLeft(QUESTION_TIME);
@@ -85,65 +106,46 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     Animated.timing(timerAnim, { toValue: 0, duration: QUESTION_TIME * 1000, useNativeDriver: false }).start();
 
     qTimerRef.current = setInterval(() => {
-      setQTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(qTimerRef.current!);
-          handleTimeOut();
-          return 0;
-        }
+      setQTimeLeft(t => {
+        if (t <= 1) { clearInterval(qTimerRef.current!); handleTimeOut(); return 0; }
         return t - 1;
       });
     }, 1000);
 
-    return () => {
-      if (qTimerRef.current) clearInterval(qTimerRef.current);
-      timerAnim.stopAnimation();
-    };
-  }, [qIndex]); // sadece soru değişince yenile
+    return () => { if (qTimerRef.current) clearInterval(qTimerRef.current); timerAnim.stopAnimation(); };
+  }, [qIndex]);
 
-  const stopQTimer = () => {
-    if (qTimerRef.current) clearInterval(qTimerRef.current);
-  };
+  const stopQTimer = () => { if (qTimerRef.current) clearInterval(qTimerRef.current); };
 
   const handleTimeOut = () => {
     if (feedback || endCalled.current) return;
     assetService.playSound('miss');
-    assetService.vibrate([0, 60]);
     setStreak(0);
     const newLives = lives - 1;
-    if (isLiveMode) {
-      setLives(newLives);
-      onLifeLost?.();
-    }
-    setFeedback({ text: `⏰ Süre doldu! Cevap: "${current?.a[current.c]}"`, correct: false });
+    if (isLiveMode) { setLives(newLives); onLifeLost?.(); }
+    setFeedback({ correct: false, explanation: current?.e });
     onAnswer?.(false, 0, qIndex);
-    setAnswered((n) => n + 1);
-    animateFeedback(() => {
+    setAnswered(n => n + 1);
+    setTimeout(() => {
       setFeedback(null);
       if (isLiveMode && newLives <= 0) {
         if (!endCalled.current) { endCalled.current = true; onEnd(); }
-      } else {
-        nextQuestion();
-      }
-    });
+      } else { nextQuestion(); }
+    }, 1500);
   };
 
   const nextQuestion = () => {
     setElim([]);
     setSelectedIdx(null);
-    // Mevcut kart sola çıkar, yeni kart sağdan gelir
     cardSlide.setValue(0);
     Animated.sequence([
-      // Hızlıca sola çık
       Animated.parallel([
-        Animated.timing(cardAnim,  { toValue: 0,    duration: 120, useNativeDriver: true }),
-        Animated.timing(cardSlide, { toValue: -60,  duration: 120, useNativeDriver: true }),
+        Animated.timing(cardAnim,  { toValue: 0,   duration: 120, useNativeDriver: true }),
+        Animated.timing(cardSlide, { toValue: -50, duration: 120, useNativeDriver: true }),
       ]),
-      // Sağdan pozisyona al
       Animated.timing(cardSlide, { toValue: 40, duration: 0, useNativeDriver: true }),
-      // İçeri süz
       Animated.parallel([
-        Animated.timing(cardAnim,  { toValue: 1,   duration: 220, useNativeDriver: true }),
+        Animated.timing(cardAnim,  { toValue: 1,  duration: 200, useNativeDriver: true }),
         Animated.spring(cardSlide, { toValue: 0, tension: 80, friction: 9, useNativeDriver: true }),
       ]),
     ]).start();
@@ -155,189 +157,151 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     setQIndex(next % pool.length);
   };
 
-  const animateFeedback = (cb: () => void, hasExplanation = false) => {
-    const delay = hasExplanation ? 1800 : 800;
-    Animated.sequence([
-      Animated.timing(feedbackAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
-      Animated.delay(delay),
-      Animated.timing(feedbackAnim, { toValue: 0, duration: 130, useNativeDriver: true }),
-    ]).start(cb);
-  };
-
   const handleChoice = (choiceIdx: number) => {
     if (!current || feedback || eliminated.includes(choiceIdx)) return;
     stopQTimer();
     setSelectedIdx(choiceIdx);
 
-    const elapsed   = Date.now() - qStartRef.current;
-    const isCorrect = choiceIdx === current.c;
+    const elapsed    = Date.now() - qStartRef.current;
+    const isCorrect  = choiceIdx === current.c;
     const streakBonus = streak >= 5 ? 1.5 : streak >= 3 ? 1.25 : 1;
     const pts = isCorrect ? Math.round(speedScore(elapsed) * streakBonus) : 0;
-
-    const hasExpl = !!current.e;
 
     if (isCorrect) {
       addScore(pts);
       assetService.playSound('hit');
       assetService.vibrate(40);
-      setStreak((s) => s + 1);
-      const timeLabel = elapsed < 3000 ? ' ⚡Süper hızlı!' : elapsed < 6000 ? ' 🔥Hızlı!' : '';
-      setFeedback({ text: `✅ Doğru! +${pts} puan${timeLabel}`, correct: true });
+      setStreak(s => s + 1);
     } else {
       assetService.playSound('miss');
       assetService.vibrate([0, 80]);
       setStreak(0);
       const newLives = lives - 1;
       if (isLiveMode) { setLives(newLives); onLifeLost?.(); }
-      setFeedback({ text: `❌ Yanlış! Cevap: "${current.a[current.c]}"`, correct: false });
-      if (isLiveMode && newLives <= 0) {
-        onAnswer?.(false, 0, qIndex);
-        setAnswered((n) => n + 1);
-        animateFeedback(() => { if (!endCalled.current) { endCalled.current = true; onEnd(); } }, hasExpl);
-        return;
-      }
     }
 
+    setFeedback({ correct: isCorrect, explanation: current.e });
     onAnswer?.(isCorrect, pts, qIndex);
-    setAnswered((n) => n + 1);
-    animateFeedback(() => { setFeedback(null); nextQuestion(); }, hasExpl);
+    setAnswered(n => n + 1);
+
+    setTimeout(() => {
+      setFeedback(null);
+      if (isLiveMode && !isCorrect && lives - 1 <= 0) {
+        if (!endCalled.current) { endCalled.current = true; onEnd(); }
+      } else { nextQuestion(); }
+    }, isCorrect ? 1000 : 1500);
   };
 
-  // ── Jokerler ──────────────────────────────────────────────────────────
   const useHalf = () => {
     if (!jokers.half || !current || feedback) return;
-    const wrongs = current.a.map((_, i) => i).filter((i) => i !== current.c && !eliminated.includes(i));
+    const wrongs = current.a.map((_, i) => i).filter(i => i !== current.c && !eliminated.includes(i));
     setElim(shuffle(wrongs).slice(0, 2));
-    setJokers((j) => ({ ...j, half: false }));
+    setJokers(j => ({ ...j, half: false }));
   };
 
   const useSkip = () => {
     if (!jokers.skip || feedback) return;
     stopQTimer();
-    setJokers((j) => ({ ...j, skip: false }));
-    setAnswered((n) => n + 1);
+    setJokers(j => ({ ...j, skip: false }));
+    setAnswered(n => n + 1);
     nextQuestion();
   };
 
   const useTime = () => {
     if (!jokers.time || feedback) return;
-    setJokers((j) => ({ ...j, time: false }));
-    setSessionKey((k) => k + 1);
+    setJokers(j => ({ ...j, time: false }));
+    setSessionLeft(t => Math.min(t + 60, SESSION_TIME * 2));
   };
-
-  const s = styles(C);
 
   if (!current) return null;
 
+  const timerWidth = timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
   const timerColor = timerAnim.interpolate({
     inputRange: [0, 0.33, 1],
-    outputRange: ['#e74c3c', '#f0c040', '#2ecc71'],
+    outputRange: ['#ef4444', '#f59e0b', '#22c55e'],
   });
 
+  const progressPct = Math.min((qIndex + 1) / total, 1);
+
   return (
-    <View style={s.container}>
-      <ScoreBar showLives={isLiveMode} />
+    <View style={s.root}>
 
-      {/* Session timer (timer modu) */}
-      {!isLiveMode && (
-        <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
-          <TimerBar
-            key={sessionKey}
-            duration={SESSION_TIME}
-            isPlaying={true}
-            onTimeUp={() => { if (!endCalled.current) { endCalled.current = true; onEnd(); } }}
-          />
+      {/* ── Üst bar ── */}
+      <View style={s.topBar}>
+        {/* Kategori ikon + Soru No + Puan + Pause */}
+        <View style={s.topRow}>
+          <Text style={s.catIconTxt}>{catIcon ?? '🎮'}</Text>
+          <Text style={s.soruTxt}>Soru {qIndex + 1} / {total}</Text>
+          <Text style={s.puanTxt}>Puan: {score.toLocaleString('tr-TR')}</Text>
+          {onPause && (
+            <TouchableOpacity style={s.pauseBtn} onPress={onPause}>
+              <Text style={{ fontSize: 18 }}>⏸</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      )}
-
-      <ComboBar combo={combo} />
-
-      {/* Soru sayacı + can + seri */}
-      <View style={s.statsRow}>
-        {streak >= 3 && (
-          <View style={[s.badge, { backgroundColor: '#f0c04033', borderColor: '#f0c040' }]}>
-            <Text style={[s.badgeText, { color: '#f0c040' }]}>🔥 {streak} seri</Text>
-          </View>
-        )}
-        {isLiveMode && (
-          <View style={[s.badge, { backgroundColor: C.danger + '22', borderColor: C.danger }]}>
-            <Text style={[s.badgeText, { color: C.danger }]}>{'❤️'.repeat(Math.max(lives, 0))}</Text>
-          </View>
-        )}
-        <View style={[s.badge, { backgroundColor: C.bgTertiary, borderColor: C.border }]}>
-          <Text style={[s.badgeText, { color: C.textSecondary }]}>
-            {isLiveMode ? `${qIndex + 1}/${pool.length}` : `${answered} soru`}
-          </Text>
+        {/* Soru progress bar */}
+        <View style={s.progressBg}>
+          <View style={[s.progressFill, { width: `${progressPct * 100}%` }]} />
         </View>
       </View>
 
-      {/* Hız sayacı — soru başına 15 saniye */}
-      <View style={s.qTimerRow}>
-        <Animated.View style={[s.qTimerBar, { flex: timerAnim as any, backgroundColor: timerColor as any }]} />
-        <Text style={[s.qTimerLabel, { color: C.textSecondary }]}>{qTimeLeft}s</Text>
+      {/* ── Süre çubuğu ── */}
+      <View style={s.qTimerBg}>
+        <Animated.View style={[s.qTimerFill, { width: timerWidth as any, backgroundColor: timerColor as any }]} />
+        <Text style={s.qTimerNum}>{qTimeLeft}s</Text>
       </View>
 
-      {/* Soru kartı — sağdan slide animasyonu */}
-      <Animated.View style={[s.questionCard, { backgroundColor: C.bgSecondary, opacity: cardAnim, transform: [{ translateX: cardSlide }] }]}>
-        <Text style={[s.normalQuestion, { color: C.textPrimary }]} numberOfLines={5}>
-          {current.q}
-        </Text>
+      {/* ── Soru ── */}
+      <Animated.View style={[s.questionBox, { opacity: cardAnim, transform: [{ translateX: cardSlide }] }]}>
+        <Text style={s.questionTxt}>{current.q}</Text>
       </Animated.View>
 
-      {/* Geri bildirim + Açıklama */}
-      {feedback && (
-        <Animated.View style={[
-          s.feedbackBox,
-          { backgroundColor: feedback.correct ? C.success + '22' : C.danger + '22', opacity: feedbackAnim },
-        ]}>
-          <Text style={[s.feedbackText, { color: feedback.correct ? C.success : C.danger }]}>
-            {feedback.text}
-          </Text>
-          {current.e ? (
-            <Text style={[s.explanationText, { color: C.textPrimary }]}>
-              💡 {current.e}
-            </Text>
-          ) : null}
-        </Animated.View>
-      )}
+      {/* ── Açıklama (feedback sonrası) ── */}
+      {feedback && current.e ? (
+        <View style={[s.explBox, { borderColor: feedback.correct ? GREEN + '55' : RED + '55' }]}>
+          <Text style={s.explTxt}>💡 {current.e}</Text>
+        </View>
+      ) : null}
 
-      {/* 4 şık */}
-      <View style={s.choicesGrid}>
+      {/* ── Seçenekler ── */}
+      <View style={s.options}>
         {current.a.map((choice, i) => {
-          const isElim    = eliminated.includes(i);
-          const isCorrect = i === current.c;
+          const isElim     = eliminated.includes(i);
+          const isCorrect  = i === current.c;
           const isSelected = i === selectedIdx;
 
-          // Feedback gösterilirken renkleri uygula
-          let bg          = C.bgSecondary;
-          let border      = C.border;
-          let textColor   = C.textPrimary;
+          let bg       = CARD;
+          let border   = BORDER;
+          let textClr  = TEXT;
+          let letterBg = '#1e1b3a';
+          let letterClr= MUTED;
 
           if (feedback && !isElim) {
             if (isCorrect) {
-              bg     = C.success + '33';
-              border = C.success;
-              textColor = C.success;
+              bg = GREEN + '22'; border = GREEN;
+              textClr = GREEN; letterBg = GREEN; letterClr = '#fff';
             } else if (isSelected) {
-              bg     = C.danger + '33';
-              border = C.danger;
-              textColor = C.danger;
+              bg = RED + '22'; border = RED;
+              textClr = RED; letterBg = RED; letterClr = '#fff';
             }
           }
 
           return (
             <TouchableOpacity
               key={i}
-              style={[s.choiceBtn, {
-                backgroundColor: isElim ? C.bgTertiary : bg,
-                borderColor: isElim ? C.bgTertiary : border,
-                opacity: isElim ? 0.25 : 1,
+              style={[s.optionBtn, {
+                backgroundColor: isElim ? '#0d0d1a' : bg,
+                borderColor: isElim ? BORDER : border,
+                opacity: isElim ? 0.3 : 1,
               }]}
               onPress={() => handleChoice(i)}
               disabled={isElim || !!feedback}
-              activeOpacity={0.75}
+              activeOpacity={0.8}
             >
-              <Text style={[s.choiceText, { color: isElim ? 'transparent' : textColor }]} numberOfLines={3}>
+              <View style={[s.letter, { backgroundColor: letterBg }]}>
+                <Text style={[s.letterTxt, { color: letterClr }]}>{LETTERS[i]}</Text>
+              </View>
+              <Text style={[s.optionTxt, { color: isElim ? '#444' : textClr }]} numberOfLines={2}>
                 {choice}
               </Text>
             </TouchableOpacity>
@@ -345,60 +309,112 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
         })}
       </View>
 
-      {/* Jokerler */}
-      <View style={s.jokerRow}>
-        <JokerBtn icon="✂️" label="50/50"  color="#e74c3c" active={jokers.half} onPress={useHalf} />
-        <JokerBtn icon="⏭️" label="Geç"   color="#3498db" active={jokers.skip} onPress={useSkip} />
-        {!isLiveMode && (
-          <JokerBtn icon="⏱️" label="+60s" color="#2ecc71" active={jokers.time} onPress={useTime} />
-        )}
+      {/* ── Jokerler ── */}
+      <View style={s.jokers}>
+        <JokerBtn
+          emoji="✂️" label="50:50"
+          active={jokers.half} color="#ef4444"
+          onPress={useHalf}
+        />
+        <JokerBtn
+          emoji="🔄" label="Çek"
+          active={jokers.time} color="#6c3aed"
+          onPress={useTime}
+        />
+        <JokerBtn
+          emoji="✕" label="Pas"
+          active={jokers.skip} color="#7c7aaa"
+          onPress={useSkip}
+        />
       </View>
+
     </View>
   );
 }
 
-function JokerBtn({ icon, label, color, active, onPress }: {
-  icon: string; label: string; color: string; active: boolean; onPress: () => void;
+function JokerBtn({ emoji, label, active, color, onPress }: {
+  emoji: string; label: string; active: boolean; color: string; onPress: () => void;
 }) {
-  const { theme } = useSettingsStore();
-  const C = Colors[theme];
   return (
     <TouchableOpacity
-      style={[jStyle.btn, { backgroundColor: C.bgSecondary, borderColor: color, opacity: active ? 1 : 0.3 }]}
+      style={[js.btn, { borderColor: active ? color : '#2e2b5a', opacity: active ? 1 : 0.35 }]}
       onPress={onPress}
       disabled={!active}
+      activeOpacity={0.75}
     >
-      <Text style={jStyle.icon}>{icon}</Text>
-      <Text style={[jStyle.label, { color }]}>{label}</Text>
+      <Text style={js.emoji}>{emoji}</Text>
+      <Text style={[js.label, { color: active ? color : MUTED }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-const jStyle = StyleSheet.create({
-  btn: { flex: 1, borderRadius: 14, paddingVertical: 10, alignItems: 'center', borderWidth: 1.5 },
-  icon: { fontSize: 18, marginBottom: 2 },
-  label: { fontFamily: 'Nunito-Bold', fontSize: 11 },
+const js = StyleSheet.create({
+  btn:   { flex: 1, backgroundColor: CARD, borderRadius: 14, borderWidth: 1.5, paddingVertical: 12, alignItems: 'center', gap: 4 },
+  emoji: { fontSize: 20 },
+  label: { fontFamily: 'Nunito-Bold', fontSize: 12 },
 });
 
-const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bgPrimary, paddingHorizontal: 16 },
-  statsRow: { flexDirection: 'row', gap: 8, marginVertical: 6, flexWrap: 'wrap' },
-  badge: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1 },
-  badgeText: { fontFamily: 'Nunito-Bold', fontSize: 12 },
-  qTimerRow: { flexDirection: 'row', alignItems: 'center', height: 8, borderRadius: 4, backgroundColor: C.bgTertiary, marginBottom: 10, overflow: 'hidden' },
-  qTimerBar: { height: '100%', borderRadius: 4 },
-  qTimerLabel: { fontFamily: 'Nunito-Bold', fontSize: 11, position: 'absolute', right: 4 },
-  questionCard: {
-    borderRadius: 20, padding: 20, alignItems: 'center', marginBottom: 10,
-    elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6,
-    minHeight: 110, justifyContent: 'center',
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: BG, paddingHorizontal: 16 },
+
+  // Üst bar
+  topBar: { paddingTop: 10, marginBottom: 6 },
+  topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
+  catIconTxt: { fontSize: 20 },
+  soruTxt: { fontFamily: 'Nunito-Bold', fontSize: 13, color: MUTED, flex: 1 },
+  puanTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT },
+  pauseBtn: { backgroundColor: '#1e1b3a', padding: 7, borderRadius: 20, marginLeft: 4 },
+  progressBg:   { height: 4, backgroundColor: '#1e1b3a', borderRadius: 2, overflow: 'hidden', marginBottom: 8 },
+  progressFill: { height: 4, backgroundColor: PURP, borderRadius: 2 },
+
+  // Süre çubuğu
+  qTimerBg: {
+    height: 8, backgroundColor: '#1e1b3a', borderRadius: 4,
+    overflow: 'hidden', marginBottom: 16, flexDirection: 'row',
   },
-  normalQuestion: { fontFamily: 'Nunito-Bold', fontSize: 16, textAlign: 'center', lineHeight: 24 },
-  feedbackBox: { borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 8, gap: 6 },
-  feedbackText: { fontFamily: 'Nunito-Bold', fontSize: 13, textAlign: 'center' },
-  explanationText: { fontFamily: 'Nunito-Regular', fontSize: 12, textAlign: 'center', lineHeight: 18, paddingHorizontal: 4 },
-  choicesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  choiceBtn: { width: '47%', borderRadius: 14, padding: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, minHeight: 58 },
-  choiceText: { fontFamily: 'Nunito-Bold', fontSize: 13, textAlign: 'center' },
-  jokerRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
+  qTimerFill: { height: 8, borderRadius: 4 },
+  qTimerNum: {
+    position: 'absolute', right: 6, top: -4,
+    fontFamily: 'Nunito-Bold', fontSize: 10, color: MUTED,
+  },
+
+  // Soru
+  questionBox: {
+    backgroundColor: CARD,
+    borderRadius: 20, padding: 22,
+    marginBottom: 12,
+    borderWidth: 1, borderColor: BORDER,
+    minHeight: 90, justifyContent: 'center',
+  },
+  questionTxt: {
+    fontFamily: 'Nunito-ExtraBold',
+    fontSize: 17, color: TEXT,
+    textAlign: 'center', lineHeight: 26,
+  },
+
+  // Açıklama
+  explBox: {
+    backgroundColor: '#1a1a35', borderRadius: 14,
+    padding: 12, marginBottom: 10, borderWidth: 1,
+  },
+  explTxt: { fontFamily: 'Nunito-Regular', fontSize: 13, color: '#c4b5fd', textAlign: 'center', lineHeight: 20 },
+
+  // Seçenekler
+  options: { gap: 10, marginBottom: 14 },
+  optionBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 16, borderWidth: 1.5,
+    paddingVertical: 16, paddingHorizontal: 14,
+    gap: 12,
+  },
+  letter: {
+    width: 34, height: 34, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  letterTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
+  optionTxt: { fontFamily: 'Nunito-Bold', fontSize: 15, flex: 1 },
+
+  // Jokerler
+  jokers: { flexDirection: 'row', gap: 10 },
 });
