@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useGameStore } from '../../src/store/gameStore';
@@ -8,8 +8,7 @@ import { useUserStore } from '../../src/store/userStore';
 import { Colors } from '../../src/constants/colors';
 import { CATEGORIES, type CategoryId } from '../../src/constants/categories';
 import { QuizMode } from '../../src/components/game/modes/QuizMode';
-
-const REVIVE_COST = 50;
+import api from '../../src/services/api';
 
 const QUIZ_CATEGORIES: CategoryId[] = [
   'history','geography','science','general','art','cinema','sports','turkey',
@@ -18,102 +17,160 @@ const QUIZ_CATEGORIES: CategoryId[] = [
 ];
 
 export default function GameScreen() {
-  const { mode, challengeId } = useLocalSearchParams<{ mode: string; challengeId?: string }>();
-  const { startGame, endGame, pauseGame, resumeGame, buyLife, lives } = useGameStore();
-  const { user } = useUserStore();
+  const { mode, challengeId, ligMode } = useLocalSearchParams<{
+    mode: string; challengeId?: string; ligMode?: string;
+  }>();
+  const { startGame, endGame, pauseGame, resumeGame } = useGameStore();
   const { theme } = useSettingsStore();
   const C = Colors[theme];
 
-  const [paused, setPaused] = useState(false);
-  const [showRevive, setShowRevive] = useState(false);
-  const started = useRef(false);
+  const [paused,       setPaused]       = useState(false);
+  const [ligHearts,    setLigHearts]    = useState<number | null>(null);
+  const [heartBlocked, setHeartBlocked] = useState(false);
+  const started       = useRef(false);
+  const failedRef     = useRef(false);
+  const wrongCount    = useRef(0); // yanlış cevap sayacı
+  const isLigMode     = ligMode === '1';
 
-  const catCfg = CATEGORIES.find((c) => c.id === mode);
+  const catCfg     = CATEGORIES.find(c => c.id === mode);
+  const isQuizMode = QUIZ_CATEGORIES.includes(mode as CategoryId);
 
+  // Lig modunda oyun başlamadan server'dan kalp say
   useEffect(() => {
-    if (!started.current && mode) {
-      started.current = true;
-      startGame(mode as any);
-    }
-  }, [mode]);
-
-  const handleEnd = () => {
-    if (lives <= 0 && user && user.coins >= REVIVE_COST && !showRevive) {
-      pauseGame();
-      setShowRevive(true);
+    if (!isLigMode) {
+      setLigHearts(null);
       return;
     }
+    api.get('/lig/current')
+      .then(r => {
+        const h = r.data?.hearts ?? 5;
+        if (h <= 0) {
+          setHeartBlocked(true);
+        } else {
+          setLigHearts(h);
+        }
+      })
+      .catch(() => setLigHearts(5)); // API yoksa 5 ver
+  }, [isLigMode]);
+
+  // Oyunu başlat
+  useEffect(() => {
+    if (started.current) return;
+    if (isLigMode && ligHearts === null) return; // kalpler yüklensin bekle
+    if (heartBlocked) return;
+    started.current = true;
+    if (mode) startGame(mode as any);
+  }, [ligHearts, heartBlocked, isLigMode]);
+
+  // Oyun bitti → kalpleri toplu düşür → result'a git
+  const goToResult = (failed: boolean) => {
     const result = endGame();
+
+    // Lig modunda yanlış sayısını sunucuya tek seferde gönder
+    if (isLigMode && wrongCount.current > 0) {
+      api.post('/lig/lose-hearts', { count: wrongCount.current }).catch(() => {});
+    }
+
     router.replace({
       pathname: '/game/result',
       params: {
-        mode: mode ?? '',
-        score: String(result.score),
+        mode:     mode ?? '',
+        score:    String(result.score),
         maxCombo: String(result.maxCombo),
         duration: String(result.durationSeconds),
         ...(challengeId ? { challengeId } : {}),
+        ...(isLigMode ? {
+          ligMode:   '1',
+          ligFailed: failed ? '1' : '0',
+          ligWrong:  String(wrongCount.current),
+        } : {}),
       },
     });
   };
 
-  const handleRevive = () => {
-    const success = buyLife(REVIVE_COST);
-    if (success) { setShowRevive(false); resumeGame(); }
-    else { Alert.alert('Hata', 'Yetersiz coin!'); handleEnd(); }
+  const handleEnd = () => goToResult(failedRef.current);
+
+  // Yanlış cevap → sadece local say, sunucuya toplu göndereceğiz
+  const handleLifeLost = () => {
+    wrongCount.current += 1;
+    const next = (ligHearts ?? 5) - wrongCount.current;
+    setLigHearts(Math.max(0, next));
+    if (next <= 0) {
+      failedRef.current = true;
+      // QuizMode zaten onEnd çağıracak
+    }
   };
 
-  const handlePause = () => { setPaused(true); pauseGame(); };
+  const handlePause  = () => { setPaused(true);  pauseGame(); };
   const handleResume = () => { setPaused(false); resumeGame(); };
-  const handleQuit = () => { setPaused(false); setShowRevive(false); endGame(); router.replace('/(tabs)'); };
+  const handleQuit   = () => { endGame(); router.replace('/(tabs)'); };
 
   const s = styles(C);
 
-  const isQuizMode = QUIZ_CATEGORIES.includes(mode as CategoryId);
-
-  const renderContent = () => {
-    if (paused || showRevive) return null;
-    if (isQuizMode) return (
-      <QuizMode
-        categoryId={mode as CategoryId}
-        onEnd={handleEnd}
-        onPause={handlePause}
-        catIcon={catCfg?.icon}
-      />
+  // Kalp kontrolü yükleniyor
+  if (isLigMode && ligHearts === null && !heartBlocked) {
+    return (
+      <SafeAreaView style={[s.safe, { backgroundColor: '#0d0d1a', alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color="#8b5cf6" size="large" />
+      </SafeAreaView>
     );
-    return <Text style={{ color: '#fff', textAlign: 'center', marginTop: 40 }}>Bilinmeyen kategori</Text>;
-  };
+  }
+
+  // Kalp 0 — oyna butonu engelli
+  if (heartBlocked) {
+    return (
+      <SafeAreaView style={[s.safe, { backgroundColor: '#0d0d1a' }]}>
+        <View style={s.blockedWrap}>
+          <Text style={{ fontSize: 64 }}>🖤🖤🖤🖤🖤</Text>
+          <Text style={s.blockedTitle}>Kalplerin Bitti!</Text>
+          <Text style={s.blockedSub}>Lig oynamak için kalp gerekiyor.{'\n'}Bekle, reklam izle veya mağazadan al.</Text>
+          <TouchableOpacity style={s.shopBtn} onPress={() => { endGame(); router.replace('/shop' as any); }}>
+            <Text style={s.shopBtnTxt}>🏪 Mağazaya Git</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
+            <Text style={s.backBtnTxt}>← Geri Dön</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: '#0d0d1a' }]}>
-      <View style={{ flex: 1 }}>{renderContent()}</View>
+      <View style={{ flex: 1 }}>
+        {!paused && isQuizMode && (
+          <QuizMode
+            categoryId={mode as CategoryId}
+            onEnd={handleEnd}
+            onPause={handlePause}
+            catIcon={catCfg?.icon}
+            lives={isLigMode ? (ligHearts ?? 5) : undefined}
+            onLifeLost={isLigMode ? handleLifeLost : undefined}
+          />
+        )}
+        {!paused && !isQuizMode && (
+          <Text style={{ color: '#fff', textAlign: 'center', marginTop: 40 }}>
+            Bilinmeyen kategori
+          </Text>
+        )}
+      </View>
 
       <Modal visible={paused} transparent animationType="fade">
         <View style={s.overlay}>
-          <View style={[s.pauseCard, { backgroundColor: C.bgSecondary }]}>
-            <Text style={[s.pauseTitle, { color: C.textPrimary }]}>⏸ Duraklatıldı</Text>
-            <TouchableOpacity style={[s.pauseBtn2, { backgroundColor: C.accentTeal }]} onPress={handleResume}>
-              <Text style={s.pauseBtnText}>▶ Devam Et</Text>
+          <View style={[s.card, { backgroundColor: C.bgSecondary }]}>
+            <Text style={[s.cardTitle, { color: C.textPrimary }]}>⏸ Duraklatıldı</Text>
+            {isLigMode && ligHearts !== null && (
+              <View style={s.heartsRow}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Text key={i} style={{ fontSize: 20, opacity: i < ligHearts ? 1 : 0.2 }}>❤️</Text>
+                ))}
+              </View>
+            )}
+            <TouchableOpacity style={[s.btn, { backgroundColor: C.accentTeal }]} onPress={handleResume}>
+              <Text style={s.btnTxt}>▶ Devam Et</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.pauseBtn2, { backgroundColor: C.danger + '33' }]} onPress={handleQuit}>
-              <Text style={[s.pauseBtnText, { color: C.danger }]}>🏠 Ana Menüye Dön</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={showRevive} transparent animationType="slide">
-        <View style={s.overlay}>
-          <View style={[s.pauseCard, { backgroundColor: C.bgSecondary, borderColor: C.accentYellow, borderWidth: 2 }]}>
-            <Text style={{ fontSize: 40, marginBottom: 8 }}>💔</Text>
-            <Text style={[s.pauseTitle, { color: C.textPrimary }]}>Canın Bitti!</Text>
-            <Text style={{ color: C.textSecondary, textAlign: 'center', marginBottom: 10 }}>
-              {REVIVE_COST} Coin harcayarak +1 can ile devam etmek ister misin?
-            </Text>
-            <TouchableOpacity style={[s.pauseBtn2, { backgroundColor: C.accentYellow }]} onPress={handleRevive}>
-              <Text style={[s.pauseBtnText, { color: '#000' }]}>✨ Canlan ({REVIVE_COST} Coin)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.pauseBtn2, { backgroundColor: C.bgTertiary }]} onPress={() => { setShowRevive(false); handleEnd(); }}>
-              <Text style={[s.pauseBtnText, { color: C.textSecondary }]}>Hayır, Bitir</Text>
+            <TouchableOpacity style={[s.btn, { backgroundColor: C.danger + '33' }]} onPress={handleQuit}>
+              <Text style={[s.btnTxt, { color: C.danger }]}>🏠 Çık</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -123,15 +180,19 @@ export default function GameScreen() {
 }
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe: { flex: 1 },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
-  topLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  catIcon: { fontSize: 20 },
-  modeName: { fontSize: 15, fontFamily: 'Nunito-Bold' },
-  pauseBtn: { padding: 8, borderRadius: 20 },
+  safe:  { flex: 1 },
   overlay: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'center', alignItems: 'center' },
-  pauseCard: { width: 300, borderRadius: 24, padding: 24, alignItems: 'center', gap: 12 },
-  pauseTitle: { fontSize: 22, fontFamily: 'Nunito-ExtraBold', marginBottom: 4 },
-  pauseBtn2: { width: '100%', borderRadius: 14, padding: 16, alignItems: 'center' },
-  pauseBtnText: { fontSize: 16, fontFamily: 'Nunito-Bold', color: '#fff' },
+  card:    { width: 300, borderRadius: 24, padding: 24, alignItems: 'center', gap: 12 },
+  cardTitle: { fontSize: 22, fontFamily: 'Nunito-ExtraBold', marginBottom: 4 },
+  heartsRow: { flexDirection: 'row', gap: 4, marginBottom: 4 },
+  btn:     { width: '100%', borderRadius: 14, padding: 16, alignItems: 'center' },
+  btnTxt:  { fontSize: 16, fontFamily: 'Nunito-Bold', color: '#fff' },
+
+  blockedWrap:  { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 14 },
+  blockedTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 26, color: '#fff' },
+  blockedSub:   { fontFamily: 'Nunito-Regular', fontSize: 15, color: '#7c7aaa', textAlign: 'center', lineHeight: 22 },
+  shopBtn:  { backgroundColor: '#6c3aed', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 32, width: '100%', alignItems: 'center' },
+  shopBtnTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#fff' },
+  backBtn:  { paddingVertical: 10 },
+  backBtnTxt: { fontFamily: 'Nunito-Regular', fontSize: 14, color: '#7c7aaa' },
 });

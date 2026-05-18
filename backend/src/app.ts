@@ -15,12 +15,11 @@ import socialRoutes from "./routes/social.routes";
 import storeRoutes from "./routes/store.routes";
 import challengeRoutes from "./routes/challenge.routes";
 import clanRoutes from "./routes/clan.routes";
-import liveRoutes from "./routes/live.routes";
 import battlepassRoutes from "./routes/battlepass.routes";
 import dailyTaskRoutes from "./routes/dailytask.routes";
-import arenaRoutes, { startArena, getArenaState, ARENA_HOURS_UTC } from "./routes/arena.routes";
 import { setupSocket } from "./socket";
-import { LiveTournamentService } from "./services/LiveTournamentService";
+import ligRoutes      from "./routes/lig.routes";
+import messagesRoutes from "./routes/messages.routes";
 
 dotenv.config();
 
@@ -29,9 +28,6 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*", methods: ["GET","POST"] } });
 
 setupSocket(io);
-
-const liveTournament = new LiveTournamentService(io);
-liveTournament.start();
 
 app.use(cors({ origin: "*", methods: ["GET","POST","PATCH","DELETE"] }));
 app.use(express.json());
@@ -45,45 +41,12 @@ app.use("/v1/social",      socialRoutes);
 app.use("/v1/store",       storeRoutes);
 app.use("/v1/challenge",   challengeRoutes);
 app.use("/v1/clan",        clanRoutes);
-app.use("/v1/live",        liveRoutes);
-app.use("/v1/battlepass",   battlepassRoutes);
+app.use("/v1/battlepass",  battlepassRoutes);
 app.use("/v1/daily-tasks", dailyTaskRoutes);
-app.use("/v1/arena",      arenaRoutes);
+app.use("/v1/lig",         ligRoutes);
+app.use("/v1/messages",   messagesRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
-
-// ── Zeka Arenası — 13:00, 18:00, 21:00 TR (UTC+3) ──
-const ARENA_CATEGORIES = ['general', 'history', 'science', 'geography', 'sports', 'cinema'];
-let arenaIdx = 0;
-
-function launchArena() {
-  const cat = ARENA_CATEGORIES[arenaIdx % ARENA_CATEGORIES.length];
-  arenaIdx++;
-  const arena = startArena(cat);
-  console.log(`🏟️ Arena başladı: ${cat} | ID: ${arena.id}`);
-
-  // Socket ile tüm kullanıcılara bildir
-  io.emit('arena_started', {
-    arenaId: arena.id,
-    category: cat,
-    endsAt: arena.endAt.toISOString(),
-    secondsLeft: 30 * 60,
-  });
-
-  // 15 dakika kala hatırlatma
-  setTimeout(() => {
-    if (getArenaState()?.id === arena.id) {
-      io.emit('arena_ending_soon', { arenaId: arena.id, secondsLeft: 15 * 60 });
-    }
-  }, 15 * 60 * 1000);
-}
-
-// 10:00 UTC = 13:00 TR
-cron.schedule("0 10 * * *", launchArena);
-// 15:00 UTC = 18:00 TR
-cron.schedule("0 15 * * *", launchArena);
-// 18:00 UTC = 21:00 TR
-cron.schedule("0 18 * * *", launchArena);
 
 // Haftalık lig sıfırlama — Her Pazartesi 00:00
 cron.schedule("0 0 * * 1", async () => {

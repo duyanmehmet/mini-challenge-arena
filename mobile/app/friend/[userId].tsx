@@ -141,9 +141,18 @@ export default function FriendProfileScreen() {
         </View>
 
         {/* ── Butonlar ── */}
-        <TouchableOpacity style={s.duelBtn} onPress={handleDuel} activeOpacity={0.85}>
-          <Text style={s.duelTxt}>⚔️ Düello Davet Et</Text>
-        </TouchableOpacity>
+        <View style={s.actionRow}>
+          <TouchableOpacity style={s.duelBtn} onPress={handleDuel} activeOpacity={0.85}>
+            <Text style={s.duelTxt}>⚔️ Düello</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.msgBtn}
+            onPress={() => router.push(`/chat/${userId}?name=${username}&avatar=${avatarId ?? 1}` as any)}
+            activeOpacity={0.85}
+          >
+            <Text style={s.msgTxt}>💬 Mesaj</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={s.removeBtn} onPress={handleRemove} disabled={removing} activeOpacity={0.7}>
           {removing
@@ -193,13 +202,20 @@ const s = StyleSheet.create({
   statDiv:  { width: 1, height: 36, backgroundColor: BORDER },
 
   // Butonlar
+  actionRow: { flexDirection: 'row', gap: 12 },
   duelBtn: {
-    backgroundColor: PURP, borderRadius: 16,
+    flex: 1, backgroundColor: PURP, borderRadius: 16,
     paddingVertical: 18, alignItems: 'center',
     shadowColor: PURP2, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5, shadowRadius: 12, elevation: 8,
   },
   duelTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: TEXT },
+  msgBtn: {
+    flex: 1, backgroundColor: '#13132a', borderRadius: 16,
+    paddingVertical: 18, alignItems: 'center',
+    borderWidth: 1.5, borderColor: PURP2,
+  },
+  msgTxt:  { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: PURP2 },
   removeBtn: { alignItems: 'center', paddingVertical: 12 },
   removeTxt: { fontFamily: 'Nunito-Bold', fontSize: 15, color: RED },
 });

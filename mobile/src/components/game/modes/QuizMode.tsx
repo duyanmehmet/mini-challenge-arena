@@ -56,7 +56,9 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const [pool] = useState<QuizQuestion[]>(() => {
     if (externalPool) return externalPool;
     const playCount = categoryPlayCounts[categoryId] ?? 0;
-    return getAdaptiveQuestions(categoryId, playCount);
+    const all = getAdaptiveQuestions(categoryId, playCount);
+    // Live modda (lig) sadece 10 soru
+    return initialLives !== undefined ? all.slice(0, 10) : all;
   });
 
   const [qIndex, setQIndex]           = useState(0);
@@ -228,10 +230,17 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
 
       {/* ── Üst bar ── */}
       <View style={s.topBar}>
-        {/* Kategori ikon + Soru No + Puan + Pause */}
         <View style={s.topRow}>
           <Text style={s.catIconTxt}>{catIcon ?? '🎮'}</Text>
           <Text style={s.soruTxt}>Soru {qIndex + 1} / {total}</Text>
+          {/* Can ikonları — sadece lig modunda (initialLives verilmişse) */}
+          {isLiveMode && (
+            <View style={s.livesRow}>
+              {[0, 1, 2].map(i => (
+                <Text key={i} style={{ fontSize: 16, opacity: i < lives ? 1 : 0.2 }}>❤️</Text>
+              ))}
+            </View>
+          )}
           <Text style={s.puanTxt}>Puan: {score.toLocaleString('tr-TR')}</Text>
           {onPause && (
             <TouchableOpacity style={s.pauseBtn} onPress={onPause}>
@@ -363,7 +372,8 @@ const s = StyleSheet.create({
   catIconTxt: { fontSize: 20 },
   soruTxt: { fontFamily: 'Nunito-Bold', fontSize: 13, color: MUTED, flex: 1 },
   puanTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT },
-  pauseBtn: { backgroundColor: '#1e1b3a', padding: 7, borderRadius: 20, marginLeft: 4 },
+  pauseBtn:  { backgroundColor: '#1e1b3a', padding: 7, borderRadius: 20, marginLeft: 4 },
+  livesRow:  { flexDirection: 'row', gap: 2, alignItems: 'center' },
   progressBg:   { height: 4, backgroundColor: '#1e1b3a', borderRadius: 2, overflow: 'hidden', marginBottom: 8 },
   progressFill: { height: 4, backgroundColor: PURP, borderRadius: 2 },
 

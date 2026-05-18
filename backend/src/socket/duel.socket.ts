@@ -3,210 +3,342 @@ import db from '../database';
 import { v4 as uuidv4 } from 'uuid';
 import { getSeedQuestions } from '../data/questions';
 
+// ── Çark segmentleri ─────────────────────────────────────────────────
+const WHEEL_CATEGORIES = ['history', 'science', 'sports', 'geography', 'cinema', 'general', 'turkey', 'economy'];
+const WHEEL_SEGMENTS = [
+  ...WHEEL_CATEGORIES.map((id, i) => ({ id, type: 'category' as const, segmentIndex: i })),
+  { id: '2x',    type: 'special' as const, segmentIndex: 8 },
+  { id: 'joker', type: 'special' as const, segmentIndex: 9 },
+];
+
+function spinWheel(): { segmentId: string; segmentIndex: number; category: string; is2x: boolean } {
+  const idx = Math.floor(Math.random() * WHEEL_SEGMENTS.length);
+  const seg = WHEEL_SEGMENTS[idx];
+  const is2x = seg.id === '2x';
+  const isJoker = seg.id === 'joker';
+  const category = (seg.type === 'category')
+    ? seg.id
+    : WHEEL_CATEGORIES[Math.floor(Math.random() * WHEEL_CATEGORIES.length)];
+  return { segmentId: seg.id, segmentIndex: seg.segmentIndex, category, is2x };
+}
+
+// ── Arayüzler ────────────────────────────────────────────────────────
 interface DuelPlayer {
   userId: string;
   socketId: string;
   username: string;
   avatarId: number;
-  score: number;
-  done: boolean;
+  roundWins: number;
+  currentRoundAnswers: number;
+  currentRoundCorrect: number;
+  ready: boolean;
+}
+
+interface Round {
+  segmentId: string;
+  segmentIndex: number;
+  category: string;
+  is2x: boolean;
+  questions: unknown[];
+  answers: Map<string, { correct: number; total: number }>;
 }
 
 interface DuelRoom {
   duelId: string;
-  category: string;
+  stake: number;
   players: DuelPlayer[];
-  questions: unknown[];
+  currentRound: number;
+  rounds: Round[];
+  coinsDeducted: boolean;
   startedAt: number;
 }
 
-// Aktif düello odaları
 const rooms = new Map<string, DuelRoom>();
-// Kullanıcının beklediği düello daveti
-const pendingInvites = new Map<string, { duelId: string; challengerId: string; category: string }>();
+const pendingInvites = new Map<string, { duelId: string; challengerId: string; stake: number }>();
+const matchmakingQueue = new Map<string, { socketId: string; stake: number; userId: string }>();
 
 export function handleDuelEvents(io: Server, socket: Socket, userId: string): void {
 
-  // ── Düello Daveti gönder ─────────────────────────────────────────────
-  socket.on('duel_invite', ({ targetId, mode }: { targetId: string; mode: string }) => {
+  // ── Davet gönder ─────────────────────────────────────────────────
+  // Not: her kullanıcı socket.join(userId) ile kendi odasına giriyor
+  socket.on('duel_invite', ({ targetId, stake = 50 }: { targetId: string; stake?: number }) => {
     const duelId = uuidv4();
-    pendingInvites.set(targetId, { duelId, challengerId: userId, category: mode });
-    io.to(targetId).emit('duel_invited', {
-      challengerId: userId,
-      mode,
-      duelId,
-    });
-    // Challenger'a da duelId gönder (bekleme ekranı için)
+    pendingInvites.set(targetId, { duelId, challengerId: userId, stake });
+    io.to(targetId).emit('duel_invited', { challengerId: userId, stake, duelId });
     socket.emit('duel_invite_sent', { duelId, targetId });
   });
 
-  // ── Daveti Kabul et ──────────────────────────────────────────────────
   socket.on('duel_accept', ({ challengerId }: { challengerId: string }) => {
     const invite = pendingInvites.get(userId);
     if (!invite || invite.challengerId !== challengerId) return;
     pendingInvites.delete(userId);
-
-    // İki oyuncuya da duelId + kategori bilgisini gönder
-    io.to(challengerId).emit('duel_accepted', { duelId: invite.duelId, category: invite.category });
-    socket.emit('duel_accepted', { duelId: invite.duelId, category: invite.category });
+    io.to(challengerId).emit('duel_accepted', { duelId: invite.duelId, stake: invite.stake });
+    socket.emit('duel_accepted', { duelId: invite.duelId, stake: invite.stake });
   });
 
-  // ── Daveti Reddet ────────────────────────────────────────────────────
   socket.on('duel_reject', ({ challengerId }: { challengerId: string }) => {
     pendingInvites.delete(userId);
     io.to(challengerId).emit('duel_rejected', { opponentId: userId });
   });
 
-  // ── Düello odasına katıl ─────────────────────────────────────────────
-  socket.on('duel_join', async ({ duelId, category: clientCategory }: {
-    duelId: string;
-    category?: string;
-    userId?: string;
-  }) => {
-    // DB'den kullanıcı bilgisi çek
-    const userRow = await db('users').where({ id: userId }).select('username', 'avatar_id').first().catch(() => null);
+  // ── Eşleşme kuyruğu ──────────────────────────────────────────────
+  socket.on('mm_join', async ({ stake = 50 }: { stake?: number }) => {
+    // Aynı bahis miktarında biri var mı?
+    let matched: { socketId: string; stake: number; userId: string } | undefined;
+    for (const [uid, entry] of matchmakingQueue.entries()) {
+      if (uid !== userId && entry.stake === stake) {
+        matched = entry;
+        matchmakingQueue.delete(uid);
+        break;
+      }
+    }
+
+    if (matched) {
+      const duelId = uuidv4();
+      const oppUser = await db('users').where('id', matched.userId).select('username', 'avatar_id', 'duel_rank').first().catch(() => null);
+      const myUser  = await db('users').where('id', userId).select('username', 'avatar_id', 'duel_rank').first().catch(() => null);
+
+      socket.emit('mm_matched', {
+        duelId, stake,
+        opponent: { username: oppUser?.username ?? 'Oyuncu', avatarId: oppUser?.avatar_id ?? 0, duelRank: oppUser?.duel_rank ?? 0 },
+      });
+      io.to(matched.socketId).emit('mm_matched', {
+        duelId, stake,
+        opponent: { username: myUser?.username ?? 'Oyuncu', avatarId: myUser?.avatar_id ?? 0, duelRank: myUser?.duel_rank ?? 0 },
+      });
+    } else {
+      matchmakingQueue.set(userId, { socketId: socket.id, stake, userId });
+      socket.emit('mm_waiting', { stake });
+    }
+  });
+
+  socket.on('mm_cancel', () => { matchmakingQueue.delete(userId); });
+
+  // ── Düello odasına katıl ─────────────────────────────────────────
+  socket.on('duel_join', async ({ duelId, stake = 50 }: { duelId: string; stake?: number }) => {
+    const userRow = await db('users').where({ id: userId }).select('username', 'avatar_id', 'coins').first().catch(() => null);
     const username = userRow?.username ?? 'Oyuncu';
     const avatarId = userRow?.avatar_id ?? 0;
+    const coins    = userRow?.coins ?? 0;
 
     let room = rooms.get(duelId);
 
     if (!room) {
-      const category = clientCategory ?? 'general';
-      const serverQuestions = getSeedQuestions(
-        category,
-        Math.floor(Date.now() / 86400000),
-        10
-      );
-      room = {
-        duelId,
-        category,
-        players: [],
-        questions: serverQuestions,
-        startedAt: Date.now(),
-      };
+      // Önceden 3 tur oluştur
+      const rounds: Round[] = Array.from({ length: 3 }, () => {
+        const spin = spinWheel();
+        return {
+          ...spin,
+          questions: getSeedQuestions(spin.category, Math.floor(Date.now() / 86400000), 3),
+          answers: new Map(),
+        };
+      });
+      room = { duelId, stake, players: [], currentRound: 0, rounds, coinsDeducted: false, startedAt: Date.now() };
       rooms.set(duelId, room);
     }
 
-    // Oyuncuyu odaya ekle
-    const alreadyIn = room.players.find((p) => p.userId === userId);
-    if (!alreadyIn) {
-      room.players.push({ userId, socketId: socket.id, username, avatarId, score: 0, done: false });
+    if (!room.players.find(p => p.userId === userId)) {
+      room.players.push({ userId, socketId: socket.id, username, avatarId, roundWins: 0, currentRoundAnswers: 0, currentRoundCorrect: 0, ready: false });
       socket.join(duelId);
     }
 
-    // İkinci oyuncu katıldığında — sorular + rakip bilgisi gönder
-    if (room.players.length === 2) {
+    // Her iki oyuncu katıldığında — coin kes + ilk turu başlat
+    if (room.players.length === 2 && !room.coinsDeducted) {
+      room.coinsDeducted = true;
+
       const [p1, p2] = room.players;
+
+      // Coin kontrolü + kesme
+      const p1Row = await db('users').where('id', p1.userId).select('coins').first().catch(() => null);
+      const p2Row = await db('users').where('id', p2.userId).select('coins').first().catch(() => null);
+
+      if ((p1Row?.coins ?? 0) < room.stake || (p2Row?.coins ?? 0) < room.stake) {
+        io.to(duelId).emit('duel_cancelled', { reason: 'Yetersiz coin.' });
+        rooms.delete(duelId);
+        return;
+      }
+
+      await db('users').where('id', p1.userId).update({ coins: db.raw(`coins - ${room.stake}`) }).catch(() => {});
+      await db('users').where('id', p2.userId).update({ coins: db.raw(`coins - ${room.stake}`) }).catch(() => {});
+
+      // Rakip bilgisi
       io.to(p1.socketId).emit('duel_opponent_joined', { username: p2.username, avatarId: p2.avatarId });
       io.to(p2.socketId).emit('duel_opponent_joined', { username: p1.username, avatarId: p1.avatarId });
-      io.to(duelId).emit('duel_questions', { questions: room.questions });
+
+      // İlk turu başlat
+      startRound(io, room);
     }
   });
 
-  // ── Gerçek zamanlı skor güncellemesi ─────────────────────────────────
-  socket.on('duel_update', ({ duelId, score }: { duelId: string; score: number; userId: string }) => {
-    const room = rooms.get(duelId);
-    if (!room) return;
-    const player = room.players.find((p) => p.userId === userId);
-    if (player) player.score = score;
-
-    // Rakibe canlı skor gönder
-    const me = room.players.find((p) => p.userId === userId);
-    socket.to(duelId).emit('duel_opponent_update', {
-      userId,
-      score,
-      answered: 0,
-      lastCorrect: null,
-      username: me?.username ?? 'Oyuncu',
-      avatarId: me?.avatarId ?? 0,
-    });
-  });
-
-  // ── Cevap verme bilgisi (rakibe ilerleme göster) ──────────────────────
-  socket.on('duel_answer', ({ duelId, correct, pts, qIndex }: {
-    duelId: string;
-    correct: boolean;
-    pts: number;
-    qIndex: number;
-    userId: string;
-  }) => {
-    const ansRoom = rooms.get(duelId);
-    const ansPlayer = ansRoom?.players.find((p) => p.userId === userId);
-    socket.to(duelId).emit('duel_opponent_update', {
-      userId,
-      score: ansPlayer?.score ?? 0,
-      answered: qIndex + 1,
-      lastCorrect: correct,
-      username: ansPlayer?.username ?? 'Oyuncu',
-      avatarId: ansPlayer?.avatarId ?? 0,
-    });
-  });
-
-  // ── Oyunu bitirdi ────────────────────────────────────────────────────
-  socket.on('duel_done', ({ duelId, score }: { duelId: string; score: number; userId: string }) => {
+  // ── Tur cevabı ───────────────────────────────────────────────────
+  socket.on('duel_round_answer', ({ duelId, correct }: { duelId: string; correct: boolean }) => {
     const room = rooms.get(duelId);
     if (!room) return;
 
-    const player = room.players.find((p) => p.userId === userId);
-    if (player) { player.score = score; player.done = true; }
+    const roundIdx = room.currentRound;
+    const round = room.rounds[roundIdx];
+    if (!round) return;
 
-    // Her iki oyuncu da bitirdiyse sonuç gönder
-    const allDone = room.players.every((p) => p.done);
-    if (allDone || room.players.filter((p) => p.done).length >= 1) {
-      // Biri bitirince 30 sn bekle, sonra sonuçlandır
-      // Basit versiyon: biri bitirince diğerini beklemeden sonuçlandır
-      const [p1, p2] = room.players;
-      const s1 = p1?.score ?? 0;
-      const s2 = p2?.score ?? 0;
+    const player = room.players.find(p => p.userId === userId);
+    if (!player) return;
 
-      let winner: string | 'draw';
-      if (!p2) {
-        winner = p1.userId;
-      } else if (s1 > s2) {
-        winner = p1.userId;
-      } else if (s2 > s1) {
-        winner = p2.userId;
-      } else {
-        winner = 'draw';
-      }
+    player.currentRoundAnswers++;
+    if (correct) player.currentRoundCorrect++;
 
-      io.to(duelId).emit('duel_finished', {
-        winner,
-        myScore: score,
-        oppScore: p1.userId === userId ? s2 : s1,
-      });
+    // Rakibe bildir
+    const opp = room.players.find(p => p.userId !== userId);
+    if (opp) {
+      io.to(opp.socketId).emit('duel_opponent_answer', { correct, answered: player.currentRoundAnswers });
+    }
 
-      // DB'ye kaydet (opsiyonel — hata olursa devam et)
-      saveDuelResult(room, winner).catch(() => {});
-      rooms.delete(duelId);
+    // İkisi de bu turda tüm soruları bitirdiyse
+    const questionsPerRound = round.questions.length;
+    const allDone = room.players.every(p => p.currentRoundAnswers >= questionsPerRound);
+
+    if (allDone) {
+      finishRound(io, room);
     }
   });
 
-  // ── Bağlantı kopunca ────────────────────────────────────────────────
+  // ── Emoji ────────────────────────────────────────────────────────
+  socket.on('duel_emoji_send', ({ duelId, emoji }: { duelId: string; emoji: string }) => {
+    socket.to(duelId).emit('duel_emoji', { emoji });
+  });
+
+  // ── Bağlantı kopunca ─────────────────────────────────────────────
   socket.on('disconnect', () => {
-    rooms.forEach((room, duelId) => {
-      const inRoom = room.players.some((p) => p.userId === userId);
-      if (inRoom) {
-        socket.to(duelId).emit('duel_opponent_left');
-        rooms.delete(duelId);
+    matchmakingQueue.delete(userId);
+
+    rooms.forEach(async (room, duelId) => {
+      const inRoom = room.players.some(p => p.userId === userId);
+      if (!inRoom) return;
+
+      socket.to(duelId).emit('duel_opponent_left');
+
+      // Ayrılan oyuncu coin kaybeder, kalan oyuncu her iki coini kazanır
+      if (room.coinsDeducted && room.players.length === 2) {
+        const winner = room.players.find(p => p.userId !== userId);
+        if (winner) {
+          const prize = room.stake * 2 - Math.floor(room.stake * 0.05); // %5 kesinti
+          await db('users').where('id', winner.userId).update({ coins: db.raw(`coins + ${prize}`) }).catch(() => {});
+          io.to(winner.socketId).emit('duel_match_result', {
+            result: 'win',
+            reason: 'Rakip ayrıldı',
+            coinsWon: prize,
+            roundWins: [winner.roundWins, 0],
+          });
+        }
       }
+      rooms.delete(duelId);
+      pendingInvites.delete(userId);
     });
-    pendingInvites.delete(userId);
   });
 }
 
-async function saveDuelResult(room: DuelRoom, winner: string | 'draw') {
+// ── Tur başlat ───────────────────────────────────────────────────────
+function startRound(io: Server, room: DuelRoom) {
+  const round = room.rounds[room.currentRound];
+  if (!round) return;
+
+  // Oyuncuların tur istatistiklerini sıfırla
+  room.players.forEach(p => { p.currentRoundAnswers = 0; p.currentRoundCorrect = 0; });
+
+  io.to(room.duelId).emit('duel_round_start', {
+    round: room.currentRound + 1,
+    totalRounds: 3,
+    segmentId: round.segmentId,
+    segmentIndex: round.segmentIndex,
+    category: round.category,
+    is2x: round.is2x,
+    questions: round.questions,
+  });
+}
+
+// ── Tur bitir ────────────────────────────────────────────────────────
+function finishRound(io: Server, room: DuelRoom) {
+  const round = room.rounds[room.currentRound];
+  if (!round) return;
+
   const [p1, p2] = room.players;
-  if (!p1 || !p2) return;
-  await db('duels').insert({
-    id: room.duelId,
-    challenger_id: p1.userId,
-    opponent_id: p2.userId,
-    mode: room.category,
-    challenger_score: p1.score,
-    opponent_score: p2.score,
-    winner_id: winner === 'draw' ? null : winner,
-    status: 'completed',
-    created_at: new Date(room.startedAt).toISOString(),
-  }).onConflict('id').ignore();
+  const p1c = p1?.currentRoundCorrect ?? 0;
+  const p2c = p2?.currentRoundCorrect ?? 0;
+
+  let roundWinner: string | 'draw';
+  if (p1c > p2c) { roundWinner = p1.userId; p1.roundWins++; }
+  else if (p2c > p1c) { roundWinner = p2.userId; p2.roundWins++; }
+  else roundWinner = 'draw';
+
+  io.to(room.duelId).emit('duel_round_end', {
+    round: room.currentRound + 1,
+    winnerId: roundWinner,
+    p1: { userId: p1.userId, correct: p1c },
+    p2: { userId: p2?.userId, correct: p2c },
+    roundWins: [p1.roundWins, p2?.roundWins ?? 0],
+  });
+
+  room.currentRound++;
+
+  // Erken bitiş: biri 2 tur kazandı
+  const maxWins = Math.max(p1.roundWins, p2?.roundWins ?? 0);
+  if (maxWins >= 2 || room.currentRound >= 3) {
+    setTimeout(() => finishMatch(io, room), 2500);
+  } else {
+    // Bir sonraki tur (2.5 sn sonra çark göster)
+    setTimeout(() => startRound(io, room), 2500);
+  }
+}
+
+// ── Maç bitir ────────────────────────────────────────────────────────
+async function finishMatch(io: Server, room: DuelRoom) {
+  const [p1, p2] = room.players;
+  if (!p1) return;
+
+  let matchWinner: string | 'draw';
+  const w1 = p1.roundWins;
+  const w2 = p2?.roundWins ?? 0;
+
+  if (w1 > w2) matchWinner = p1.userId;
+  else if (w2 > w1) matchWinner = p2!.userId;
+  else matchWinner = 'draw';
+
+  const totalPot = room.stake * 2;
+  const cut = Math.floor(totalPot * 0.05); // %5 ev kesintisi
+  const prize = totalPot - cut;
+
+  if (matchWinner !== 'draw') {
+    await db('users').where('id', matchWinner).update({ coins: db.raw(`coins + ${prize}`) }).catch(() => {});
+    // Duel rank güncelle
+    const loser = matchWinner === p1.userId ? p2?.userId : p1.userId;
+    await db('users').where('id', matchWinner).update({ duel_rank: db.raw('duel_rank + 25') }).catch(() => {});
+    if (loser) await db('users').where('id', loser).update({ duel_rank: db.raw('GREATEST(0, duel_rank - 15)') }).catch(() => {});
+  } else {
+    // Beraberlikte her ikisine geri öde (kesintisiz)
+    for (const p of room.players) {
+      await db('users').where('id', p.userId).update({ coins: db.raw(`coins + ${room.stake}`) }).catch(() => {});
+    }
+  }
+
+  // Sonuçları kaydet
+  if (p2) {
+    await db('duels').insert({
+      id: room.duelId,
+      challenger_id: p1.userId,
+      opponent_id: p2.userId,
+      mode: 'wheel',
+      challenger_score: p1.roundWins,
+      opponent_score: p2.roundWins,
+      winner_id: matchWinner === 'draw' ? null : matchWinner,
+      status: 'completed',
+      created_at: new Date(room.startedAt).toISOString(),
+    }).onConflict('id').ignore().catch(() => {});
+  }
+
+  io.to(room.duelId).emit('duel_match_result', {
+    winnerId: matchWinner,
+    roundWins: [w1, w2],
+    coinsWon: matchWinner !== 'draw' ? prize : 0,
+    stake: room.stake,
+  });
+
+  rooms.delete(room.duelId);
 }
