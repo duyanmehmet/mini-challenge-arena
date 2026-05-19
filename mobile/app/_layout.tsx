@@ -53,17 +53,16 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     const initNotifications = async () => {
       try {
         const token = await notificationService.registerForPushNotificationsAsync();
-        if (token) console.log('Push Token:', token);
+        if (token) console.log('[Push] Token kaydedildi');
         await notificationService.scheduleDailyReminder();
-      } catch (err) {
-        console.log('Notification error:', err);
-      }
+      } catch {}
     };
     initNotifications();
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {

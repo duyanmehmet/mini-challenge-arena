@@ -1,9 +1,88 @@
-// expo-notifications Expo Go'da SDK 53+ çalışmaz — stub servis
-// Gerçek build (EAS Build) için bu dosyayı aktif implementasyonla değiştir
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+import api from './api';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 export const notificationService = {
-  registerForPushNotificationsAsync: async (): Promise<string | null> => null,
-  scheduleDailyReminder: async (): Promise<void> => {},
-  sendLocalNotification: async (_title: string, _body: string): Promise<void> => {},
-  cancelAll: async (): Promise<void> => {},
+  async registerForPushNotificationsAsync(): Promise<string | null> {
+    // Simülatör/web'de token alınamaz
+    if (Platform.OS === 'web') return null;
+    if (!Constants.isDevice) return null;
+
+    try {
+      // İzin kontrolü
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      let finalStatus = existing;
+
+      if (existing !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') return null;
+
+      // Android kanal oluştur
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'Varsayılan',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#8b5cf6',
+        });
+      }
+
+      // Expo push token al
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+
+      // Sunucuya kaydet
+      if (token) {
+        await api.post('/user/push-token', { token }).catch(() => {});
+      }
+
+      return token;
+    } catch {
+      return null;
+    }
+  },
+
+  async scheduleDailyReminder(): Promise<void> {
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🏟️ Lig seni bekliyor!',
+          body: 'Bugünkü sorularını çöz, sıralamana bak.',
+          sound: true,
+        },
+        trigger: {
+          hour: 20,
+          minute: 0,
+          repeats: true,
+        } as any,
+      });
+    } catch {}
+  },
+
+  async sendLocalNotification(title: string, body: string): Promise<void> {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: { title, body, sound: true },
+        trigger: null,
+      });
+    } catch {}
+  },
+
+  async cancelAll(): Promise<void> {
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch {}
+  },
 };

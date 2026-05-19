@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import db from '../database';
 import { v4 as uuidv4 } from 'uuid';
 import { getSeedQuestions } from '../data/questions';
+import { pushService } from '../services/push.service';
 
 // ── Çark segmentleri ─────────────────────────────────────────────────
 const WHEEL_CATEGORIES = ['history', 'science', 'sports', 'geography', 'cinema', 'general', 'turkey', 'economy'];
@@ -60,12 +61,25 @@ const matchmakingQueue = new Map<string, { socketId: string; stake: number; user
 export function handleDuelEvents(io: Server, socket: Socket, userId: string): void {
 
   // ── Davet gönder ─────────────────────────────────────────────────
-  // Not: her kullanıcı socket.join(userId) ile kendi odasına giriyor
-  socket.on('duel_invite', ({ targetId, stake = 50 }: { targetId: string; stake?: number }) => {
+  socket.on('duel_invite', async ({ targetId, stake = 50 }: { targetId: string; stake?: number }) => {
     const duelId = uuidv4();
     pendingInvites.set(targetId, { duelId, challengerId: userId, stake });
     io.to(targetId).emit('duel_invited', { challengerId: userId, stake, duelId });
     socket.emit('duel_invite_sent', { duelId, targetId });
+
+    // Push bildirimi — hedef çevrimdışıysa da ulaşsın
+    const [challenger, target] = await Promise.all([
+      db('users').where('id', userId).select('username').first().catch(() => null),
+      db('users').where('id', targetId).select('push_token').first().catch(() => null),
+    ]);
+    if (target?.push_token && challenger) {
+      pushService.sendToUser(
+        target.push_token,
+        '⚔️ Düello Daveti!',
+        `${challenger.username} seni ${stake} 🪙 için düelloya davet etti!`,
+        { type: 'duel_invite', duelId, challengerId: userId, stake }
+      ).catch(() => {});
+    }
   });
 
   socket.on('duel_accept', ({ challengerId }: { challengerId: string }) => {
