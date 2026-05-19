@@ -305,7 +305,7 @@ function finishRound(io: Server, room: DuelRoom) {
 // ── Maç bitir ────────────────────────────────────────────────────────
 async function finishMatch(io: Server, room: DuelRoom) {
   const [p1, p2] = room.players;
-  if (!p1) return;
+  if (!p1 || !p2) return; // İki oyuncu da olmadan maç bitirilemez
 
   let matchWinner: string | 'draw';
   const w1 = p1.roundWins;

@@ -62,16 +62,14 @@ export default function ShopScreen() {
 
   const handleBuyCoin = (pkg: typeof COIN_PACKAGES[0]) => {
     Alert.alert(
-      'Satın Al',
-      `${pkg.coins} coin almak istiyor musun?\nFiyat: ${pkg.price}`,
+      '🏪 Satın Al',
+      `${pkg.coins} Coin — ${pkg.price}\n\nGerçek ödeme sistemi yakında aktif olacak.\nŞu an test modunda coin ekleniyor.`,
       [
         { text: 'İptal', style: 'cancel' },
         {
-          text: 'Satın Al', onPress: () => {
-            // Gerçek IAP entegrasyonu burada olacak
-            // Şimdilik test için direkt ekle
+          text: 'Test: Ekle', onPress: () => {
             addCoins(pkg.coins);
-            Alert.alert('Başarılı!', `${pkg.coins} coin hesabına eklendi! 🪙`);
+            Alert.alert('✅ Eklendi (Test)', `${pkg.coins} 🪙 hesabına eklendi!`);
           },
         },
       ]

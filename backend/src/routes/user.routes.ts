@@ -83,6 +83,38 @@ router.get("/daily-tasks", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 
+// ── Arkadaş istatistikleri (friend profile ekranı için) ─────────────
+router.get("/friend-stats/:friendId", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const fid = req.params.friendId;
+    const user = await db("users").where("id", fid)
+      .select("id","username","avatar_id","level","xp","weekly_score","current_league","streak_count")
+      .first();
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+
+    const totalGames = await db("game_sessions").where("user_id", fid)
+      .count("* as cnt").first()
+      .then((r: any) => parseInt(r?.cnt ?? "0")).catch(() => 0);
+
+    const wins = await db("duels").where("winner_id", fid)
+      .count("* as cnt").first()
+      .then((r: any) => parseInt(r?.cnt ?? "0")).catch(() => 0);
+
+    const totalDuels = await db("duels")
+      .where((b: any) => b.where("challenger_id", fid).orWhere("opponent_id", fid))
+      .count("* as cnt").first()
+      .then((r: any) => parseInt(r?.cnt ?? "0")).catch(() => 0);
+
+    res.json({
+      username: user.username, avatarId: user.avatar_id,
+      level: user.level, xp: user.xp,
+      weeklyScore: user.weekly_score ?? 0,
+      totalGames, winRate: totalDuels > 0 ? Math.round((wins / totalDuels) * 100) : 0,
+      totalScore: user.weekly_score ?? 0,
+    });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
 router.post("/push-token", authMiddleware, async (req: AuthRequest, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ message: "Token gerekli." });

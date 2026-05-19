@@ -104,8 +104,8 @@ export default function DuelLobbyScreen() {
     }
     const socket = socketService.getSocket();
     if (!socket) { Alert.alert('Bağlantı yok'); return; }
-    const duelId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    socket.emit('duel_invite', { targetId: selectedFriend.id, stake: selectedStake, duelId });
+    // duelId sunucu tarafında üretiliyor, burada göndermeye gerek yok
+    socket.emit('duel_invite', { targetId: selectedFriend.id, stake: selectedStake });
     setWaiting(true);
   };
 
