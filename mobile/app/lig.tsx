@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   ActivityIndicator, Animated, Alert, Dimensions, Modal,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useUserStore } from '../src/store/userStore';
@@ -175,8 +176,12 @@ export default function LigScreen() {
 
           {/* Hafta kartı */}
           {info && (
-            <View style={[s.weekCard, { borderColor: (info.category.color ?? PURP) + '55' }]}>
-              <View style={[s.weekIconBg, { backgroundColor: (info.category.color ?? PURP) + '20' }]}>
+            <LinearGradient
+              colors={[info.category.color + 'cc', info.category.color + '44', '#13132a']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={s.weekCard}
+            >
+              <View style={[s.weekIconBg, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
                 <Text style={{ fontSize: 42 }}>{info.category.icon}</Text>
               </View>
               <View style={s.weekInfo}>
@@ -186,10 +191,10 @@ export default function LigScreen() {
                 <Text style={s.weekCatName}>{info.category.name}</Text>
                 <View style={s.weekCountRow}>
                   <Text style={s.weekCountLabel}>⏳ Bitiş: </Text>
-                  <Text style={[s.weekCountVal, { color: RED }]}>{countdown}</Text>
+                  <Text style={[s.weekCountVal, { color: '#fde047' }]}>{countdown}</Text>
                 </View>
               </View>
-            </View>
+            </LinearGradient>
           )}
 
           {/* Can dolu değilse küçük uyarı */}
@@ -215,16 +220,18 @@ export default function LigScreen() {
           <View style={s.playRow}>
             {/* 2X */}
             <Animated.View style={{ flex: 1, transform: [{ scale: pulseAnim }] }}>
-              <TouchableOpacity
-                style={[s.playBtn, { backgroundColor: info?.category.color ?? PURP }]}
-                onPress={() => handlePlay()}
-                activeOpacity={0.85}
-              >
-                <View style={s.playBtnBadge}>
-                  <Text style={s.playBtnBadgeTxt}>⭐ 2X PUAN</Text>
-                </View>
-                <Text style={s.playBtnTxt}>▶  {info?.category.name ?? 'Oyna'}</Text>
-                <Text style={s.playBtnSub}>Haftanın kategorisi</Text>
+              <TouchableOpacity onPress={() => handlePlay()} activeOpacity={0.85} style={{ borderRadius: 18, overflow: 'hidden' }}>
+                <LinearGradient
+                  colors={[info?.category.color ?? PURP, '#4c1d95', '#2e1065']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={s.playBtn}
+                >
+                  <View style={s.playBtnBadge}>
+                    <Text style={s.playBtnBadgeTxt}>⭐ 2X PUAN</Text>
+                  </View>
+                  <Text style={s.playBtnTxt}>▶  {info?.category.name ?? 'Oyna'}</Text>
+                  <Text style={s.playBtnSub}>Haftanın kategorisi</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </Animated.View>
 
@@ -312,7 +319,7 @@ const s = StyleSheet.create({
   loadWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll:   { paddingBottom: 32 },
 
-  weekCard:   { margin: 16, borderRadius: 20, borderWidth: 1.5, backgroundColor: CARD, flexDirection: 'row', alignItems: 'center', gap: 16, padding: 16 },
+  weekCard:   { margin: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 16, padding: 16, overflow: 'hidden' },
   weekIconBg: { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   weekInfo:   { flex: 1, gap: 4 },
   weekBadge:  { backgroundColor: PURP + '30', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
@@ -326,8 +333,8 @@ const s = StyleSheet.create({
   // Butonlar yan yana
   playRow:  { flexDirection: 'row', marginHorizontal: 16, gap: 10, marginBottom: 10 },
 
-  playBtn:      { borderRadius: 18, paddingVertical: 16, alignItems: 'center', gap: 4,
-                  shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 },
+  playBtn:      { paddingVertical: 18, alignItems: 'center', gap: 4,
+                  shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.5, shadowRadius: 14, elevation: 10 },
   playBtnBadge: { backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3 },
   playBtnBadgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 11, color: GOLD, letterSpacing: 0.5 },
   playBtnTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#fff' },
