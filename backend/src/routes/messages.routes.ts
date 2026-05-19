@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authMiddleware, type AuthRequest } from "../middleware/auth.middleware";
 import db from "../database";
 import { v4 as uuidv4 } from "uuid";
+import { pushService } from "../services/push.service";
 
 const router = Router();
 
@@ -19,11 +20,12 @@ router.get("/conversations", authMiddleware, async (req: AuthRequest, res) => {
         m.content   AS last_message,
         m.created_at AS last_at,
         m.sender_id,
-        SUM(CASE WHEN m2.is_read = 0 AND m2.receiver_id = ? THEN 1 ELSE 0 END) AS unread
+        (SELECT COUNT(*) FROM messages m2
+          WHERE m2.sender_id = u.id AND m2.receiver_id = ? AND m2.is_read = 0) AS unread
       FROM users u
-      JOIN social_follows sf ON (
-        (sf.follower_id = ? AND sf.following_id = u.id) OR
-        (sf.following_id = ? AND sf.follower_id = u.id)
+      JOIN friendships f ON (
+        (f.requester_id = ? AND f.receiver_id = u.id) OR
+        (f.receiver_id = ? AND f.requester_id = u.id)
       )
       LEFT JOIN messages m ON m.id = (
         SELECT id FROM messages
@@ -32,13 +34,10 @@ router.get("/conversations", authMiddleware, async (req: AuthRequest, res) => {
         ORDER BY created_at DESC
         LIMIT 1
       )
-      LEFT JOIN messages m2 ON (
-        m2.sender_id = u.id AND m2.receiver_id = ? AND m2.is_read = 0
-      )
-      WHERE u.id != ?
+      WHERE u.id != ? AND f.status = 'accepted'
       GROUP BY u.id
-      ORDER BY last_at DESC NULLS LAST
-    `, [uid, uid, uid, uid, uid, uid, uid]);
+      ORDER BY last_at DESC
+    `, [uid, uid, uid, uid, uid, uid]);
 
     res.json(rows || []);
   } catch (err) {
@@ -100,6 +99,19 @@ router.post("/:friendId", authMiddleware, async (req: AuthRequest, res) => {
     };
 
     await db("messages").insert(msg);
+
+    // Alıcıya push bildirimi gönder
+    const sender = await db("users").where("id", uid).select("username").first().catch(() => null);
+    const receiver = await db("users").where("id", fid).select("push_token").first().catch(() => null);
+    if (receiver?.push_token && sender) {
+      pushService.sendToUser(
+        receiver.push_token,
+        `💬 ${sender.username}`,
+        content.trim().substring(0, 80),
+        { type: "message", senderId: uid }
+      ).catch(() => {});
+    }
+
     res.json(msg);
   } catch (err) {
     console.error(err);

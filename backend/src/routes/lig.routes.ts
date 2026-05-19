@@ -1,6 +1,7 @@
 import { Router } from "express";
 import db from "../database";
 import { authMiddleware, type AuthRequest } from "../middleware/auth.middleware";
+import { DailyTaskService } from "../services/DailyTaskService";
 
 const router = Router();
 
@@ -141,6 +142,11 @@ router.post("/submit", authMiddleware, async (req: AuthRequest, res) => {
       .count("* as cnt")
       .first()
       .then((r: any) => parseInt(r?.cnt ?? "0") + 1);
+
+    // Günlük görevleri güncelle
+    DailyTaskService.updateTaskProgress(req.userId!, "score_any", finalScore).catch(() => {});
+    DailyTaskService.updateTaskProgress(req.userId!, `score_${categoryId}`, finalScore).catch(() => {});
+    DailyTaskService.updateTaskProgress(req.userId!, "play_count", 1).catch(() => {});
 
     return res.json({
       finalScore,

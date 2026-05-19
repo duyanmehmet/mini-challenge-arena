@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import cron from "node-cron";
 import "./database"; // Knex + Objection başlat
+import db from "./database";
 import { connectRedis } from "./redis";
 import { apiLimiter } from "./middleware/rateLimit.middleware";
 import authRoutes from "./routes/auth.routes";
@@ -48,11 +49,15 @@ app.use("/v1/messages",   messagesRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 
-// Haftalık lig sıfırlama — Her Pazartesi 00:00
-cron.schedule("0 0 * * 1", async () => {
+// Haftalık lig sıfırlama — Her Pazartesi 00:00 TR (UTC+3 = 21:00 UTC Pazar)
+cron.schedule("0 21 * * 0", async () => {
   try {
     const { LeagueResetService } = await import("./services/LeagueResetService");
     await LeagueResetService.processWeeklyReset();
+    // Lig tier terfi/düşme
+    const { processLigReset } = await import("./routes/lig.routes");
+    await processLigReset(db);
+    console.log("✅ Haftalık lig sıfırlama ve terfi tamamlandı");
   } catch (err) { console.error("League reset error:", err); }
 });
 

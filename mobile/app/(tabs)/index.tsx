@@ -60,7 +60,8 @@ export default function HomeScreen() {
   const slideAnim = useRef(new Animated.Value(24)).current;
   const xpAnim    = useRef(new Animated.Value(0)).current;
 
-  const [ligInfo, setLigInfo] = useState<any>(null);
+  const [ligInfo,      setLigInfo]      = useState<any>(null);
+  const [unreadMsgs,   setUnreadMsgs]   = useState(0);
 
   const xpPct = user ? Math.min(user.xp / (user.level * 500), 1) : 0;
 
@@ -80,8 +81,8 @@ export default function HomeScreen() {
       if (pbs) setPersonalBests(pbs);
       if (badges) setBadges(badges as string[]);
     }).catch(() => {});
-    // Lig bilgisi
     api.get('/lig/current').then(r => setLigInfo(r.data)).catch(() => {});
+    api.get('/messages/unread/count').then(r => setUnreadMsgs(r.data?.count ?? 0)).catch(() => {});
   }, [user?.id]));
 
   if (!user) return null;
@@ -126,9 +127,14 @@ export default function HomeScreen() {
                 <Text style={s.coinsTxt}>🪙 {user.coins.toLocaleString('tr-TR')}</Text>
                 <View style={s.plusIcon}><Text style={s.plusTxt}>+</Text></View>
               </TouchableOpacity>
-              {/* Mesaj butonu */}
+              {/* Mesaj butonu + badge */}
               <TouchableOpacity style={s.msgBtn} onPress={() => router.push('/messages' as any)}>
                 <Text style={{ fontSize: 20 }}>💬</Text>
+                {unreadMsgs > 0 && (
+                  <View style={s.msgBadge}>
+                    <Text style={s.msgBadgeTxt}>{unreadMsgs > 9 ? '9+' : unreadMsgs}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -336,7 +342,9 @@ const s = StyleSheet.create({
   coinsTxt:  { fontFamily: 'Nunito-Bold', fontSize: 12, color: GOLD },
   plusIcon:  { backgroundColor: GOLD, borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
   plusTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 11, color: '#000', lineHeight: 16 },
-  msgBtn:    { backgroundColor: PURP + '22', borderRadius: 10, width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: PURP + '44' },
+  msgBtn:    { backgroundColor: PURP + '22', borderRadius: 10, width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: PURP + '44', position: 'relative' },
+  msgBadge:  { position: 'absolute', top: -4, right: -4, backgroundColor: '#ef4444', borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 2, borderColor: BG },
+  msgBadgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 9, color: '#fff' },
 
   xpBg:   { height: 4, backgroundColor: '#1e1b3a', borderRadius: 2, overflow: 'hidden', width: 130 },
   xpFill: { height: 4, borderRadius: 2, backgroundColor: PURP2 },

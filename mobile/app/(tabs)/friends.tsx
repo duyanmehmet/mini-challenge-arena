@@ -158,8 +158,16 @@ export default function FriendsScreen() {
                   <Text style={[s.username, { color: C.textPrimary }]}>{item.username}</Text>
                   <Text style={[s.leagueText, { color: C.textSecondary }]}>{league?.icon} {league?.name}</Text>
                 </View>
-                <Text style={[s.score, { color: C.accentYellow }]}>{item.weeklyScore.toLocaleString('tr-TR')}</Text>
-                <Text style={{ color: C.textSecondary, fontSize: 18 }}>›</Text>
+                <TouchableOpacity
+                  style={s.msgBtn}
+                  onPress={(e) => {
+                    e.stopPropagation?.();
+                    router.push(`/chat/${item.userId ?? item.id}?name=${item.username}&avatar=${item.avatarId ?? 1}` as any);
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={{ fontSize: 20 }}>💬</Text>
+                </TouchableOpacity>
               </TouchableOpacity>
             );
           })}
@@ -185,4 +193,5 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   score: { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
   duelBtn: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, marginTop: 4 },
   duelText: { fontFamily: 'Nunito-Bold', fontSize: 11 },
+  msgBtn:  { padding: 6 },
 });

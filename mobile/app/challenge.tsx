@@ -1,22 +1,28 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
-import { Colors } from '../src/constants/colors';
-import { CATEGORIES as GAME_MODES } from '../src/constants/categories';
+import { CATEGORIES } from '../src/constants/categories';
 import { Avatar } from '../src/components/ui/Avatar';
 import api from '../src/services/api';
 
+const BG    = '#0d0d1a';
+const CARD  = '#13132a';
+const PURP  = '#6c3aed';
+const PURP2 = '#8b5cf6';
+const TEXT  = '#ffffff';
+const MUTED = '#7c7aaa';
+const GOLD  = '#f59e0b';
+const GREEN = '#10b981';
+const BORDER= '#2e2b5a';
+
 export default function ChallengeScreen() {
-  const { theme } = useSettingsStore();
   const { user } = useUserStore();
-  const C = Colors[theme];
-  const [challenge, setChallenge] = useState<any>(null);
+  const [challenge, setChallenge]   = useState<any>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [myScore, setMyScore]    = useState<number | null>(null);
-  const [loading, setLoading]    = useState(true);
+  const [myScore, setMyScore]       = useState<number | null>(null);
+  const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -31,68 +37,124 @@ export default function ChallengeScreen() {
   }, []);
 
   if (!user) return null;
-  const s = styles(C);
-  const modeCfg = challenge ? GAME_MODES.find((m) => m.id === challenge.mode) : null;
-  const today = new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long' });
+
+  const modeCfg = challenge ? CATEGORIES.find(m => m.id === challenge.mode) : null;
+  const today   = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
 
   return (
-    <SafeAreaView style={s.safe}>
-      <TouchableOpacity onPress={() => router.back()} style={s.back}>
-        <Text style={[s.backText, { color: C.textSecondary }]}>← Geri</Text>
-      </TouchableOpacity>
-      <Text style={[s.title, { color: C.textPrimary }]}>⚡ Günün Challenge'ı</Text>
-      <Text style={[s.date, { color: C.textSecondary }]}>{today}</Text>
+    <SafeAreaView style={s.root}>
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Text style={s.backTxt}>← Geri</Text>
+        </TouchableOpacity>
+        <View style={s.headerCenter}>
+          <Text style={s.headerTitle}>Bugünün Meydanı</Text>
+          <Text style={s.headerDate}>{today}</Text>
+        </View>
+        <View style={{ width: 60 }} />
+      </View>
 
       {loading ? (
-        <ActivityIndicator color={C.accentRed} style={{ marginTop: 40 }} />
+        <View style={s.loadingWrap}>
+          <ActivityIndicator color={PURP2} size="large" />
+          <Text style={s.loadingTxt}>Yükleniyor...</Text>
+        </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Mod kartı */}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+
+          {/* Kategori Kartı */}
           {modeCfg && (
-            <View style={[s.modeCard, { backgroundColor: modeCfg.color + '15', borderColor: modeCfg.color }]}>
-              <Text style={s.modeEmoji}>{modeCfg.icon}</Text>
-              <View>
-                <Text style={[s.modeName, { color: C.textPrimary }]}>{modeCfg.name}</Text>
-                <Text style={[s.modeTag, { color: C.textSecondary }]}>{modeCfg.description}</Text>
-                <Text style={[s.target, { color: modeCfg.color }]}>🎯 Hedef: {challenge?.target_score} puan</Text>
+            <View style={[s.modeCard, { borderColor: modeCfg.color + '60' }]}>
+              <View style={[s.modeIconBg, { backgroundColor: modeCfg.color + '20' }]}>
+                <Text style={{ fontSize: 44 }}>{modeCfg.icon}</Text>
+              </View>
+              <View style={s.modeInfo}>
+                <View style={s.modeBadge}>
+                  <Text style={s.modeBadgeTxt}>GÜNÜN KATEGORİSİ</Text>
+                </View>
+                <Text style={s.modeName}>{modeCfg.name}</Text>
+                <Text style={s.modeDesc}>{modeCfg.description}</Text>
+                <View style={s.targetRow}>
+                  <Text style={s.targetTxt}>🎯 Hedef: </Text>
+                  <Text style={[s.targetScore, { color: modeCfg.color }]}>
+                    {challenge?.target_score?.toLocaleString('tr-TR')} puan
+                  </Text>
+                </View>
               </View>
             </View>
           )}
 
-          {/* Kendi skoru */}
+          {/* Oyna / Tamamlandı */}
           {myScore !== null ? (
-            <View style={[s.myScore, { backgroundColor: C.success + '15', borderColor: C.success }]}>
-              <Text style={[s.myScoreText, { color: C.success }]}>✅ Bu günü oynadın: {myScore.toLocaleString('tr-TR')} puan</Text>
+            <View style={s.doneCard}>
+              <Text style={s.doneIcon}>✅</Text>
+              <View>
+                <Text style={s.doneTxt}>Bugünü tamamladın!</Text>
+                <Text style={s.doneScore}>{myScore.toLocaleString('tr-TR')} puan</Text>
+              </View>
             </View>
           ) : (
             <TouchableOpacity
-              style={[s.playBtn, { backgroundColor: modeCfg?.color ?? C.accentRed }]}
+              style={[s.playBtn, { backgroundColor: modeCfg?.color ?? PURP }]}
+              activeOpacity={0.85}
               onPress={() => {
-              if (challenge) router.push({ pathname: `/game/${challenge.mode}` as any, params: { challengeId: challenge.id } });
-            }}
+                if (challenge) {
+                  router.push({
+                    pathname: `/game/${challenge.mode}` as any,
+                    params: { challengeId: challenge.id },
+                  });
+                }
+              }}
             >
-              <Text style={s.playBtnText}>▶ Şimdi Oyna — {modeCfg?.shortName}</Text>
+              <Text style={s.playBtnTxt}>▶  Şimdi Oyna</Text>
+              <Text style={s.playBtnSub}>{modeCfg?.shortName} · {challenge?.target_score} puan hedef</Text>
             </TouchableOpacity>
           )}
 
-          {/* Liderlik */}
-          <Text style={[s.lbTitle, { color: C.textPrimary }]}>🏆 Bugünkü Sıralama</Text>
-          {leaderboard.slice(0, 20).map((entry: any, i: number) => (
-            <View key={i} style={[s.lbRow, {
-              backgroundColor: entry.username === user.username ? C.accentRed + '15' : C.bgSecondary,
-              borderColor: entry.username === user.username ? C.accentRed : C.border,
-            }]}>
-              <Text style={[s.lbRank, { color: i < 3 ? C.accentYellow : C.textSecondary }]}>
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}
-              </Text>
-              <Avatar avatarId={entry.avatarId} size={32} />
-              <Text style={[s.lbName, { color: C.textPrimary }]}>{entry.username}</Text>
-              <Text style={[s.lbScore, { color: C.accentYellow }]}>{entry.score.toLocaleString('tr-TR')}</Text>
+          {/* XP Bilgisi */}
+          <View style={s.xpRow}>
+            <View style={s.xpBadge}>
+              <Text style={s.xpTxt}>🏆 Hedefi geç → +100 XP</Text>
             </View>
-          ))}
-          {leaderboard.length === 0 && (
-            <Text style={[s.empty, { color: C.textSecondary }]}>Henüz kimse oynamadı. İlk sen ol!</Text>
+            <View style={s.xpBadge}>
+              <Text style={s.xpTxt}>✅ Oyna → +25 XP</Text>
+            </View>
+          </View>
+
+          {/* Liderlik */}
+          <Text style={s.lbTitle}>Bugünkü Sıralama</Text>
+
+          {leaderboard.length === 0 ? (
+            <View style={s.emptyWrap}>
+              <Text style={s.emptyIcon}>🏁</Text>
+              <Text style={s.emptyTxt}>Henüz kimse oynamadı.</Text>
+              <Text style={s.emptySub}>İlk sen ol ve liderliği kap!</Text>
+            </View>
+          ) : (
+            leaderboard.slice(0, 20).map((entry: any, i: number) => {
+              const isMe = entry.username === user.username;
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+              return (
+                <View key={i} style={[s.lbRow, isMe && s.lbRowMe]}>
+                  <View style={s.lbRankWrap}>
+                    {medal
+                      ? <Text style={{ fontSize: 20 }}>{medal}</Text>
+                      : <Text style={s.lbRank}>#{i + 1}</Text>
+                    }
+                  </View>
+                  <Avatar avatarId={entry.avatarId} size={34} />
+                  <Text style={[s.lbName, isMe && { color: PURP2 }]} numberOfLines={1}>
+                    {entry.username}{isMe ? ' (sen)' : ''}
+                  </Text>
+                  <Text style={[s.lbScore, i < 3 && { color: GOLD }]}>
+                    {entry.score.toLocaleString('tr-TR')}
+                  </Text>
+                </View>
+              );
+            })
           )}
+
           <View style={{ height: 32 }} />
         </ScrollView>
       )}
@@ -100,25 +162,64 @@ export default function ChallengeScreen() {
   );
 }
 
-const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bgPrimary },
-  back: { padding: 16, paddingBottom: 4 },
-  backText: { fontFamily: 'Nunito-Regular', fontSize: 15 },
-  title: { fontSize: 22, fontFamily: 'Nunito-ExtraBold', paddingHorizontal: 16 },
-  date: { fontFamily: 'Nunito-Regular', fontSize: 13, paddingHorizontal: 16, marginBottom: 16 },
-  modeCard: { marginHorizontal: 16, borderRadius: 16, padding: 16, flexDirection: 'row', gap: 14, borderWidth: 1.5, marginBottom: 12, alignItems: 'center' },
-  modeEmoji: { fontSize: 48 },
-  modeName: { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
-  modeTag: { fontFamily: 'Nunito-Regular', fontSize: 13, marginBottom: 4 },
-  target: { fontFamily: 'Nunito-Bold', fontSize: 14 },
-  myScore: { marginHorizontal: 16, borderRadius: 12, padding: 14, borderWidth: 1.5, marginBottom: 12, alignItems: 'center' },
-  myScoreText: { fontFamily: 'Nunito-Bold', fontSize: 15 },
-  playBtn: { marginHorizontal: 16, borderRadius: 16, padding: 18, alignItems: 'center', marginBottom: 20 },
-  playBtnText: { color: '#fff', fontFamily: 'Nunito-ExtraBold', fontSize: 17 },
-  lbTitle: { paddingHorizontal: 16, fontFamily: 'Nunito-Bold', fontSize: 16, marginBottom: 8 },
-  lbRow: { marginHorizontal: 16, marginBottom: 6, borderRadius: 12, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1 },
-  lbRank: { width: 32, fontFamily: 'Nunito-Bold', fontSize: 14, textAlign: 'center' },
-  lbName: { flex: 1, fontFamily: 'Nunito-Regular', fontSize: 14 },
-  lbScore: { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
-  empty: { textAlign: 'center', fontFamily: 'Nunito-Regular', fontSize: 14, marginTop: 24 },
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: BG },
+
+  header:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
+  backBtn:      { width: 60 },
+  backTxt:      { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: TEXT },
+  headerDate:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED, marginTop: 2 },
+
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  loadingTxt:  { fontFamily: 'Nunito-Regular', fontSize: 14, color: MUTED },
+
+  scroll: { paddingBottom: 32 },
+
+  // Kategori kartı
+  modeCard:   { margin: 16, borderRadius: 20, borderWidth: 1.5, backgroundColor: CARD, flexDirection: 'row', alignItems: 'center', gap: 16, padding: 16 },
+  modeIconBg: { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  modeInfo:   { flex: 1, gap: 4 },
+  modeBadge:  { backgroundColor: PURP + '30', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
+  modeBadgeTxt: { fontFamily: 'Nunito-Bold', fontSize: 9, color: PURP2, letterSpacing: 0.8 },
+  modeName:   { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: TEXT },
+  modeDesc:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
+  targetRow:  { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  targetTxt:  { fontFamily: 'Nunito-Bold', fontSize: 13, color: MUTED },
+  targetScore:{ fontFamily: 'Nunito-ExtraBold', fontSize: 13 },
+
+  // Oyna
+  playBtn:    { marginHorizontal: 16, borderRadius: 18, paddingVertical: 18, alignItems: 'center', marginBottom: 12,
+                shadowColor: PURP2, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 10, elevation: 8 },
+  playBtnTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#fff' },
+  playBtnSub: { fontFamily: 'Nunito-Regular', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
+
+  // Tamamlandı
+  doneCard:   { marginHorizontal: 16, borderRadius: 16, borderWidth: 1.5, borderColor: GREEN + '60', backgroundColor: GREEN + '12',
+                flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, marginBottom: 12 },
+  doneIcon:   { fontSize: 32 },
+  doneTxt:    { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: GREEN },
+  doneScore:  { fontFamily: 'Nunito-Regular', fontSize: 13, color: MUTED, marginTop: 2 },
+
+  // XP
+  xpRow:    { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 20 },
+  xpBadge:  { flex: 1, backgroundColor: CARD, borderRadius: 12, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: BORDER },
+  xpTxt:    { fontFamily: 'Nunito-Bold', fontSize: 11, color: MUTED, textAlign: 'center' },
+
+  // Liderlik
+  lbTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: TEXT, paddingHorizontal: 16, marginBottom: 10 },
+  lbRow:    { marginHorizontal: 16, marginBottom: 6, borderRadius: 14, padding: 12, flexDirection: 'row',
+              alignItems: 'center', gap: 10, backgroundColor: CARD, borderWidth: 1, borderColor: BORDER },
+  lbRowMe:  { borderColor: PURP2, backgroundColor: PURP + '18' },
+  lbRankWrap:{ width: 32, alignItems: 'center' },
+  lbRank:   { fontFamily: 'Nunito-Bold', fontSize: 13, color: MUTED },
+  lbName:   { flex: 1, fontFamily: 'Nunito-SemiBold', fontSize: 14, color: TEXT },
+  lbScore:  { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT },
+
+  // Boş
+  emptyWrap: { alignItems: 'center', marginTop: 32, gap: 8 },
+  emptyIcon: { fontSize: 48 },
+  emptyTxt:  { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: TEXT },
+  emptySub:  { fontFamily: 'Nunito-Regular', fontSize: 13, color: MUTED },
 });

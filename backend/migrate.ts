@@ -2,7 +2,7 @@ import knex from 'knex';
 import dotenv from 'dotenv';
 dotenv.config();
 
-import config from '../knexfile';
+import config from './knexfile';
 
 const env = (process.env.NODE_ENV as string) || 'development';
 const db = knex(config[env]);

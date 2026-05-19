@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   Animated, Alert,
 } from 'react-native';
+import { admobService } from '../src/services/admob.service';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useUserStore } from '../src/store/userStore';
@@ -79,30 +80,37 @@ export default function ShopScreen() {
 
   const handleWatchAdCoins = async () => {
     setAdLoading(true);
-    // Reklam servisi entegrasyonu
-    setTimeout(async () => {
-      try {
+    try {
+      await admobService.showRewarded(() => {
         addCoins(50);
         Alert.alert('Teşekkürler!', '+50 🪙 coin kazandın!');
-      } catch {}
-      finally { setAdLoading(false); }
-    }, 1500);
+      });
+    } catch {
+      Alert.alert('Reklam Yüklenemedi', 'Lütfen daha sonra tekrar dene.');
+    } finally {
+      setAdLoading(false);
+    }
   };
 
   const handleWatchAdLife = async () => {
     setAdLoading(true);
-    setTimeout(async () => {
-      try {
-        const res = await api.post('/lig/revive');
-        const newH = res.data?.hearts ?? Math.min(hearts + 1, maxHearts);
-        setHearts(newH);
-        setNextHeart(null);
-        Alert.alert('Harika!', `+1 ❤️  Kalp kazandın! (${newH}/${maxHearts})`);
-      } catch {
-        Alert.alert('Hata', 'Kalp yenilenemedi.');
-      }
-      finally { setAdLoading(false); }
-    }, 1500);
+    try {
+      await admobService.showRewarded(async () => {
+        try {
+          const res = await api.post('/lig/revive');
+          const newH = res.data?.hearts ?? Math.min(hearts + 1, maxHearts);
+          setHearts(newH);
+          setNextHeart(null);
+          Alert.alert('Harika!', `+1 ❤️ Kalp kazandın! (${newH}/${maxHearts})`);
+        } catch {
+          Alert.alert('Hata', 'Kalp yenilenemedi.');
+        }
+      });
+    } catch {
+      Alert.alert('Reklam Yüklenemedi', 'Lütfen daha sonra tekrar dene.');
+    } finally {
+      setAdLoading(false);
+    }
   };
 
   const handleBuyLifeCoins = async () => {

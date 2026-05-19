@@ -2,28 +2,19 @@ import { Tabs, router } from 'expo-router';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRef, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 
 const BG     = '#0d0d1a';
 const ACTIVE = '#8b5cf6';
-const INACT  = '#4a4870';
+const INACT  = '#3d3a6b';
 const BORDER = '#1e1b3a';
 
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
-  return (
-    <View style={{ alignItems: 'center', gap: 2 }}>
-      <Text style={{ fontSize: focused ? 22 : 20, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
-      <Text style={{
-        fontSize: 10,
-        fontFamily: 'Nunito-SemiBold',
-        color: focused ? ACTIVE : INACT,
-      }}>{label}</Text>
-    </View>
-  );
-}
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 60 + (insets.bottom > 0 ? insets.bottom : Platform.OS === 'android' ? 8 : 0);
+  const pb = insets.bottom > 0 ? insets.bottom : Platform.OS === 'android' ? 8 : 0;
+  const tabBarHeight = 56 + pb;
 
   return (
     <Tabs
@@ -34,29 +25,44 @@ export default function TabsLayout() {
           borderTopColor: BORDER,
           borderTopWidth: 1,
           height: tabBarHeight,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          paddingBottom: pb,
           paddingTop: 6,
           elevation: 16,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
+          shadowOpacity: 0.4,
+          shadowRadius: 10,
         },
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
         tabBarActiveTintColor: ACTIVE,
         tabBarInactiveTintColor: INACT,
+        tabBarLabelStyle: {
+          fontSize: 9,
+          fontFamily: 'Nunito-SemiBold',
+          marginTop: -2,
+          marginBottom: 2,
+        },
+        tabBarIconStyle: {
+          marginTop: 2,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" label="Ana Sayfa" focused={focused} />,
+          tabBarLabel: 'Ana Sayfa',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={20} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="leaderboard"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏆" label="Liderlik" focused={focused} />,
+          tabBarLabel: 'Liderlik',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={20} color={color} />
+          ),
         }}
       />
 
@@ -71,13 +77,19 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="friends"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📋" label="Görevler" focused={focused} />,
+          tabBarLabel: 'Arkadaşlar',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'people' : 'people-outline'} size={20} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👤" label="Profil" focused={focused} />,
+          tabBarLabel: 'Profil',
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={20} color={color} />
+          ),
         }}
       />
     </Tabs>
@@ -88,18 +100,18 @@ function OynaButton() {
   const pulse = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     Animated.loop(Animated.sequence([
-      Animated.timing(pulse, { toValue: 1.12, duration: 900, useNativeDriver: true }),
-      Animated.timing(pulse, { toValue: 1,    duration: 900, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 1.1, duration: 950, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 1,   duration: 950, useNativeDriver: true }),
     ])).start();
   }, []);
   return (
     <TouchableOpacity
       style={s.centerBtn}
-      onPress={() => router.push('/kategoriler' as any)}
+      onPress={() => router.push('/lig' as any)}
       activeOpacity={0.85}
     >
       <Animated.View style={[s.centerInner, { transform: [{ scale: pulse }] }]}>
-        <Text style={{ fontSize: 26 }}>🎮</Text>
+        <Ionicons name="game-controller" size={26} color="#fff" />
       </Animated.View>
       <Text style={s.centerLabel}>Oyna</Text>
     </TouchableOpacity>
@@ -122,16 +134,15 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOpacity: 0.9,
+    shadowRadius: 14,
+    elevation: 12,
     borderWidth: 3,
     borderColor: '#1e1b3a',
   },
   centerLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Nunito-SemiBold',
     color: ACTIVE,
-    marginTop: 2,
   },
 });

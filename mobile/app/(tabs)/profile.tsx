@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   Alert, Modal, TextInput, ScrollView, FlatList, ActivityIndicator,
@@ -9,6 +9,7 @@ import { useUserStore } from '../../src/store/userStore';
 import { Avatar } from '../../src/components/ui/Avatar';
 import { userService } from '../../src/services/user.service';
 import { storeService } from '../../src/services/store.service';
+import api from '../../src/services/api';
 
 const BG     = '#0d0d1a';
 const CARD   = '#13132a';
@@ -22,12 +23,21 @@ const RED    = '#ef4444';
 const AVATARS = ['🐺','🦊','🐯','🦁','🐻','🐼','🦝','🐨','🦄','🐲'];
 const PRICES  = [0, 0, 0, 100, 100, 250, 250, 500, 500, 1000];
 
+const LEAGUE_ICONS:  Record<string, string> = { iron: '⚙️', bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '🔷', diamond: '💎', champion: '👑' };
+const LEAGUE_NAMES:  Record<string, string> = { iron: 'Demir', bronze: 'Bronz', silver: 'Gümüş', gold: 'Altın', platinum: 'Platin', diamond: 'Elmas', champion: 'Şampiyonlar' };
+const LEAGUE_COLORS: Record<string, string> = { iron: '#71717a', bronze: '#cd7f32', silver: '#9ca3af', gold: '#f59e0b', platinum: '#38bdf8', diamond: '#06b6d4', champion: '#a78bfa' };
+
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useUserStore();
   const [avatarModal, setAvatarModal] = useState(false);
   const [editModal,   setEditModal]   = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [processing,  setProcessing]  = useState<number | null>(null);
+  const [ligInfo,     setLigInfo]     = useState<any>(null);
+
+  useEffect(() => {
+    api.get('/lig/current').then(r => setLigInfo(r.data)).catch(() => {});
+  }, []);
 
   if (!user) return null;
 
@@ -127,8 +137,30 @@ export default function ProfileScreen() {
           <View style={s.statDiv} />
           <StatBox label="Seri" value={`🔥 ${user.streakCount}`} />
           <View style={s.statDiv} />
-          <StatBox label="Lig" value={`🏆 ${user.currentLeague}`} />
+          <StatBox label="Seviye" value={`⭐ ${user.level}`} />
         </View>
+
+        {/* ── Lig Bilgisi ── */}
+        <TouchableOpacity style={s.ligCard} onPress={() => router.push('/lig' as any)} activeOpacity={0.85}>
+          <View style={s.ligLeft}>
+            {(() => {
+              const league = user.currentLeague ?? 'bronze';
+              const color  = LEAGUE_COLORS[league] ?? '#cd7f32';
+              return (
+                <>
+                  <Text style={{ fontSize: 28 }}>{LEAGUE_ICONS[league] ?? '🥉'}</Text>
+                  <View>
+                    <Text style={[s.ligName, { color }]}>{LEAGUE_NAMES[league] ?? 'Bronz'} Ligi</Text>
+                    <Text style={s.ligSub}>
+                      {ligInfo ? `#${ligInfo.userRank}. sıra · ${(ligInfo.userScore ?? 0).toLocaleString('tr-TR')} puan` : 'Lig bilgisi yükleniyor...'}
+                    </Text>
+                  </View>
+                </>
+              );
+            })()}
+          </View>
+          <Text style={s.ligArrow}>›</Text>
+        </TouchableOpacity>
 
         {/* ── Menü ── */}
         <View style={s.menu}>
@@ -276,6 +308,13 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: BORDER,
   },
   statDiv: { width: 1, height: 32, backgroundColor: BORDER },
+
+  // ── Lig Kartı ──
+  ligCard:  { flexDirection: 'row', alignItems: 'center', backgroundColor: CARD, marginHorizontal: 20, borderRadius: 18, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: BORDER },
+  ligLeft:  { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  ligName:  { fontFamily: 'Nunito-ExtraBold', fontSize: 16 },
+  ligSub:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED, marginTop: 2 },
+  ligArrow: { fontFamily: 'Nunito-Bold', fontSize: 22, color: MUTED },
 
   // ── Menü ──
   menu: {

@@ -7,6 +7,7 @@ import { CATEGORIES } from '../../src/constants/categories';
 import { gameService } from '../../src/services/game.service';
 import { assetService } from '../../src/services/asset.service';
 import api from '../../src/services/api';
+import { admobService } from '../../src/services/admob.service';
 import { Share } from 'react-native';
 
 const BG    = '#0d0d1a';
@@ -182,9 +183,9 @@ export default function ResultScreen() {
   // ── Lig Başarısız Ekranı ──────────────────────────────────────────
   if (isLig && isLigFailed) {
     const handleWatchAd = async () => {
-      try {
-        await api.post('/lig/revive');
-      } catch {}
+      await admobService.showRewarded(async () => {
+        await api.post('/lig/revive').catch(() => {});
+      });
       router.replace('/lig' as any);
     };
 
