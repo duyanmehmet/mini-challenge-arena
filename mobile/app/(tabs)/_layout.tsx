@@ -59,9 +59,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="leaderboard"
         options={{
-          tabBarLabel: 'Liderlik',
+          tabBarLabel: 'Sıralama',
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={20} color={color} />
+            <Ionicons name={focused ? 'podium' : 'podium-outline'} size={20} color={color} />
           ),
         }}
       />

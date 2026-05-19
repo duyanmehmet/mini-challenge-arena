@@ -1,76 +1,186 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+/**
+ * Ana Ekran — store bağlantılı, özel navbar yok (tab bar kullanılıyor)
+ */
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Animated, useWindowDimensions,
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView, Dimensions, Animated, Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useUserStore } from '../../src/store/userStore';
 import { userService } from '../../src/services/user.service';
 import api from '../../src/services/api';
 import { Avatar } from '../../src/components/ui/Avatar';
+import { Colors } from '../../src/constants/theme';
 
-const BG    = '#0d0d1a';
-const CARD  = '#13132a';
-const PURP  = '#6c3aed';
-const PURP2 = '#8b5cf6';
-const TEXT  = '#ffffff';
-const MUTED = '#7c7aaa';
-const GOLD  = '#f59e0b';
-const BORDER= '#2e2b5a';
-
+const { width: W } = Dimensions.get('window');
 const LEAGUE_ICONS: Record<string, string> = {
-  iron: '⚙️', bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '🔷', diamond: '💎', champion: '👑',
+  filiz:'🌱',kaya:'🪨',demir:'🔩',celik:'⚔️',bronz:'🥉',
+  gumus:'🥈',altin:'🥇',safir:'🔵',zumrut:'💚',elmas:'💎',
+  platin:'🔷',kristal:'🌟',mistik:'🔮',ay:'🌙',gunes:'☀️',
+  simsek:'⚡',alev:'🔥',okyanus:'🌊',zirve:'🏔️',kartal:'🦅',
+  ejderha:'🐉',galaksi:'🌌',nova:'💫',efsane:'🦄',kral:'👑',
+  yildiz:'⭐',meteor:'🌠',zafer:'🏆',elit:'🎯',sampiyon:'🏅',
 };
 const LEAGUE_COLORS: Record<string, string> = {
-  iron: '#71717a', bronze: '#cd7f32', silver: '#9ca3af', gold: '#f59e0b', platinum: '#38bdf8', diamond: '#06b6d4', champion: '#a78bfa',
+  filiz:'#86efac',kaya:'#a8a29e',demir:'#94a3b8',celik:'#64748b',bronz:'#cd7f32',
+  gumus:'#9ca3af',altin:'#f59e0b',safir:'#3b82f6',zumrut:'#22c55e',elmas:'#06b6d4',
+  platin:'#38bdf8',kristal:'#e2e8f0',mistik:'#a855f7',ay:'#c4b5fd',gunes:'#fbbf24',
+  simsek:'#facc15',alev:'#f97316',okyanus:'#0ea5e9',zirve:'#e2e8f0',kartal:'#854d0e',
+  ejderha:'#dc2626',galaksi:'#6366f1',nova:'#f0abfc',efsane:'#e879f9',kral:'#fde047',
+  yildiz:'#fef08a',meteor:'#fb923c',zafer:'#f59e0b',elit:'#f43f5e',sampiyon:'#a78bfa',
 };
 
-// ── Basınca küçülen wrapper ───────────────────────────────────────────
-function PressCard({ onPress, style, children }: {
-  onPress: () => void; style?: any; children: React.ReactNode;
-}) {
+// ─── STREAK ALEV ─────────────────────────────────────────────────
+const StreakBadge: React.FC<{ count: number }> = ({ count }) => {
   const scale = useRef(new Animated.Value(1)).current;
-  const press = () => {
-    Animated.sequence([
-      Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, speed: 50, bounciness: 0 }),
-      Animated.spring(scale, { toValue: 1,    useNativeDriver: true, speed: 20 }),
-    ]).start();
+  const glow  = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(Animated.sequence([
+      Animated.parallel([
+        Animated.timing(scale, { toValue: 1.16, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(glow,  { toValue: 1,    duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
+      ]),
+      Animated.parallel([
+        Animated.timing(scale, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(glow,  { toValue: 0, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: false }),
+      ]),
+    ])).start();
+  }, []);
+  const bgOp = glow.interpolate({ inputRange: [0, 1], outputRange: [0.05, 0.2] });
+  return (
+    <View style={s.streakWrap}>
+      <Animated.View style={[StyleSheet.absoluteFill, s.streakGlow, { opacity: bgOp }]} />
+      <Animated.Text style={[s.streakEmoji, { transform: [{ scale }] }]}>🔥</Animated.Text>
+      <Text style={s.streakNum}>{count}</Text>
+    </View>
+  );
+};
+
+// ─── KOİN ────────────────────────────────────────────────────────
+const CoinBadge: React.FC<{ amount: number; onPress: () => void }> = ({ amount, onPress }) => {
+  const sc = useRef(new Animated.Value(1)).current;
+  const [floaters, setFloaters] = useState<{ id: number; val: number }[]>([]);
+  const nid = useRef(0);
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
+    const id = nid.current++;
+    setFloaters(p => [...p, { id, val: Math.floor(Math.random() * 50) + 10 }]);
+    Animated.sequence([
+      Animated.timing(sc, { toValue: 1.18, duration: 100, useNativeDriver: true }),
+      Animated.spring(sc, { toValue: 1, tension: 80, friction: 6, useNativeDriver: true }),
+    ]).start();
+    setTimeout(() => setFloaters(p => p.filter(x => x.id !== id)), 1000);
   };
   return (
-    <TouchableOpacity onPress={press} activeOpacity={1}>
-      <Animated.View style={[{ transform: [{ scale }] }, style]}>{children}</Animated.View>
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.8} style={s.coinWrap}>
+      <Animated.View style={[s.coinBadge, { transform: [{ scale: sc }] }]}>
+        <Text style={s.coinEmoji}>🪙</Text>
+        <Text style={s.coinText}>{amount.toLocaleString('tr-TR')}</Text>
+        <View style={s.coinPlus}><Text style={s.coinPlusText}>+</Text></View>
+      </Animated.View>
+      {floaters.map(f => <FloatingNum key={f.id} value={f.val} />)}
     </TouchableOpacity>
   );
-}
+};
+const FloatingNum: React.FC<{ value: number }> = ({ value }) => {
+  const y = useRef(new Animated.Value(0)).current;
+  const op = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(y, { toValue: -52, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.sequence([Animated.delay(400), Animated.timing(op, { toValue: 0, duration: 500, useNativeDriver: true })]),
+    ]).start();
+  }, []);
+  return <Animated.Text style={[s.floatNum, { transform: [{ translateY: y }], opacity: op }]}>+{value}</Animated.Text>;
+};
 
+// ─── ANİMASYONLU KART ────────────────────────────────────────────
+const AnimCard: React.FC<{ delay: number; children: React.ReactNode; style?: object; onPress?: () => void }> = ({ delay, children, style, onPress }) => {
+  const ty = useRef(new Animated.Value(70)).current;
+  const op = useRef(new Animated.Value(0)).current;
+  const sc = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(ty, { toValue: 0, duration: 450, delay, easing: Easing.out(Easing.back(1.2)), useNativeDriver: true }),
+      Animated.timing(op, { toValue: 1, duration: 320, delay, useNativeDriver: true }),
+    ]).start();
+  }, []);
+  const pressIn  = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Animated.spring(sc, { toValue: 0.95, tension: 80, friction: 7, useNativeDriver: true }).start(); };
+  const pressOut = () => Animated.spring(sc, { toValue: 1, tension: 80, friction: 7, useNativeDriver: true }).start();
+  return (
+    <Animated.View style={[{ transform: [{ translateY: ty }, { scale: sc }], opacity: op }, style]}>
+      <TouchableOpacity onPress={onPress} onPressIn={pressIn} onPressOut={pressOut} activeOpacity={1}>{children}</TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// ─── DÖNEN GLOW HALKA ────────────────────────────────────────────
+const GlowRing: React.FC = () => {
+  const rot = useRef(new Animated.Value(0)).current;
+  useEffect(() => { Animated.loop(Animated.timing(rot, { toValue: 1, duration: 4500, easing: Easing.linear, useNativeDriver: true })).start(); }, []);
+  const rotate = rot.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  return (
+    <Animated.View pointerEvents="none" style={[s.glowRing, { transform: [{ rotate }] }]}>
+      <View style={s.glowArc1} /><View style={s.glowArc2} />
+    </Animated.View>
+  );
+};
+
+// ─── KILIC ÇARPIŞMA ───────────────────────────────────────────────
+const SwordClash: React.FC = () => {
+  const lx = useRef(new Animated.Value(-55)).current;
+  const rx = useRef(new Animated.Value(55)).current;
+  const sparkSc = useRef(new Animated.Value(0)).current;
+  const sparkOp = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = () => {
+      lx.setValue(-55); rx.setValue(55); sparkSc.setValue(0); sparkOp.setValue(0);
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(lx, { toValue: -3, duration: 340, easing: Easing.out(Easing.back(1.4)), useNativeDriver: true }),
+          Animated.timing(rx, { toValue: 3,  duration: 340, easing: Easing.out(Easing.back(1.4)), useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.spring(sparkSc, { toValue: 1, tension: 200, friction: 5, useNativeDriver: true }),
+          Animated.timing(sparkOp, { toValue: 1, duration: 80, useNativeDriver: true }),
+        ]),
+        Animated.delay(550),
+        Animated.parallel([
+          Animated.timing(sparkOp, { toValue: 0, duration: 200, useNativeDriver: true }),
+          Animated.timing(lx, { toValue: -55, duration: 280, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+          Animated.timing(rx, { toValue: 55,  duration: 280, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+        ]),
+        Animated.delay(1100),
+      ]).start(loop);
+    };
+    loop();
+  }, []);
+  return (
+    <View style={s.swordRow}>
+      <Animated.Text style={[s.sword, { transform: [{ translateX: lx }, { scaleX: -1 }] }]}>⚔️</Animated.Text>
+      <Animated.View style={[s.spark, { transform: [{ scale: sparkSc }], opacity: sparkOp }]}><Text style={{ fontSize: 20 }}>✨</Text></Animated.View>
+      <Animated.Text style={[s.sword, { transform: [{ translateX: rx }] }]}>⚔️</Animated.Text>
+    </View>
+  );
+};
+
+// ─── ANA EKRAN ────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { user, dailyTasks, setDailyTasks, setPersonalBests, updateUser, setBadges, token } = useUserStore();
-  const { width } = useWindowDimensions();
-
-  // Responsive kırılma noktaları
-  const isTablet  = width >= 768;
-  const isDesktop = width >= 1024;
-  const pad       = isTablet ? 24 : 16;
-  const cardGap   = isTablet ? 14 : 10;
-
-  const fadeAnim  = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(24)).current;
-  const xpAnim    = useRef(new Animated.Value(0)).current;
-
-  const [ligInfo,      setLigInfo]      = useState<any>(null);
-  const [unreadMsgs,   setUnreadMsgs]   = useState(0);
-
-  const xpPct = user ? Math.min(user.xp / (user.level * 500), 1) : 0;
+  const [ligInfo,    setLigInfo]    = useState<any>(null);
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
+  const headerOp = useRef(new Animated.Value(0)).current;
+  const headerY  = useRef(new Animated.Value(-18)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim,  { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+      Animated.timing(headerOp, { toValue: 1, duration: 380, useNativeDriver: true }),
+      Animated.timing(headerY,  { toValue: 0, duration: 380, easing: Easing.out(Easing.quad), useNativeDriver: true }),
     ]).start();
-    Animated.timing(xpAnim, { toValue: xpPct, duration: 1200, delay: 400, useNativeDriver: false }).start();
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -87,316 +197,191 @@ export default function HomeScreen() {
 
   if (!user) return null;
 
-  const xpWidth = xpAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-  const league  = (user as any).currentLeague ?? 'bronze';
-
-  // Tablet/Desktop'ta 4 mod yan yana, telefonda 2+2
-  const bigCardMinH  = isTablet ? 220 : 180;
-  const bigFontTitle = isTablet ? 26 : 22;
-  const smallFontT   = isTablet ? 17 : 15;
-  const avatarSize   = isTablet ? 56 : 44;
-  const maxW         = isDesktop ? 800 : undefined;
+  const league      = (user as any).currentLeague ?? 'bronz';
+  const leagueColor = LEAGUE_COLORS[league] ?? '#cd7f32';
+  const leagueIcon  = LEAGUE_ICONS[league]  ?? '🥉';
+  const hearts      = Array.from({ length: 5 }, (_, i) => i < (ligInfo?.hearts ?? 5) ? '❤️' : '🖤');
 
   return (
-    <SafeAreaView style={s.root}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[s.scroll, maxW ? { alignSelf: 'center', width: '100%', maxWidth: maxW } : undefined]}
-      >
-        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
-          {/* ── Header ── */}
-          <View style={[s.header, { paddingHorizontal: pad }]}>
-            <TouchableOpacity style={s.userRow} onPress={() => router.push('/(tabs)/profile')}>
-              <Avatar avatarId={user.avatarId} size={avatarSize} />
-              <View style={s.nameBlock}>
-                <Text style={[s.greeting, isTablet && { fontSize: 18 }]} numberOfLines={1}>{user.username} 👋</Text>
-                <Text style={s.level}>Seviye {user.level}</Text>
-                <View style={[s.xpBg, isTablet && { width: 200 }]}>
-                  <Animated.View style={[s.xpFill, { width: xpWidth }]} />
-                </View>
-                <Text style={s.xpTxt}>{user.xp} / {user.level * 500} XP</Text>
-              </View>
-            </TouchableOpacity>
-            <View style={s.headerRight}>
-              {user.streakCount > 0 && (
-                <View style={s.streak}><Text style={s.streakTxt}>🔥 {user.streakCount}</Text></View>
+        {/* HEADER */}
+        <Animated.View style={[s.header, { opacity: headerOp, transform: [{ translateY: headerY }] }]}>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+            <View style={s.avatar}>
+              <Avatar avatarId={user.avatarId} size={38} />
+              <View style={s.lvlBadge}><Text style={s.lvlTxt}>{user.level}</Text></View>
+            </View>
+          </TouchableOpacity>
+          <View style={s.headerRight}>
+            {user.streakCount > 0 && <StreakBadge count={user.streakCount} />}
+            <CoinBadge amount={user.coins} onPress={() => router.push('/shop' as any)} />
+            <TouchableOpacity style={s.msgBtn} onPress={() => router.push('/messages' as any)}>
+              <Text style={{ fontSize: 20 }}>💬</Text>
+              {unreadMsgs > 0 && (
+                <View style={s.msgBadge}><Text style={s.msgBadgeTxt}>{unreadMsgs > 9 ? '9+' : unreadMsgs}</Text></View>
               )}
-              {/* Coin + mağaza butonu */}
-              <TouchableOpacity style={s.coinBtn} onPress={() => router.push('/shop' as any)}>
-                <Text style={s.coinsTxt}>🪙 {user.coins.toLocaleString('tr-TR')}</Text>
-                <View style={s.plusIcon}><Text style={s.plusTxt}>+</Text></View>
-              </TouchableOpacity>
-              {/* Mesaj butonu + badge */}
-              <TouchableOpacity style={s.msgBtn} onPress={() => router.push('/messages' as any)}>
-                <Text style={{ fontSize: 20 }}>💬</Text>
-                {unreadMsgs > 0 && (
-                  <View style={s.msgBadge}>
-                    <Text style={s.msgBadgeTxt}>{unreadMsgs > 9 ? '9+' : unreadMsgs}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </View>
+        </Animated.View>
 
-          {/* ── Bölüm başlığı ── */}
-          <View style={[s.sectionHeader, { paddingHorizontal: pad }]}>
-            <Text style={[s.sectionTitle, isTablet && { fontSize: 20 }]}>Oyun Modları</Text>
-          </View>
+        <Animated.Text style={[s.sectionTitle, { opacity: headerOp }]}>Oyun Modları</Animated.Text>
 
-          {/* ── Tablet/Desktop: 4 kart yan yana ── */}
-          {isTablet ? (
-            <View style={[s.bigRow, { paddingHorizontal: pad, gap: cardGap }]}>
-              {/* LİG */}
-              <PressCard onPress={() => router.push('/lig' as any)} style={[s.ligCard, { flex: 1, minHeight: bigCardMinH }]}>
-                <View style={s.ligBg} />
-                <View style={s.ligGlow} />
-                <View style={s.ligContent}>
-                  <View style={s.ligTopRow}>
-                    <Text style={[s.ligIcon, { fontSize: 32 }]}>🏟️</Text>
-                    <View style={[s.leagueBadge, { borderColor: (LEAGUE_COLORS[league] ?? '#cd7f32') + '88' }]}>
-                      <Text style={{ fontSize: 14 }}>{LEAGUE_ICONS[league] ?? '🥉'}</Text>
-                      <Text style={[s.leagueName, { color: LEAGUE_COLORS[league] ?? '#cd7f32', fontSize: 13 }]}>
-                        {league.charAt(0).toUpperCase() + league.slice(1)}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[s.ligTitle, { fontSize: bigFontTitle }]}>Lig</Text>
-                  <Text style={s.ligSub}>{ligInfo ? `Bu hafta: ${ligInfo.category?.name ?? '—'}` : 'Haftalık yarış'}</Text>
-                  {ligInfo && <Text style={[s.ligRank, { color: GOLD }]}>#{ligInfo.userRank}. sırada</Text>}
-                  <View style={s.ligLives}>
-                    {[0, 1, 2].map(i => (
-                      <Text key={i} style={{ fontSize: 16, opacity: i < (ligInfo?.livesLeft ?? 3) ? 1 : 0.25 }}>❤️</Text>
-                    ))}
-                  </View>
-                </View>
-              </PressCard>
-
-              {/* DÜELLO */}
-              <PressCard onPress={() => router.push('/duel/lobby' as any)} style={[s.duelCard, { flex: 1, minHeight: bigCardMinH }]}>
-                <View style={s.duelBg} />
-                <View style={s.duelGlow} />
-                <View style={s.duelContent}>
-                  <Text style={[s.duelIcon, { fontSize: 36 }]}>⚔️</Text>
-                  <Text style={[s.duelTitle, { fontSize: bigFontTitle }]}>Düello</Text>
-                  <Text style={s.duelSub}>Çark · 1'e 1</Text>
-                  <View style={s.duelStakes}>
-                    <Text style={[s.stakeLabel, { fontSize: 13 }]}>50-2000</Text>
-                    <Text style={s.stakeIcon}>🪙</Text>
-                  </View>
-                </View>
-              </PressCard>
-
-              {/* CHALLENGE */}
-              <PressCard onPress={() => router.push('/challenge' as any)} style={[s.smallCard, { flex: 1, minHeight: bigCardMinH, justifyContent: 'center' }]}>
-                <View style={[s.smallIconBg, { backgroundColor: '#f59e0b22', width: 60, height: 60, borderRadius: 18 }]}>
-                  <Text style={{ fontSize: 30 }}>🏆</Text>
-                </View>
-                <Text style={[s.smallTitle, { fontSize: smallFontT }]}>Challenge</Text>
-                <Text style={s.smallSub}>Günlük liderlik</Text>
-                <Text style={[s.smallBadge, { color: GOLD }]}>+100 XP</Text>
-              </PressCard>
-
-              {/* ANTRENMAN */}
-              <PressCard onPress={() => router.push('/antrenman' as any)} style={[s.smallCard, { flex: 1, minHeight: bigCardMinH, justifyContent: 'center' }]}>
-                <View style={[s.smallIconBg, { backgroundColor: '#06b6d422', width: 60, height: 60, borderRadius: 18 }]}>
-                  <Text style={{ fontSize: 30 }}>📚</Text>
-                </View>
-                <Text style={[s.smallTitle, { fontSize: smallFontT }]}>Antrenman</Text>
-                <Text style={s.smallSub}>Kategori seç</Text>
-                <Text style={[s.smallBadge, { color: '#06b6d4' }]}>Serbest oyna</Text>
-              </PressCard>
+        {/* BIG CARDS */}
+        <View style={s.bigRow}>
+          {/* LİG */}
+          <AnimCard delay={80} style={s.halfWrap} onPress={() => router.push('/lig' as any)}>
+            <View style={[s.bigCard, { backgroundColor: '#3b1fa3' }]}>
+              <GlowRing />
+              <View style={[s.ligBadge, { borderColor: leagueColor + '88' }]}>
+                <Text>{leagueIcon}</Text>
+                <Text style={[s.ligBadgeTxt, { color: leagueColor }]}>{league.charAt(0).toUpperCase() + league.slice(1)}</Text>
+              </View>
+              <Text style={s.bigCardIcon}>🏟️</Text>
+              <Text style={s.bigCardTitle}>Lig</Text>
+              <Text style={s.bigCardSub}>{ligInfo?.category?.name ?? 'Haftalık yarış'}</Text>
+              {ligInfo && <Text style={s.ligRank}>#{ligInfo.userRank}. sıradasın</Text>}
+              <Text style={s.heartsRow}>{hearts.join('')}</Text>
             </View>
-          ) : (
-            /* ── Telefon: 2 büyük + 2 küçük ── */
-            <>
-              <View style={[s.bigRow, { paddingHorizontal: pad, gap: cardGap }]}>
-                {/* LİG */}
-                <PressCard onPress={() => router.push('/lig' as any)} style={[s.ligCard, { minHeight: bigCardMinH }]}>
-                  <View style={s.ligBg} />
-                  <View style={s.ligGlow} />
-                  <View style={s.ligContent}>
-                    <View style={s.ligTopRow}>
-                      <Text style={s.ligIcon}>🏟️</Text>
-                      <View style={[s.leagueBadge, { borderColor: (LEAGUE_COLORS[league] ?? '#cd7f32') + '88' }]}>
-                        <Text style={{ fontSize: 12 }}>{LEAGUE_ICONS[league] ?? '🥉'}</Text>
-                        <Text style={[s.leagueName, { color: LEAGUE_COLORS[league] ?? '#cd7f32' }]}>
-                          {league.charAt(0).toUpperCase() + league.slice(1)}
-                        </Text>
-                      </View>
-                    </View>
-                    <Text style={s.ligTitle}>Lig</Text>
-                    <Text style={s.ligSub}>{ligInfo ? `Bu hafta: ${ligInfo.category?.name ?? '—'}` : 'Haftalık yarış'}</Text>
-                    {ligInfo && <Text style={[s.ligRank, { color: GOLD }]}>#{ligInfo.userRank}. sırada</Text>}
-                    <View style={s.ligLives}>
-                      {[0, 1, 2].map(i => (
-                        <Text key={i} style={{ fontSize: 14, opacity: i < (ligInfo?.livesLeft ?? 3) ? 1 : 0.25 }}>❤️</Text>
-                      ))}
-                    </View>
-                  </View>
-                </PressCard>
+          </AnimCard>
 
-                {/* DÜELLO */}
-                <PressCard onPress={() => router.push('/duel/lobby' as any)} style={[s.duelCard, { minHeight: bigCardMinH }]}>
-                  <View style={s.duelBg} />
-                  <View style={s.duelGlow} />
-                  <View style={s.duelContent}>
-                    <Text style={s.duelIcon}>⚔️</Text>
-                    <Text style={s.duelTitle}>Düello</Text>
-                    <Text style={s.duelSub}>Çark · 1'e 1</Text>
-                    <View style={s.duelStakes}>
-                      <Text style={s.stakeLabel}>50-2000</Text>
-                      <Text style={s.stakeIcon}>🪙</Text>
-                    </View>
-                    {user.streakCount > 0 && (
-                      <Text style={[s.duelStreak, { color: '#f97316' }]}>🔥 {user.streakCount} seri</Text>
-                    )}
-                  </View>
-                </PressCard>
-              </View>
+          {/* DÜELLO */}
+          <AnimCard delay={190} style={s.halfWrap} onPress={() => router.push('/duel/lobby' as any)}>
+            <View style={[s.bigCard, { backgroundColor: '#4a1880' }]}>
+              <SwordClash />
+              <Text style={s.bigCardTitle}>Düello</Text>
+              <Text style={s.bigCardSub}>Çark · 1'e 1</Text>
+              <View style={s.duelCoinBadge}><Text style={s.duelCoinTxt}>50-2000 🪙</Text></View>
+              {user.streakCount > 0 && <Text style={s.duelStreak}>🔥 {user.streakCount} seri</Text>}
+            </View>
+          </AnimCard>
+        </View>
 
-              <View style={[s.smallRow, { paddingHorizontal: pad, gap: cardGap }]}>
-                <PressCard onPress={() => router.push('/challenge' as any)} style={s.smallCard}>
-                  <View style={[s.smallIconBg, { backgroundColor: '#f59e0b22' }]}>
-                    <Text style={{ fontSize: 26 }}>🏆</Text>
-                  </View>
-                  <Text style={s.smallTitle}>Challenge</Text>
-                  <Text style={s.smallSub}>Günlük liderlik</Text>
-                  <Text style={[s.smallBadge, { color: GOLD }]}>+100 XP</Text>
-                </PressCard>
+        {/* SMALL CARDS */}
+        <View style={s.bigRow}>
+          <AnimCard delay={290} style={s.halfWrap} onPress={() => router.push('/challenge' as any)}>
+            <View style={s.smallCard}>
+              <Text style={s.smallIcon}>🎯</Text>
+              <Text style={s.smallTitle}>Challenge</Text>
+              <Text style={s.smallSub}>Günlük liderlik</Text>
+              <Text style={s.smallXP}>+100 XP</Text>
+            </View>
+          </AnimCard>
+          <AnimCard delay={390} style={s.halfWrap} onPress={() => router.push('/antrenman' as any)}>
+            <View style={s.smallCard}>
+              <Text style={s.smallIcon}>📚</Text>
+              <Text style={s.smallTitle}>Antrenman</Text>
+              <Text style={s.smallSub}>Kategori seç</Text>
+              <Text style={[s.smallXP, { color: Colors.blue }]}>Serbest oyna</Text>
+            </View>
+          </AnimCard>
+        </View>
 
-                <PressCard onPress={() => router.push('/antrenman' as any)} style={s.smallCard}>
-                  <View style={[s.smallIconBg, { backgroundColor: '#06b6d422' }]}>
-                    <Text style={{ fontSize: 26 }}>📚</Text>
-                  </View>
-                  <Text style={s.smallTitle}>Antrenman</Text>
-                  <Text style={s.smallSub}>Kategori seç</Text>
-                  <Text style={[s.smallBadge, { color: '#06b6d4' }]}>Serbest oyna</Text>
-                </PressCard>
-              </View>
-            </>
-          )}
-
-          {/* ── Günlük görevler ── */}
-          {dailyTasks && dailyTasks.length > 0 && (
-            <>
-              <View style={[s.sectionHeader, { paddingHorizontal: pad }]}>
-                <Text style={[s.sectionTitle, isTablet && { fontSize: 20 }]}>Günlük Görevler</Text>
+        {/* GÜNLÜK GÖREVLER */}
+        {dailyTasks && dailyTasks.length > 0 && (
+          <>
+            <AnimCard delay={470} style={{ marginTop: 20 }}>
+              <View style={s.taskHeader}>
+                <Text style={s.sectionTitle}>Günlük Görevler</Text>
                 <TouchableOpacity onPress={() => router.push('/tasks' as any)}>
-                  <Text style={s.sectionLink}>Tümü ›</Text>
+                  <Text style={s.tumumBtn}>Tümü ›</Text>
                 </TouchableOpacity>
               </View>
-              {dailyTasks.slice(0, isTablet ? 3 : 2).map((task: any, idx: number) => {
-                const pct = Math.min(((task.current_value ?? 0) / (task.target_value ?? 1)) * 100, 100);
-                const taskIcon = task.task_type?.startsWith('score_history') ? '🏺'
-                  : task.task_type?.startsWith('score_science') ? '🔬'
-                  : task.task_type?.startsWith('score_sports') ? '⚽'
-                  : task.task_type?.startsWith('score_geo') ? '🌍'
-                  : task.task_type?.startsWith('score_cinema') ? '🎬'
-                  : task.task_type?.startsWith('score_turkey') ? '🇹🇷'
-                  : task.task_type?.startsWith('score_economy') ? '📈'
-                  : task.task_type?.startsWith('score_art') ? '🎨'
-                  : task.task_type?.startsWith('score_medical') ? '🩺'
-                  : task.task_type?.startsWith('score_license') ? '🚗'
-                  : task.task_type?.startsWith('score_kids') ? '🧒'
-                  : task.task_type?.startsWith('play_') ? '🎮'
-                  : '🎯';
-                return (
-                  <View key={task.id ?? idx} style={[s.taskRow, { marginHorizontal: pad }]}>
-                    <Text style={{ fontSize: 20 }}>{taskIcon}</Text>
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={s.taskTitle} numberOfLines={1}>{task.task_description}</Text>
-                      <View style={s.taskProgBg}>
-                        <View style={[s.taskProgFill, { width: `${pct}%` }]} />
-                      </View>
-                      <Text style={[s.taskXpTxt, { color: task.is_completed ? '#22c55e' : MUTED }]}>
-                        {task.is_completed ? '✅ Tamamlandı' : `${task.current_value ?? 0} / ${task.target_value}`}
-                      </Text>
+            </AnimCard>
+            {dailyTasks.slice(0, 2).map((task: any, i: number) => (
+              <AnimCard key={task.id ?? i} delay={530 + i * 60} style={{ marginTop: 10 }}>
+                <View style={s.taskCard}>
+                  <Text style={s.taskIcon}>{task.task_type?.startsWith('play') ? '🎮' : '🎯'}</Text>
+                  <View style={s.taskInfo}>
+                    <Text style={s.taskTitle} numberOfLines={1}>{task.task_description}</Text>
+                    <View style={s.taskBarBg}>
+                      <View style={[s.taskBarFill, { width: `${Math.min(((task.current_value ?? 0) / (task.target_value ?? 1)) * 100, 100)}%` as any }]} />
                     </View>
-                    <Text style={s.taskReward}>+{task.xp_reward} XP</Text>
+                    <Text style={s.taskProg}>{task.current_value ?? 0} / {task.target_value}</Text>
                   </View>
-                );
-              })}
-            </>
-          )}
+                  <View style={s.taskXPBadge}><Text style={s.taskXPTxt}>+{task.xp_reward} XP</Text></View>
+                </View>
+              </AnimCard>
+            ))}
+          </>
+        )}
 
-        </Animated.View>
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+const CARD_H = 200;
 const s = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: BG },
-  scroll: { paddingBottom: 40 },
+  safe: { flex: 1, backgroundColor: Colors.bg },
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 40 },
 
-  header:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, paddingBottom: 10 },
-  userRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  nameBlock: { flex: 1, gap: 2 },
-  greeting:  { fontFamily: 'Nunito-Bold', fontSize: 15, color: TEXT },
-  level:     { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED, marginBottom: 4 },
-  headerRight: { flexDirection: 'row', gap: 6, alignItems: 'center', marginLeft: 6 },
-  streak:    { backgroundColor: '#ff4d0022', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
-  streakTxt: { fontFamily: 'Nunito-Bold', fontSize: 12, color: '#ff6b35' },
-  coinBtn:   { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: GOLD + '22', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 5, borderWidth: 1, borderColor: GOLD + '44' },
-  coinsTxt:  { fontFamily: 'Nunito-Bold', fontSize: 12, color: GOLD },
-  plusIcon:  { backgroundColor: GOLD, borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
-  plusTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 11, color: '#000', lineHeight: 16 },
-  msgBtn:    { backgroundColor: PURP + '22', borderRadius: 10, width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: PURP + '44', position: 'relative' },
-  msgBadge:  { position: 'absolute', top: -4, right: -4, backgroundColor: '#ef4444', borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 2, borderColor: BG },
-  msgBadgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 9, color: '#fff' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: Colors.card, borderWidth: 2, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  lvlBadge: { position: 'absolute', bottom: -4, right: -4, backgroundColor: Colors.purple, borderRadius: 8, paddingHorizontal: 4, paddingVertical: 1 },
+  lvlTxt: { color: Colors.white, fontSize: 9, fontWeight: '800' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
-  xpBg:   { height: 4, backgroundColor: '#1e1b3a', borderRadius: 2, overflow: 'hidden', width: 130 },
-  xpFill: { height: 4, borderRadius: 2, backgroundColor: PURP2 },
-  xpTxt:  { fontFamily: 'Nunito-Regular', fontSize: 10, color: MUTED },
+  streakWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  streakGlow: { backgroundColor: Colors.gold, borderRadius: 20 },
+  streakEmoji: { fontSize: 16, marginRight: 3 },
+  streakNum: { color: Colors.white, fontWeight: '800', fontSize: 14 },
 
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 4 },
-  sectionTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: TEXT },
-  sectionLink:   { fontFamily: 'Nunito-Regular', fontSize: 13, color: PURP2 },
+  coinWrap: { position: 'relative', alignItems: 'center' },
+  coinBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#12102a', borderRadius: 18, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1.5, borderColor: Colors.gold, gap: 4 },
+  coinEmoji: { fontSize: 14 },
+  coinText: { color: Colors.white, fontWeight: '800', fontSize: 12 },
+  coinPlus: { width: 16, height: 16, borderRadius: 8, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center' },
+  coinPlusText: { color: '#000', fontWeight: '900', fontSize: 12, lineHeight: 16 },
+  floatNum: { position: 'absolute', top: -4, color: Colors.gold, fontWeight: '900', fontSize: 13, zIndex: 99 },
+  msgBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.card, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  msgBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#ef4444', borderRadius: 9, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 2, borderColor: Colors.bg },
+  msgBadgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 9, color: Colors.white },
 
-  // Büyük iki kart
-  bigRow:  { flexDirection: 'row', marginBottom: 10 },
+  sectionTitle: { color: Colors.white, fontSize: 17, fontWeight: '800', marginBottom: 8 },
+  bigRow: { flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 10 },
+  halfWrap: { flex: 1 },
 
-  // Lig kartı — overflow:hidden KALDIRILDI (içeriği kırpıyordu)
-  ligCard: { flex: 1.2, borderRadius: 22, minHeight: 200 },
-  ligBg:   { ...StyleSheet.absoluteFillObject, backgroundColor: '#0a0520', borderRadius: 22 },
-  ligGlow: { position: 'absolute', right: -30, top: -30, width: 180, height: 160, borderRadius: 90, backgroundColor: '#4c1d95', opacity: 0.5 },
-  ligContent:  { padding: 14, zIndex: 2, gap: 5 },
-  ligTopRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  ligIcon:     { fontSize: 28 },
-  leagueBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  leagueName:  { fontFamily: 'Nunito-Bold', fontSize: 11 },
-  ligTitle:    { fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: TEXT, marginTop: 4 },
-  ligSub:      { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#a78bfa' },
-  ligRank:     { fontFamily: 'Nunito-ExtraBold', fontSize: 13 },
-  ligLives:    { flexDirection: 'row', gap: 4, marginTop: 4, paddingBottom: 4 },
+  bigCard: { borderRadius: 22, padding: 14, minHeight: CARD_H, overflow: 'hidden', borderWidth: 1, borderColor: Colors.border, position: 'relative' },
+  bigCardIcon: { fontSize: 32, marginBottom: 5 },
+  bigCardTitle: { color: Colors.white, fontSize: 20, fontWeight: '900', marginBottom: 2 },
+  bigCardSub: { color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: '600', marginBottom: 6 },
 
-  // Düello kartı — overflow:hidden KALDIRILDI
-  duelCard: { flex: 1, borderRadius: 22, minHeight: 200 },
-  duelBg:   { ...StyleSheet.absoluteFillObject, backgroundColor: '#0d0520', borderRadius: 22 },
-  duelGlow: { position: 'absolute', left: -20, bottom: -20, width: 160, height: 140, borderRadius: 80, backgroundColor: '#7c3aed', opacity: 0.4 },
-  duelContent: { flex: 1, padding: 16, zIndex: 2, alignItems: 'flex-start' },
-  duelIcon:    { fontSize: 32 },
-  duelTitle:   { fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: TEXT, marginTop: 8 },
-  duelSub:     { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#a78bfa' },
-  duelStakes:  { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 8, backgroundColor: GOLD + '20', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  stakeLabel:  { fontFamily: 'Nunito-Bold', fontSize: 12, color: GOLD },
-  stakeIcon:   { fontSize: 12 },
-  duelStreak:  { fontFamily: 'Nunito-Bold', fontSize: 11, marginTop: 4 },
+  ligBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(245,158,11,0.18)', borderRadius: 9, paddingHorizontal: 7, paddingVertical: 3, alignSelf: 'flex-start', marginBottom: 7, borderWidth: 1 },
+  ligBadgeTxt: { fontSize: 9, fontWeight: '800' },
+  ligRank: { color: Colors.gold, fontSize: 12, fontWeight: '800', marginBottom: 4 },
+  heartsRow: { fontSize: 13, letterSpacing: 1 },
 
-  // Küçük iki kart
-  smallRow:  { flexDirection: 'row', marginBottom: 20 },
-  smallCard: { flex: 1, borderRadius: 18, backgroundColor: CARD, padding: 14, borderWidth: 1, borderColor: BORDER, gap: 4 },
-  smallIconBg: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
-  smallTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT },
-  smallSub:    { fontFamily: 'Nunito-Regular', fontSize: 11, color: MUTED },
-  smallBadge:  { fontFamily: 'Nunito-Bold', fontSize: 11, marginTop: 2 },
+  duelCoinBadge: { backgroundColor: 'rgba(245,158,11,0.18)', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, marginTop: 5, borderWidth: 1, borderColor: Colors.gold, alignSelf: 'center' },
+  duelCoinTxt: { color: Colors.gold, fontWeight: '800', fontSize: 11 },
+  duelStreak: { color: Colors.white, fontSize: 11, fontWeight: '700', marginTop: 4, textAlign: 'center', opacity: 0.9 },
 
-  // Görevler
-  taskRow:      { marginBottom: 8, backgroundColor: CARD, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: BORDER },
-  taskTitle:    { fontFamily: 'Nunito-Bold', fontSize: 13, color: TEXT, marginBottom: 4 },
-  taskXpTxt:    { fontFamily: 'Nunito-Regular', fontSize: 10, marginTop: 3 },
-  taskProgBg:   { height: 4, backgroundColor: '#1e1b3a', borderRadius: 2, overflow: 'hidden' },
-  taskProgFill: { height: 4, backgroundColor: PURP2, borderRadius: 2 },
-  taskReward:   { fontFamily: 'Nunito-Bold', fontSize: 12, color: GOLD, marginLeft: 10 },
+  smallCard: { backgroundColor: Colors.card, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: Colors.border },
+  smallIcon: { fontSize: 28, marginBottom: 6 },
+  smallTitle: { color: Colors.white, fontSize: 14, fontWeight: '800', marginBottom: 2 },
+  smallSub: { color: Colors.muted, fontSize: 10, fontWeight: '500', marginBottom: 6 },
+  smallXP: { color: Colors.gold, fontSize: 11, fontWeight: '800' },
+
+  glowRing: { position: 'absolute', width: 160, height: 160, borderRadius: 80, top: -40, right: -40, alignItems: 'center', justifyContent: 'center' },
+  glowArc1: { position: 'absolute', width: 160, height: 160, borderRadius: 80, borderWidth: 2.5, borderColor: 'rgba(139,92,246,0.3)', borderTopColor: 'rgba(245,158,11,0.6)' },
+  glowArc2: { position: 'absolute', width: 110, height: 110, borderRadius: 55, borderWidth: 1.5, borderColor: 'rgba(139,92,246,0.18)', borderBottomColor: 'rgba(139,92,246,0.4)' },
+
+  swordRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 44, marginBottom: 4, width: '100%' },
+  sword: { fontSize: 24 },
+  spark: { position: 'absolute', zIndex: 10 },
+
+  taskHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  tumumBtn: { color: Colors.purpleLight, fontSize: 13, fontWeight: '700' },
+  taskCard: { backgroundColor: Colors.card, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.border, gap: 10 },
+  taskIcon: { fontSize: 22 },
+  taskInfo: { flex: 1 },
+  taskTitle: { color: Colors.white, fontSize: 12, fontWeight: '700', marginBottom: 5 },
+  taskBarBg: { height: 5, backgroundColor: '#1e1e3a', borderRadius: 3, marginBottom: 3 },
+  taskBarFill: { height: 5, backgroundColor: Colors.purple, borderRadius: 3 },
+  taskProg: { color: Colors.muted, fontSize: 10 },
+  taskXPBadge: { backgroundColor: 'rgba(245,158,11,0.15)', borderRadius: 9, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, borderColor: Colors.gold },
+  taskXPTxt: { color: Colors.gold, fontSize: 10, fontWeight: '800' },
 });

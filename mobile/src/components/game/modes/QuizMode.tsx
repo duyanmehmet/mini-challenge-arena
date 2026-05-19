@@ -211,8 +211,10 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
 
   const useTime = () => {
     if (!jokers.time || feedback) return;
+    stopQTimer();
     setJokers(j => ({ ...j, time: false }));
-    setSessionLeft(t => Math.min(t + 60, SESSION_TIME * 2));
+    // Soruyu değiştir — ceza yok, can gitmiyor, sadece sonraki soruya geç
+    nextQuestion();
   };
 
   if (!current) return null;
@@ -236,8 +238,8 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
           {/* Can ikonları — sadece lig modunda (initialLives verilmişse) */}
           {isLiveMode && (
             <View style={s.livesRow}>
-              {[0, 1, 2].map(i => (
-                <Text key={i} style={{ fontSize: 16, opacity: i < lives ? 1 : 0.2 }}>❤️</Text>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Text key={i} style={{ fontSize: 15, opacity: i < lives ? 1 : 0.18 }}>❤️</Text>
               ))}
             </View>
           )}
@@ -326,7 +328,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
           onPress={useHalf}
         />
         <JokerBtn
-          emoji="🔄" label="Çek"
+          emoji="🔀" label="Değiştir"
           active={jokers.time} color="#6c3aed"
           onPress={useTime}
         />

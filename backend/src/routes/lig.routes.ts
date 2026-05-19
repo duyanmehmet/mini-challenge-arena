@@ -17,7 +17,14 @@ const WEEK_CATEGORIES = [
   { id: "economy",   name: "Ekonomi",       icon: "📈", color: "#2ecc71" },
 ];
 
-const LEAGUE_ORDER = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "champion"];
+const LEAGUE_ORDER = [
+  "filiz","kaya","demir","celik","bronz",
+  "gumus","altin","safir","zumrut","elmas",
+  "platin","kristal","mistik","ay","gunes",
+  "simsek","alev","okyanus","zirve","kartal",
+  "ejderha","galaksi","nova","efsane","kral",
+  "yildiz","meteor","zafer","elit","sampiyon",
+];
 
 const MAX_HEARTS  = 5;
 const REGEN_MS    = 2 * 60 * 60 * 1000; // 2 saat

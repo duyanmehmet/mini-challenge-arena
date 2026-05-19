@@ -326,28 +326,14 @@ export default function ResultScreen() {
           </View>
         )}
 
-        {/* Butonlar */}
-        <View style={s.btns}>
-          <TouchableOpacity
-            style={s.primaryBtn}
-            onPress={() => router.replace('/(tabs)')}
-            activeOpacity={0.85}
-          >
-            <Text style={s.primaryBtnTxt}>Ana Sayfaya Dön</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={s.secondaryBtn}
-            onPress={() => router.replace(`/game/${mode}` as any)}
-            activeOpacity={0.85}
-          >
-            <Text style={s.secondaryBtnTxt}>Tekrar Oyna</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={handleShare} style={s.shareBtn}>
-            <Text style={s.shareTxt}>📤 Paylaş</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Buton */}
+        <TouchableOpacity
+          style={s.primaryBtn}
+          onPress={() => router.replace('/(tabs)')}
+          activeOpacity={0.85}
+        >
+          <Text style={s.primaryBtnTxt}>Ana Sayfa</Text>
+        </TouchableOpacity>
 
       </Animated.View>
     </SafeAreaView>
@@ -404,6 +390,7 @@ const s = StyleSheet.create({
   // Butonlar
   btns: { width: '100%', gap: 12 },
   primaryBtn: {
+    alignSelf: 'stretch',
     backgroundColor: PURP,
     borderRadius: 16, paddingVertical: 18,
     alignItems: 'center',

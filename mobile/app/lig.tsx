@@ -24,9 +24,30 @@ const GREEN = '#10b981';
 const RED   = '#ef4444';
 const BORDER= '#2e2b5a';
 
-const LEAGUE_ICONS:  Record<string, string> = { iron: '⚙️', bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '🔷', diamond: '💎', champion: '👑' };
-const LEAGUE_COLORS: Record<string, string> = { iron: '#71717a', bronze: '#cd7f32', silver: '#9ca3af', gold: '#f59e0b', platinum: '#38bdf8', diamond: '#06b6d4', champion: '#a78bfa' };
-const LEAGUE_NAMES:  Record<string, string> = { iron: 'Demir', bronze: 'Bronz', silver: 'Gümüş', gold: 'Altın', platinum: 'Platin', diamond: 'Elmas', champion: 'Şampiyonlar' };
+const LEAGUE_ICONS: Record<string, string> = {
+  filiz:'🌱',kaya:'🪨',demir:'🔩',celik:'⚔️',bronz:'🥉',
+  gumus:'🥈',altin:'🥇',safir:'🔵',zumrut:'💚',elmas:'💎',
+  platin:'🔷',kristal:'🌟',mistik:'🔮',ay:'🌙',gunes:'☀️',
+  simsek:'⚡',alev:'🔥',okyanus:'🌊',zirve:'🏔️',kartal:'🦅',
+  ejderha:'🐉',galaksi:'🌌',nova:'💫',efsane:'🦄',kral:'👑',
+  yildiz:'⭐',meteor:'🌠',zafer:'🏆',elit:'🎯',sampiyon:'🏅',
+};
+const LEAGUE_COLORS: Record<string, string> = {
+  filiz:'#86efac',kaya:'#a8a29e',demir:'#94a3b8',celik:'#64748b',bronz:'#cd7f32',
+  gumus:'#9ca3af',altin:'#f59e0b',safir:'#3b82f6',zumrut:'#22c55e',elmas:'#06b6d4',
+  platin:'#38bdf8',kristal:'#e2e8f0',mistik:'#a855f7',ay:'#c4b5fd',gunes:'#fbbf24',
+  simsek:'#facc15',alev:'#f97316',okyanus:'#0ea5e9',zirve:'#e2e8f0',kartal:'#854d0e',
+  ejderha:'#dc2626',galaksi:'#6366f1',nova:'#f0abfc',efsane:'#e879f9',kral:'#fde047',
+  yildiz:'#fef08a',meteor:'#fb923c',zafer:'#f59e0b',elit:'#f43f5e',sampiyon:'#a78bfa',
+};
+const LEAGUE_NAMES: Record<string, string> = {
+  filiz:'Filiz',kaya:'Kaya',demir:'Demir',celik:'Çelik',bronz:'Bronz',
+  gumus:'Gümüş',altin:'Altın',safir:'Safir',zumrut:'Zümrüt',elmas:'Elmas',
+  platin:'Platin',kristal:'Kristal',mistik:'Mistik',ay:'Ay',gunes:'Güneş',
+  simsek:'Şimşek',alev:'Alev',okyanus:'Okyanus',zirve:'Zirve',kartal:'Kartal',
+  ejderha:'Ejderha',galaksi:'Galaksi',nova:'Nova',efsane:'Efsane',kral:'Kral',
+  yildiz:'Yıldız',meteor:'Meteor',zafer:'Zafer',elit:'Elit',sampiyon:'Şampiyon',
+};
 
 interface LigInfo {
   category: { id: string; name: string; icon: string; color: string };
@@ -46,10 +67,19 @@ function useCountdown(targetIso: string) {
     const update = () => {
       const diff = new Date(targetIso).getTime() - Date.now();
       if (diff <= 0) { setText('Bitti'); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setText(`${h}s ${m}d ${s}sn`);
+      const totalHours = diff / 3600000;
+      if (totalHours >= 24) {
+        // 1 günden fazla → gün göster
+        const days = Math.ceil(totalHours / 24);
+        setText(`${days} gün kaldı`);
+      } else {
+        // 1 günden az → saat:dakika:saniye
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        if (h > 0) setText(`${h}s ${m}dk ${s}sn`);
+        else setText(`${m}dk ${s}sn`);
+      }
     };
     update();
     const id = setInterval(update, 1000);
@@ -60,9 +90,8 @@ function useCountdown(targetIso: string) {
 
 export default function LigScreen() {
   const { user } = useUserStore();
-  const [info,        setInfo]        = useState<LigInfo | null>(null);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [loading,     setLoading]     = useState(true);
+  const [info,    setInfo]    = useState<LigInfo | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [showCatModal, setShowCatModal] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -82,12 +111,8 @@ export default function LigScreen() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [ligRes, lbRes] = await Promise.all([
-        api.get('/lig/current'),
-        api.get('/lig/leaderboard'),
-      ]);
-      setInfo(ligRes.data);
-      setLeaderboard(lbRes.data ?? []);
+      const res = await api.get('/lig/current');
+      setInfo(res.data);
     } catch {
       Alert.alert('Hata', 'Lig bilgisi yüklenemedi.');
     } finally {
@@ -125,9 +150,19 @@ export default function LigScreen() {
           <Text style={s.backTxt}>← Geri</Text>
         </TouchableOpacity>
         <Text style={s.headerTitle}>🏟️ Lig</Text>
-        <View style={[s.leagueBadge, { borderColor: leagueColor + '80' }]}>
-          <Text>{leagueIcon}</Text>
-          <Text style={[s.leagueBadgeTxt, { color: leagueColor }]}>{leagueName}</Text>
+
+        {/* Sağ: Lig rozeti + Canlar */}
+        <View style={s.headerRight}>
+          <View style={[s.leagueBadge, { borderColor: leagueColor + '80' }]}>
+            <Text>{leagueIcon}</Text>
+            <Text style={[s.leagueBadgeTxt, { color: leagueColor }]}>{leagueName}</Text>
+          </View>
+          {/* Kompakt kalp göstergesi */}
+          <View style={s.heartsHeader}>
+            {Array.from({ length: info?.maxHearts ?? 5 }).map((_, i) => (
+              <Text key={i} style={{ fontSize: 14, opacity: i < (info?.hearts ?? 5) ? 1 : 0.2 }}>❤️</Text>
+            ))}
+          </View>
         </View>
       </View>
 
@@ -157,48 +192,24 @@ export default function LigScreen() {
             </View>
           )}
 
-          {/* Sıralama + Skor */}
-          {info && (
-            <View style={s.statsRow}>
-              <View style={s.statBox}>
-                <Text style={s.statNum}>{info.userRank}.</Text>
-                <Text style={s.statLabel}>Sıran</Text>
-              </View>
-              <View style={[s.statBox, s.statBoxMid]}>
-                <Text style={[s.statNum, { color: GOLD }]}>{info.userScore.toLocaleString('tr-TR')}</Text>
-                <Text style={s.statLabel}>Haftalık Puan</Text>
-              </View>
-              <View style={s.statBox}>
-                <Text style={s.statNum}>{info.leagueCount}</Text>
-                <Text style={s.statLabel}>Rakip</Text>
-              </View>
+          {/* Can dolu değilse küçük uyarı */}
+          {info && (info.hearts ?? 5) < (info.maxHearts ?? 5) && (
+            <View style={s.heartWarn}>
+              <Text style={s.heartWarnTxt}>
+                {(info.hearts ?? 0) === 0
+                  ? '🖤 Kalplerin bitti!'
+                  : `❤️ ${info.hearts}/${info.maxHearts} kalp`}
+                {info.nextHeartMinutes
+                  ? `  ·  ⏳ ${info.nextHeartMinutes} dk sonra +1`
+                  : ''}
+              </Text>
+              {(info.hearts ?? 0) === 0 && (
+                <TouchableOpacity onPress={() => router.push('/shop' as any)}>
+                  <Text style={s.heartWarnBtn}>Doldur →</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
-
-          {/* Paylaşılan kalp havuzu */}
-          <View style={s.heartsCard}>
-            <View style={s.heartsRow}>
-              {Array.from({ length: info?.maxHearts ?? 5 }).map((_, i) => (
-                <Text key={i} style={{ fontSize: 26, opacity: i < (info?.hearts ?? 5) ? 1 : 0.18 }}>❤️</Text>
-              ))}
-            </View>
-            <Text style={s.heartsTxt}>
-              {info?.hearts ?? 5} / {info?.maxHearts ?? 5} Kalp
-            </Text>
-            {(info?.hearts ?? 5) < (info?.maxHearts ?? 5) && info?.nextHeartMinutes && (
-              <Text style={s.heartsRegen}>
-                ⏳ {info.nextHeartMinutes} dk sonra +1 kalp
-              </Text>
-            )}
-            {(info?.hearts ?? 5) === 0 && (
-              <TouchableOpacity
-                style={s.refillBtn}
-                onPress={() => router.push('/shop' as any)}
-              >
-                <Text style={s.refillTxt}>📺 Reklam İzle / Coin Harca</Text>
-              </TouchableOpacity>
-            )}
-          </View>
 
           {/* 2X ve 1X butonları — eşit boyut yan yana */}
           <View style={s.playRow}>
@@ -274,47 +285,7 @@ export default function LigScreen() {
             </View>
           </Modal>
 
-          {/* Lig terfi bilgisi */}
-          <View style={s.promotionCard}>
-            <Text style={s.promotionTxt}>
-              🏆 İlk 5 kişi <Text style={{ color: GOLD }}>yükseliyor</Text>
-              {'  '}💔 Son 5 kişi <Text style={{ color: RED }}>düşüyor</Text>
-            </Text>
-          </View>
-
-          {/* Liderlik tablosu */}
-          <Text style={s.lbTitle}>Ligin Sıralaması</Text>
-
-          {leaderboard.map((entry: any, i: number) => {
-            const isMe  = entry.username === user.username;
-            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
-            const isTop5  = i < 5;
-            const isBot5  = leaderboard.length >= 10 && i >= leaderboard.length - 5;
-            return (
-              <View key={i} style={[
-                s.lbRow,
-                isMe    && s.lbRowMe,
-                isTop5  && !isMe && s.lbRowTop,
-                isBot5  && !isMe && s.lbRowBot,
-              ]}>
-                <View style={s.rankWrap}>
-                  {medal ? <Text style={{ fontSize: 18 }}>{medal}</Text>
-                         : <Text style={s.rankTxt}>#{i + 1}</Text>}
-                </View>
-                <Avatar avatarId={entry.avatar_id} size={34} />
-                <Text style={[s.lbName, isMe && { color: PURP2 }]} numberOfLines={1}>
-                  {entry.username}{isMe ? ' (sen)' : ''}
-                </Text>
-                <Text style={[s.lbScore, i < 3 && { color: GOLD }]}>
-                  {(entry.weekly_score ?? 0).toLocaleString('tr-TR')}
-                </Text>
-                {isTop5 && <Text style={s.upArrow}>↑</Text>}
-                {isBot5 && <Text style={s.downArrow}>↓</Text>}
-              </View>
-            );
-          })}
-
-          <View style={{ height: 40 }} />
+          <View style={{ height: 24 }} />
         </ScrollView>
       )}
     </SafeAreaView>
@@ -325,11 +296,18 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
 
   header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
-  backBtn:       { width: 60 },
+  backBtn:       { width: 44 },
   backTxt:       { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
-  headerTitle:   { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT },
-  leagueBadge:   { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
-  leagueBadgeTxt:{ fontFamily: 'Nunito-ExtraBold', fontSize: 12 },
+  headerTitle:   { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT, flex: 1 },
+  headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  leagueBadge:   { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
+  leagueBadgeTxt:{ fontFamily: 'Nunito-ExtraBold', fontSize: 11 },
+  heartsHeader:  { flexDirection: 'row', gap: 1 },
+
+  // Can uyarı bandı
+  heartWarn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 10, backgroundColor: '#2a0a0a', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: RED + '44' },
+  heartWarnTxt: { fontFamily: 'Nunito-Bold', fontSize: 12, color: '#fca5a5' },
+  heartWarnBtn: { fontFamily: 'Nunito-ExtraBold', fontSize: 12, color: GOLD },
 
   loadWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll:   { paddingBottom: 32 },
@@ -344,18 +322,6 @@ const s = StyleSheet.create({
   weekCountLabel: { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
   weekCountVal:   { fontFamily: 'Nunito-ExtraBold', fontSize: 13 },
 
-  statsRow:    { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, backgroundColor: CARD, borderRadius: 18, borderWidth: 1, borderColor: BORDER },
-  statBox:     { flex: 1, alignItems: 'center', paddingVertical: 14 },
-  statBoxMid:  { borderLeftWidth: 1, borderRightWidth: 1, borderColor: BORDER },
-  statNum:     { fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: TEXT },
-  statLabel:   { fontFamily: 'Nunito-Regular', fontSize: 11, color: MUTED, marginTop: 2 },
-
-  heartsCard:  { marginHorizontal: 16, marginBottom: 14, backgroundColor: '#1a0a2e', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: '#6c3aed44', alignItems: 'center', gap: 8 },
-  heartsRow:   { flexDirection: 'row', gap: 6 },
-  heartsTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT },
-  heartsRegen: { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
-  refillBtn:   { backgroundColor: GOLD + '22', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: GOLD + '55', marginTop: 4 },
-  refillTxt:   { fontFamily: 'Nunito-Bold', fontSize: 13, color: GOLD },
 
   // Butonlar yan yana
   playRow:  { flexDirection: 'row', marginHorizontal: 16, gap: 10, marginBottom: 10 },
@@ -393,15 +359,4 @@ const s = StyleSheet.create({
   promotionCard: { marginHorizontal: 16, marginBottom: 16, backgroundColor: CARD, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: BORDER, alignItems: 'center' },
   promotionTxt:  { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
 
-  lbTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: TEXT, paddingHorizontal: 16, marginBottom: 10 },
-  lbRow:   { marginHorizontal: 16, marginBottom: 6, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: CARD, borderWidth: 1, borderColor: BORDER },
-  lbRowMe:  { borderColor: PURP2, backgroundColor: PURP + '18' },
-  lbRowTop: { borderColor: GREEN + '55' },
-  lbRowBot: { borderColor: RED + '44' },
-  rankWrap: { width: 32, alignItems: 'center' },
-  rankTxt:  { fontFamily: 'Nunito-Bold', fontSize: 13, color: MUTED },
-  lbName:   { flex: 1, fontFamily: 'Nunito-SemiBold', fontSize: 14, color: TEXT },
-  lbScore:  { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT },
-  upArrow:  { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: GREEN },
-  downArrow:{ fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: RED },
 });

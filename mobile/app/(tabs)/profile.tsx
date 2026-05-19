@@ -23,9 +23,30 @@ const RED    = '#ef4444';
 const AVATARS = ['🐺','🦊','🐯','🦁','🐻','🐼','🦝','🐨','🦄','🐲'];
 const PRICES  = [0, 0, 0, 100, 100, 250, 250, 500, 500, 1000];
 
-const LEAGUE_ICONS:  Record<string, string> = { iron: '⚙️', bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '🔷', diamond: '💎', champion: '👑' };
-const LEAGUE_NAMES:  Record<string, string> = { iron: 'Demir', bronze: 'Bronz', silver: 'Gümüş', gold: 'Altın', platinum: 'Platin', diamond: 'Elmas', champion: 'Şampiyonlar' };
-const LEAGUE_COLORS: Record<string, string> = { iron: '#71717a', bronze: '#cd7f32', silver: '#9ca3af', gold: '#f59e0b', platinum: '#38bdf8', diamond: '#06b6d4', champion: '#a78bfa' };
+const LEAGUE_ICONS: Record<string, string> = {
+  filiz:'🌱',kaya:'🪨',demir:'🔩',celik:'⚔️',bronz:'🥉',
+  gumus:'🥈',altin:'🥇',safir:'🔵',zumrut:'💚',elmas:'💎',
+  platin:'🔷',kristal:'🌟',mistik:'🔮',ay:'🌙',gunes:'☀️',
+  simsek:'⚡',alev:'🔥',okyanus:'🌊',zirve:'🏔️',kartal:'🦅',
+  ejderha:'🐉',galaksi:'🌌',nova:'💫',efsane:'🦄',kral:'👑',
+  yildiz:'⭐',meteor:'🌠',zafer:'🏆',elit:'🎯',sampiyon:'🏅',
+};
+const LEAGUE_NAMES: Record<string, string> = {
+  filiz:'Filiz',kaya:'Kaya',demir:'Demir',celik:'Çelik',bronz:'Bronz',
+  gumus:'Gümüş',altin:'Altın',safir:'Safir',zumrut:'Zümrüt',elmas:'Elmas',
+  platin:'Platin',kristal:'Kristal',mistik:'Mistik',ay:'Ay',gunes:'Güneş',
+  simsek:'Şimşek',alev:'Alev',okyanus:'Okyanus',zirve:'Zirve',kartal:'Kartal',
+  ejderha:'Ejderha',galaksi:'Galaksi',nova:'Nova',efsane:'Efsane',kral:'Kral',
+  yildiz:'Yıldız',meteor:'Meteor',zafer:'Zafer',elit:'Elit',sampiyon:'Şampiyon',
+};
+const LEAGUE_COLORS: Record<string, string> = {
+  filiz:'#86efac',kaya:'#a8a29e',demir:'#94a3b8',celik:'#64748b',bronz:'#cd7f32',
+  gumus:'#9ca3af',altin:'#f59e0b',safir:'#3b82f6',zumrut:'#22c55e',elmas:'#06b6d4',
+  platin:'#38bdf8',kristal:'#e2e8f0',mistik:'#a855f7',ay:'#c4b5fd',gunes:'#fbbf24',
+  simsek:'#facc15',alev:'#f97316',okyanus:'#0ea5e9',zirve:'#e2e8f0',kartal:'#854d0e',
+  ejderha:'#dc2626',galaksi:'#6366f1',nova:'#f0abfc',efsane:'#e879f9',kral:'#fde047',
+  yildiz:'#fef08a',meteor:'#fb923c',zafer:'#f59e0b',elit:'#f43f5e',sampiyon:'#a78bfa',
+};
 
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useUserStore();
@@ -86,6 +107,7 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
+    { icon: '🏆', label: 'Sıralamalar',   arrow: true,  onPress: () => router.push('/(tabs)/leaderboard' as any) },
     { icon: '🏅', label: 'Rozetler',      arrow: true,  onPress: () => router.push('/stats' as any) },
     { icon: '🎮', label: 'Oyun Geçmişi',  arrow: true,  onPress: () => router.push('/stats' as any) },
     { icon: '👥', label: 'Arkadaşlar',    arrow: false, onPress: () => router.push('/(tabs)/friends' as any) },
