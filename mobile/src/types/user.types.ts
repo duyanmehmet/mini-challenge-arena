@@ -38,11 +38,12 @@ export interface Friend {
 }
 
 export interface DailyTask {
-  taskType: string;
-  description: string;
-  currentValue: number;
-  targetValue: number;
-  coinReward: number;
-  xpReward: number;
-  isCompleted: boolean;
+  id: string;
+  task_type: string;
+  task_description: string;
+  current_value: number;
+  target_value: number;
+  coin_reward: number;
+  xp_reward: number;
+  is_completed: boolean;
 }

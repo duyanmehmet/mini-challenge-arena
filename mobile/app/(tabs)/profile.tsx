@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   Alert, Modal, TextInput, ScrollView, FlatList, ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useUserStore } from '../../src/store/userStore';
@@ -11,17 +12,17 @@ import { userService } from '../../src/services/user.service';
 import { storeService } from '../../src/services/store.service';
 import api from '../../src/services/api';
 
-const BG     = '#0d0d1a';
-const CARD   = '#13132a';
-const BORDER = '#2e2b5a';
+const BG     = '#ffffff';
+const CARD   = '#ffffff';
+const BORDER = '#f3f4f6';
 const PURP   = '#6c3aed';
 const PURP2  = '#8b5cf6';
-const TEXT   = '#ffffff';
-const MUTED  = '#7c7aaa';
+const TEXT   = '#111827';
+const MUTED  = '#9ca3af';
 const RED    = '#ef4444';
 
 const AVATARS = ['🐺','🦊','🐯','🦁','🐻','🐼','🦝','🐨','🦄','🐲'];
-const PRICES  = [0, 0, 0, 100, 100, 250, 250, 500, 500, 1000];
+const PRICES  = [0, 0, 0, 100, 100, 250, 250, 500, 500, 1000]; // Mağaza ile senkronize
 
 const LEAGUE_ICONS: Record<string, string> = {
   filiz:'🌱',kaya:'🪨',demir:'🔩',celik:'⚔️',bronz:'🥉',
@@ -106,17 +107,24 @@ export default function ProfileScreen() {
     }
   };
 
-  const menuItems = [
-    { icon: '🏆', label: 'Sıralamalar',   arrow: true,  onPress: () => router.push('/(tabs)/leaderboard' as any) },
-    { icon: '🏅', label: 'Rozetler',      arrow: true,  onPress: () => router.push('/stats' as any) },
-    { icon: '🎮', label: 'Oyun Geçmişi',  arrow: true,  onPress: () => router.push('/stats' as any) },
-    { icon: '👥', label: 'Arkadaşlar',    arrow: false, onPress: () => router.push('/(tabs)/friends' as any) },
-    { icon: '⚙️', label: 'Ayarlar',       arrow: false, onPress: () => router.push('/settings' as any) },
+  const menuItems: { ionicon: string; color: string; bg: string; label: string; arrow: boolean; onPress: () => void }[] = [
+    { ionicon: 'trophy-outline',         color: '#f59e0b', bg: '#fef9c3', label: 'Sıralamalar',   arrow: true,  onPress: () => router.push('/(tabs)/leaderboard' as any) },
+    { ionicon: 'ribbon-outline',         color: '#8b5cf6', bg: '#ede9fe', label: 'Rozetler',      arrow: true,  onPress: () => router.push('/stats' as any) },
+    { ionicon: 'game-controller-outline',color: '#06b6d4', bg: '#e0f2fe', label: 'Oyun Geçmişi',  arrow: true,  onPress: () => router.push('/stats' as any) },
+    { ionicon: 'people-outline',         color: '#10b981', bg: '#d1fae5', label: 'Arkadaşlar',    arrow: false, onPress: () => router.push('/(tabs)/friends' as any) },
+    { ionicon: 'settings-outline',       color: '#6b7280', bg: '#f3f4f6', label: 'Ayarlar',       arrow: false, onPress: () => router.push('/settings' as any) },
   ];
 
   return (
     <SafeAreaView style={s.root}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+
+        {/* ── Geri butonu ── */}
+        <View style={s.backRow}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={s.backBtn}>← Geri</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* ── Üst: Avatar + İsim + XP ── */}
         <View style={s.top}>
@@ -124,7 +132,7 @@ export default function ProfileScreen() {
           <TouchableOpacity style={s.avatarWrap} onPress={() => setAvatarModal(true)}>
             <Avatar avatarId={user.avatarId} size={80} />
             <View style={s.editBadge}>
-              <Text style={{ fontSize: 10, color: '#fff' }}>✏️</Text>
+              <Ionicons name="pencil" size={11} color="#fff" />
             </View>
           </TouchableOpacity>
 
@@ -193,11 +201,11 @@ export default function ProfileScreen() {
               onPress={item.onPress}
               activeOpacity={0.7}
             >
-              <View style={s.menuIcon}>
-                <Text style={{ fontSize: 20 }}>{item.icon}</Text>
+              <View style={[s.menuIcon, { backgroundColor: item.bg }]}>
+                <Ionicons name={item.ionicon as any} size={20} color={item.color} />
               </View>
               <Text style={s.menuLabel}>{item.label}</Text>
-              {item.arrow && <Text style={s.menuArrow}>›</Text>}
+              {item.arrow && <Ionicons name="chevron-forward" size={18} color="#d1d5db" />}
             </TouchableOpacity>
           ))}
         </View>
@@ -205,8 +213,8 @@ export default function ProfileScreen() {
         {/* ── Çıkış Yap ── */}
         <View style={[s.menu, { marginTop: 12 }]}>
           <TouchableOpacity style={s.menuItem} onPress={handleLogout} activeOpacity={0.7}>
-            <View style={[s.menuIcon, { backgroundColor: RED + '22' }]}>
-              <Text style={{ fontSize: 20 }}>↗️</Text>
+            <View style={[s.menuIcon, { backgroundColor: '#fee2e2' }]}>
+              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
             </View>
             <Text style={[s.menuLabel, { color: RED }]}>Çıkış Yap</Text>
           </TouchableOpacity>
@@ -290,8 +298,8 @@ export default function ProfileScreen() {
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ alignItems: 'center', flex: 1 }}>
-      <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT }}>{value}</Text>
-      <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#111827' }}>{value}</Text>
+      <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -299,6 +307,8 @@ function StatBox({ label, value }: { label: string; value: string }) {
 const s = StyleSheet.create({
   root:   { flex: 1, backgroundColor: BG },
   scroll: { paddingBottom: 20 },
+  backRow:{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 },
+  backBtn:{ fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden', alignSelf: 'flex-start' },
 
   // ── Üst ──
   top: { alignItems: 'center', paddingTop: 28, paddingBottom: 20, paddingHorizontal: 24 },
@@ -312,7 +322,7 @@ const s = StyleSheet.create({
   username: { fontFamily: 'Nunito-ExtraBold', fontSize: 24, color: TEXT, marginBottom: 4 },
   level:    { fontFamily: 'Nunito-Regular',   fontSize: 14, color: MUTED, marginBottom: 14 },
   xpWrap:   { width: '80%', gap: 4 },
-  xpBg:     { height: 6, backgroundColor: '#1e1b3a', borderRadius: 3, overflow: 'hidden' },
+  xpBg:     { height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' },
   xpFill:   { height: 6, borderRadius: 3, backgroundColor: PURP2 },
   xpTxt:    { fontFamily: 'Nunito-Regular', fontSize: 11, color: MUTED, textAlign: 'right' },
   verifyBanner: {
@@ -325,55 +335,58 @@ const s = StyleSheet.create({
   // ── Stats ──
   statsRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: CARD, marginHorizontal: 20,
+    backgroundColor: '#fff', marginHorizontal: 20,
     borderRadius: 18, padding: 16, marginBottom: 20,
-    borderWidth: 1, borderColor: BORDER,
+    borderWidth: 1, borderColor: '#f3f4f6',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
-  statDiv: { width: 1, height: 32, backgroundColor: BORDER },
+  statDiv: { width: 1, height: 32, backgroundColor: '#f3f4f6' },
 
   // ── Lig Kartı ──
-  ligCard:  { flexDirection: 'row', alignItems: 'center', backgroundColor: CARD, marginHorizontal: 20, borderRadius: 18, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: BORDER },
+  ligCard:  { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 20, borderRadius: 18, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   ligLeft:  { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   ligName:  { fontFamily: 'Nunito-ExtraBold', fontSize: 16 },
-  ligSub:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED, marginTop: 2 },
-  ligArrow: { fontFamily: 'Nunito-Bold', fontSize: 22, color: MUTED },
+  ligSub:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#9ca3af', marginTop: 2 },
+  ligArrow: { fontFamily: 'Nunito-Bold', fontSize: 22, color: '#d1d5db' },
 
   // ── Menü ──
   menu: {
-    backgroundColor: CARD,
+    backgroundColor: '#fff',
     marginHorizontal: 20, borderRadius: 18,
-    borderWidth: 1, borderColor: BORDER,
+    borderWidth: 1, borderColor: '#f3f4f6',
     overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
   },
   menuItem: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 18, paddingVertical: 16, gap: 14,
   },
-  menuBorder: { borderBottomWidth: 1, borderBottomColor: BORDER },
+  menuBorder: { borderBottomWidth: 1, borderBottomColor: '#f9fafb' },
   menuIcon: {
     width: 40, height: 40, borderRadius: 12,
-    backgroundColor: '#1e1b3a',
+    backgroundColor: '#f3f4f6',
     alignItems: 'center', justifyContent: 'center',
   },
-  menuLabel: { fontFamily: 'Nunito-Bold', fontSize: 16, color: TEXT, flex: 1 },
-  menuArrow: { fontFamily: 'Nunito-Bold', fontSize: 22, color: MUTED },
+  menuLabel: { fontFamily: 'Nunito-Bold', fontSize: 16, color: '#111827', flex: 1 },
+  menuArrow: { fontFamily: 'Nunito-Bold', fontSize: 22, color: '#d1d5db' },
 
   // ── Modaller ──
-  modalOverlay: { flex: 1, backgroundColor: '#000000bb', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalCard: {
-    backgroundColor: '#1a1a35', borderRadius: 24,
+    backgroundColor: '#fff', borderRadius: 24,
     padding: 24, width: '100%', maxWidth: 360,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 10,
   },
-  modalTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT, textAlign: 'center', marginBottom: 20 },
+  modalTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: '#111827', textAlign: 'center', marginBottom: 20 },
   avatarOpt: {
     width: 72, height: 72, borderRadius: 18,
-    backgroundColor: '#13132a', borderWidth: 1.5, borderColor: BORDER,
+    backgroundColor: '#f9fafb', borderWidth: 1.5, borderColor: '#e5e7eb',
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarOptActive: { borderColor: PURP2, backgroundColor: PURP + '22' },
+  avatarOptActive: { borderColor: PURP2, backgroundColor: '#ede9fe' },
   priceTag: {
     position: 'absolute', bottom: 2,
-    backgroundColor: '#000000cc', borderRadius: 6, paddingHorizontal: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 6, paddingHorizontal: 4,
   },
   priceTxt: { fontFamily: 'Nunito-Bold', fontSize: 9, color: '#fff' },
   activeDot: {
@@ -381,14 +394,14 @@ const s = StyleSheet.create({
     width: 10, height: 10, borderRadius: 5,
     backgroundColor: PURP2, borderWidth: 1.5, borderColor: '#fff',
   },
-  closeBtn: { backgroundColor: '#2a2a4a', borderRadius: 12, padding: 14, alignItems: 'center' },
-  closeTxt: { fontFamily: 'Nunito-Bold', fontSize: 14, color: MUTED },
+  closeBtn: { backgroundColor: '#f3f4f6', borderRadius: 12, padding: 14, alignItems: 'center' },
+  closeTxt: { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#6b7280' },
   saveBtn:  { backgroundColor: PURP, borderRadius: 12, padding: 14, alignItems: 'center' },
   saveTxt:  { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff' },
   nameInput: {
-    backgroundColor: '#0d0d1a', borderRadius: 12,
-    borderWidth: 1, borderColor: BORDER,
-    color: TEXT, fontFamily: 'Nunito-Regular',
+    backgroundColor: '#f9fafb', borderRadius: 12,
+    borderWidth: 1, borderColor: '#e5e7eb',
+    color: '#111827', fontFamily: 'Nunito-Regular',
     fontSize: 16, paddingHorizontal: 16, paddingVertical: 14,
     marginTop: 4,
   },

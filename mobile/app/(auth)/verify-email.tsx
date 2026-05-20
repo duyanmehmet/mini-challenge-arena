@@ -6,11 +6,11 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { authService } from '../../src/services/auth.service';
 
-const BG    = '#0d0d1a';
-const CARD  = '#13132a';
+const BG    = '#ffffff';
+const CARD  = '#ffffff';
 const PURP  = '#6c3aed';
 const PURP2 = '#8b5cf6';
-const TEXT  = '#ffffff';
+const TEXT  = '#111827';
 const MUTED = '#7c7aaa';
 const BORDER= '#2e2b5a';
 

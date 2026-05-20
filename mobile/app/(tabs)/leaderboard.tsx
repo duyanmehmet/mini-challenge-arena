@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { Share } from 'react-native';
 import {
   View, Text, StyleSheet, FlatList, ActivityIndicator,
   ScrollView, Animated, Dimensions,
@@ -11,12 +12,12 @@ import api from '../../src/services/api';
 
 const { width } = Dimensions.get('window');
 
-const BG    = '#0d0d1a';
-const CARD  = '#13132a';
+const BG    = '#ffffff';
+const CARD  = '#ffffff';
 const PURP  = '#6c3aed';
 const PURP2 = '#8b5cf6';
-const TEXT  = '#ffffff';
-const MUTED = '#7c7aaa';
+const TEXT  = '#111827';
+const MUTED = '#9ca3af';
 const GOLD  = '#f59e0b';
 const GREEN = '#22c55e';
 const RED   = '#ef4444';
@@ -166,12 +167,22 @@ export default function SiralamaScreen() {
         <Text style={[s.leagueTitle, { color: leagueCfg.color }]}>
           {leagueCfg.icon}  {leagueCfg.name} Ligi
         </Text>
-        {countdown ? (
-          <View style={s.countdown}>
-            <Text style={s.countdownIcon}>⏳</Text>
-            <Text style={s.countdownTxt}>{countdown}</Text>
-          </View>
-        ) : null}
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          {countdown ? (
+            <View style={s.countdown}>
+              <Text style={s.countdownIcon}>⏳</Text>
+              <Text style={s.countdownTxt}>{countdown}</Text>
+            </View>
+          ) : null}
+          {ligInfo && (
+            <TouchableOpacity
+              style={{ backgroundColor: '#ede9fe', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: '#c4b5fd' }}
+              onPress={() => Share.share({ message: `Zeka Meydanı'nda ${leagueCfg.name} Ligi'nde #${ligInfo.userRank}. sıradayım! ${ligInfo.userScore?.toLocaleString('tr-TR')} puan yaptım. Sen geçebilir misin? 🏆` })}
+            >
+              <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 12, color: '#7c3aed' }}>📤 Paylaş</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* ── Kupa satırı — sadece erişilebilen ligler ── */}
@@ -201,7 +212,7 @@ export default function SiralamaScreen() {
               {/* İsim etiketi */}
               <Text style={[
                 s.trophyName,
-                { color: isActive ? l.color : isLocked ? '#444' : MUTED },
+                { color: isActive ? l.color : isLocked ? '#d1d5db' : MUTED },
                 isActive && { fontFamily: 'Nunito-ExtraBold' },
               ]}>
                 {isLocked ? '???' : l.name}
@@ -229,7 +240,7 @@ export default function SiralamaScreen() {
           {/* TERFİ DİLİMİ */}
           <View style={s.zoneLabel}>
             <Text style={s.zoneLabelIcon}>▲</Text>
-            <Text style={[s.zoneLabelTxt, { color: GREEN }]}>TERFİ DİLİMİ</Text>
+            <Text style={[s.zoneLabelTxt, { color: GREEN }]}>ŞAMPİYONLUK HATTI</Text>
             <Text style={s.zoneLabelIcon}>▲</Text>
           </View>
 
@@ -249,7 +260,7 @@ export default function SiralamaScreen() {
               <View style={s.divider} />
               <View style={s.zoneLabel}>
                 <Text style={s.zoneLabelIcon}>▼</Text>
-                <Text style={[s.zoneLabelTxt, { color: RED }]}>DÜŞME DİLİMİ</Text>
+                <Text style={[s.zoneLabelTxt, { color: RED }]}>TEHLİKE BÖLGESİ</Text>
                 <Text style={s.zoneLabelIcon}>▼</Text>
               </View>
               {leaderboard.slice(relStart).map((item, i) => renderRow(item, i + relStart))}
@@ -264,47 +275,47 @@ export default function SiralamaScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
+  root: { flex: 1, backgroundColor: '#ffffff' },
 
   // Header
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 8 },
   leagueTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 22 },
-  countdown:    { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: CARD, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+  countdown:    { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f3f4f6', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#e5e7eb' },
   countdownIcon:{ fontSize: 14 },
-  countdownTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: MUTED },
+  countdownTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#374151' },
 
   // Kupa satırı
   trophyRow:    { paddingHorizontal: 16, paddingVertical: 12, gap: 16, alignItems: 'center' },
   trophyItem:   { alignItems: 'center', gap: 4 },
   trophyActive: { transform: [{ scale: 1.15 }] },
-  trophyCircle: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1040' },
+  trophyCircle: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' },
   trophyEmoji:  { fontSize: 26 },
   trophyDot:    { width: 6, height: 6, borderRadius: 3 },
-  trophyName:   { fontFamily: 'Nunito-Regular', fontSize: 10, color: MUTED, marginTop: 2 },
+  trophyName:   { fontFamily: 'Nunito-Regular', fontSize: 10, color: '#9ca3af', marginTop: 2 },
 
   // Liste
   list:       { paddingHorizontal: 16 },
-  center:     { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  emptyTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: TEXT },
-  emptySub:   { fontFamily: 'Nunito-Regular', fontSize: 14, color: MUTED },
+  center:     { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#fff' },
+  emptyTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#111827' },
+  emptySub:   { fontFamily: 'Nunito-Regular', fontSize: 14, color: '#9ca3af' },
 
   // Zone labels
   zoneLabel:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 8 },
-  zoneLabelIcon:{ fontFamily: 'Nunito-ExtraBold', fontSize: 12, color: MUTED },
+  zoneLabelIcon:{ fontFamily: 'Nunito-ExtraBold', fontSize: 12, color: '#9ca3af' },
   zoneLabelTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 13, letterSpacing: 1.5 },
 
-  divider:    { height: 1, backgroundColor: BORDER, marginVertical: 4 },
+  divider:    { height: 1, backgroundColor: '#f3f4f6', marginVertical: 4 },
 
   // Satırlar
-  row:        { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 16, marginBottom: 4, backgroundColor: CARD, borderWidth: 1, borderColor: BORDER },
-  rowMe:      { borderColor: PURP2, backgroundColor: PURP + '15' },
-  rowPromote: { borderColor: GREEN + '55', backgroundColor: GREEN + '08' },
-  rowRelegate:{ borderColor: RED + '44',   backgroundColor: RED + '08' },
+  row:        { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 16, marginBottom: 4, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
+  rowMe:      { borderColor: PURP2, backgroundColor: '#f5f3ff' },
+  rowPromote: { borderColor: '#86efac', backgroundColor: '#f0fdf4' },
+  rowRelegate:{ borderColor: '#fca5a5', backgroundColor: '#fff1f2' },
 
   rankWrap:   { width: 32, alignItems: 'center' },
-  rankNum:    { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: MUTED },
-  name:       { flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: TEXT },
-  score:      { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: MUTED },
+  rankNum:    { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#9ca3af' },
+  name:       { flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: '#111827' },
+  score:      { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#374151' },
   upArrow:    { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: GREEN },
   downArrow:  { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: RED },
 });

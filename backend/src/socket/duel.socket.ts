@@ -172,8 +172,13 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
         return;
       }
 
-      await db('users').where('id', p1.userId).update({ coins: db.raw(`coins - ${room.stake}`) }).catch(() => {});
-      await db('users').where('id', p2.userId).update({ coins: db.raw(`coins - ${room.stake}`) }).catch(() => {});
+      await db.transaction(async trx => {
+        await trx('users').where('id', p1.userId).update({ coins: db.raw(`coins - ${room.stake}`) });
+        await trx('users').where('id', p2.userId).update({ coins: db.raw(`coins - ${room.stake}`) });
+      }).catch(() => {
+        io.to(duelId).emit('duel_cancelled', { reason: 'Coin kesintisi başarısız.' });
+        rooms.delete(duelId);
+      });
 
       // Rakip bilgisi
       io.to(p1.socketId).emit('duel_opponent_joined', { username: p2.username, avatarId: p2.avatarId });

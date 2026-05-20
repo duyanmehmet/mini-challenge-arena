@@ -125,13 +125,34 @@ export default function LigScreen() {
     const catId = categoryId ?? info?.category.id;
     if (!catId) return;
     if ((info?.hearts ?? 5) <= 0) {
-      router.push('/shop' as any);
+      Alert.alert(
+        '❤️ Kalplerin Bitti',
+        'Oynamak için kalp gerekli.',
+        [
+          { text: 'İptal', style: 'cancel' },
+          { text: '250 🪙 ile Doldur', onPress: handleRefillHearts },
+        ]
+      );
       return;
     }
     router.push({
       pathname: `/game/${catId}` as any,
       params: { ligMode: '1' },
     });
+  };
+
+  const handleRefillHearts = async () => {
+    if ((user?.coins ?? 0) < 250) {
+      Alert.alert('Yetersiz Altın', '5 kalbi doldurmak için 250 🪙 gerekli.');
+      return;
+    }
+    try {
+      const res = await api.post('/lig/refill-hearts');
+      setInfo(prev => prev ? { ...prev, hearts: res.data.hearts } : prev);
+      Alert.alert('✅ Kalplerin Doldu!', '5 kalbin yenilendi.');
+    } catch (e: any) {
+      Alert.alert('Hata', e?.response?.data?.message ?? 'İşlem başarısız.');
+    }
   };
 
   const countdown = useCountdown(info?.weekEndsAt ?? new Date(Date.now() + 86400000).toISOString());
@@ -148,9 +169,14 @@ export default function LigScreen() {
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Text style={s.backTxt}>← Geri</Text>
+          <View style={s.backBtnInner}>
+            <Text style={s.backTxt}>←  Geri</Text>
+          </View>
         </TouchableOpacity>
-        <Text style={s.headerTitle}>🏟️ Lig</Text>
+        <View style={s.headerTitleRow}>
+          <Text style={{ fontSize: 20 }}>🏟️</Text>
+          <Text style={s.headerTitle}>Lig</Text>
+        </View>
 
         {/* Sağ: Lig rozeti + Canlar */}
         <View style={s.headerRight}>
@@ -208,11 +234,9 @@ export default function LigScreen() {
                   ? `  ·  ⏳ ${info.nextHeartMinutes} dk sonra +1`
                   : ''}
               </Text>
-              {(info.hearts ?? 0) === 0 && (
-                <TouchableOpacity onPress={() => router.push('/shop' as any)}>
-                  <Text style={s.heartWarnBtn}>Doldur →</Text>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity onPress={handleRefillHearts} style={s.refillBtn}>
+                <Text style={s.refillBtnTxt}>❤️ 5 Kalp  250 🪙</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -235,19 +259,22 @@ export default function LigScreen() {
               </TouchableOpacity>
             </Animated.View>
 
-            {/* 1X */}
-            <TouchableOpacity
-              style={[s.oneXBtn, { flex: 1 }]}
-              onPress={() => setShowCatModal(true)}
-              activeOpacity={0.85}
-            >
-              <Text style={s.oneXHorse}>🐎</Text>
-              <View style={s.oneXBadge}>
-                <Text style={s.oneXBadgeTxt}>1X</Text>
-              </View>
-              <Text style={s.oneXTitle}>Kategori Seç</Text>
-              <Text style={s.oneXSub}>Normal puan</Text>
-            </TouchableOpacity>
+            {/* 1X — 2X ile aynı boyut ve şekil */}
+            <Animated.View style={{ flex: 1 }}>
+              <TouchableOpacity onPress={() => setShowCatModal(true)} activeOpacity={0.85} style={{ borderRadius: 18, overflow: 'hidden' }}>
+                <LinearGradient
+                  colors={['#6d28d9', '#4c1d95', '#2e1065']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={s.playBtn}
+                >
+                  <View style={s.playBtnBadge}>
+                    <Text style={s.playBtnBadgeTxt}>🐎 1X PUAN</Text>
+                  </View>
+                  <Text style={s.playBtnTxt}>Kategori Seç</Text>
+                  <Text style={s.playBtnSub}>Normal puan</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
           </View>
 
           {/* Kategori seçim modal */}
@@ -300,31 +327,35 @@ export default function LigScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
+  root: { flex: 1, backgroundColor: '#ffffff' },
 
   header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
-  backBtn:       { width: 44 },
-  backTxt:       { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
-  headerTitle:   { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT, flex: 1 },
+  backBtn:       { },
+  backBtnInner:  { backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
+  backTxt:       { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff' },
+  headerTitleRow:{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginHorizontal: 8 },
+  headerTitle:   { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: '#111827' },
   headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  leagueBadge:   { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
+  leagueBadge:   { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#fff' },
   leagueBadgeTxt:{ fontFamily: 'Nunito-ExtraBold', fontSize: 11 },
   heartsHeader:  { flexDirection: 'row', gap: 1 },
 
   // Can uyarı bandı
-  heartWarn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 10, backgroundColor: '#2a0a0a', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: RED + '44' },
-  heartWarnTxt: { fontFamily: 'Nunito-Bold', fontSize: 12, color: '#fca5a5' },
-  heartWarnBtn: { fontFamily: 'Nunito-ExtraBold', fontSize: 12, color: GOLD },
+  heartWarn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 10, backgroundColor: '#fff1f2', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#fecdd3' },
+  heartWarnTxt: { fontFamily: 'Nunito-Bold', fontSize: 12, color: '#ef4444', flex: 1 },
+  heartWarnBtn: { fontFamily: 'Nunito-ExtraBold', fontSize: 12, color: '#f59e0b' },
+  refillBtn:    { backgroundColor: '#fef3c7', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: '#fde68a' },
+  refillBtnTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 11, color: '#d97706' },
 
-  loadWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll:   { paddingBottom: 32 },
+  loadWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+  scroll:   { paddingBottom: 32, backgroundColor: '#fff' },
 
   weekCard:   { margin: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 16, padding: 16, overflow: 'hidden' },
   weekIconBg: { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   weekInfo:   { flex: 1, gap: 4 },
-  weekBadge:  { backgroundColor: PURP + '30', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
-  weekBadgeTxt: { fontFamily: 'Nunito-Bold', fontSize: 9, color: PURP2, letterSpacing: 0.8 },
-  weekCatName:  { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT },
+  weekBadge:  { backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
+  weekBadgeTxt: { fontFamily: 'Nunito-Bold', fontSize: 9, color: '#fff', letterSpacing: 0.8 },
+  weekCatName:  { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: '#fff' },
   weekCountRow: { flexDirection: 'row', alignItems: 'center' },
   weekCountLabel: { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
   weekCountVal:   { fontFamily: 'Nunito-ExtraBold', fontSize: 13 },
@@ -341,29 +372,29 @@ const s = StyleSheet.create({
   playBtnSub:   { fontFamily: 'Nunito-Regular', fontSize: 11, color: 'rgba(255,255,255,0.7)' },
 
   // 1X butonu
-  oneXBtn:   { flex: 1, backgroundColor: '#1a1040', borderRadius: 18, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 2, borderColor: '#6c3aed66' },
+  oneXBtn:   { flex: 1, backgroundColor: '#fff', borderRadius: 18, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 2, borderColor: '#6c3aed44' },
   oneXHorse: { fontSize: 32 },
-  oneXBadge: { backgroundColor: '#6c3aed33', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1, borderColor: '#8b5cf655' },
-  oneXBadgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 13, color: '#a78bfa', letterSpacing: 1 },
-  oneXTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT },
-  oneXSub:   { fontFamily: 'Nunito-Regular', fontSize: 11, color: MUTED },
+  oneXBadge: { backgroundColor: '#ede9fe', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1, borderColor: '#c4b5fd' },
+  oneXBadgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 13, color: '#7c3aed', letterSpacing: 1 },
+  oneXTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#111827' },
+  oneXSub:   { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#9ca3af' },
 
   // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalSheet:   { backgroundColor: '#13132a', borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '80%', paddingBottom: 20 },
-  modalHeader:  { flexDirection: 'row', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: '#2e2b5a', gap: 10 },
-  modalTitle:   { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: TEXT, flex: 1 },
-  modalBadge:   { backgroundColor: '#6c3aed33', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#8b5cf655' },
-  modalBadgeTxt:{ fontFamily: 'Nunito-ExtraBold', fontSize: 11, color: '#a78bfa', letterSpacing: 0.5 },
-  modalClose:   { backgroundColor: '#ffffff15', borderRadius: 10, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  modalCloseTxt:{ fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: MUTED },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalSheet:   { backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '80%', paddingBottom: 20 },
+  modalHeader:  { flexDirection: 'row', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', gap: 10 },
+  modalTitle:   { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#111827', flex: 1 },
+  modalBadge:   { backgroundColor: '#ede9fe', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#c4b5fd' },
+  modalBadgeTxt:{ fontFamily: 'Nunito-ExtraBold', fontSize: 11, color: '#7c3aed', letterSpacing: 0.5 },
+  modalClose:   { backgroundColor: '#f3f4f6', borderRadius: 10, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  modalCloseTxt:{ fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#6b7280' },
   modalGrid:    { flexDirection: 'row', flexWrap: 'wrap', padding: 14, gap: 10 },
-  modalCatCard: { width: CAT_CARD_W, backgroundColor: '#0d0d1a', borderRadius: 16, padding: 12, alignItems: 'center', gap: 5, borderWidth: 1.5 },
+  modalCatCard: { width: CAT_CARD_W, backgroundColor: '#f9fafb', borderRadius: 16, padding: 12, alignItems: 'center', gap: 5, borderWidth: 1.5 },
   modalCatIcon: { width: 50, height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  modalCatName: { fontFamily: 'Nunito-ExtraBold', fontSize: 12, color: TEXT, textAlign: 'center' },
+  modalCatName: { fontFamily: 'Nunito-ExtraBold', fontSize: 12, color: '#111827', textAlign: 'center' },
   modalCatCount:{ fontFamily: 'Nunito-Regular', fontSize: 10, textAlign: 'center' },
 
-  promotionCard: { marginHorizontal: 16, marginBottom: 16, backgroundColor: CARD, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: BORDER, alignItems: 'center' },
-  promotionTxt:  { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
+  promotionCard: { marginHorizontal: 16, marginBottom: 16, backgroundColor: '#f9fafb', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center' },
+  promotionTxt:  { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#6b7280' },
 
 });

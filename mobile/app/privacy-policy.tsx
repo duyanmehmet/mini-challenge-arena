@@ -1,72 +1,97 @@
 import { ScrollView, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useSettingsStore } from '../src/store/settingsStore';
-import { Colors } from '../src/constants/colors';
 
 export default function PrivacyPolicyScreen() {
-  const { theme } = useSettingsStore();
-  const C = Colors[theme];
-  const s = styles(C);
-
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.root}>
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={[s.back, { color: C.textSecondary }]}>← Geri</Text>
+          <Text style={s.back}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={[s.title, { color: C.textPrimary }]}>Gizlilik Politikası</Text>
-        <View style={{ width: 40 }} />
+        <Text style={s.title}>Gizlilik Politikası</Text>
+        <View style={{ width: 70 }} />
       </View>
+
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <Text style={[s.updated, { color: C.textSecondary }]}>Son güncelleme: Mayıs 2026</Text>
+        <Text style={s.updated}>Son güncelleme: 20 Mayıs 2026</Text>
 
-        <Section title="1. Toplanan Veriler" C={C}>
-          Zeka Meydanı uygulaması; kullanıcı adı, e-posta adresi ve oyun skorları gibi temel bilgileri toplar. Bu veriler yalnızca hizmetin sunulması amacıyla kullanılır.
+        <Section title="1. Giriş">
+          Zeka Meydanı uygulamasını kullandığınız için teşekkür ederiz. Bu Gizlilik Politikası, kişisel verilerinizin nasıl toplandığını, kullanıldığını ve korunduğunu açıklamaktadır.
         </Section>
 
-        <Section title="2. Verilerin Kullanımı" C={C}>
-          Toplanan veriler; hesap yönetimi, liderlik tablosu görüntüleme ve günlük görev takibi için kullanılır. Üçüncü taraflarla hiçbir koşulda satılmaz veya paylaşılmaz.
+        <Section title="2. Toplanan Veriler">
+          Uygulamamız aşağıdaki verileri toplar:{'\n\n'}
+          • **Hesap bilgileri:** Kullanıcı adı, e-posta adresi ve şifrelenmiş parola{'\n'}
+          • **Oyun verileri:** Puanlar, lig sıralaması, oynanan oyunlar ve başarımlar{'\n'}
+          • **Cihaz bilgileri:** İşletim sistemi ve uygulama versiyonu{'\n'}
+          • **Bildirim token'ı:** Anlık bildirim göndermek için
         </Section>
 
-        <Section title="3. Veri Güvenliği" C={C}>
-          Şifreler bcrypt ile hashlenerek saklanır. Tüm API iletişimi HTTPS üzerinden gerçekleştirilir. JWT token'ları 30 günlük süre sonunda geçersiz hale gelir.
+        <Section title="3. Verilerin Kullanımı">
+          Topladığımız veriler şu amaçlarla kullanılır:{'\n\n'}
+          • Hesabınızı oluşturmak ve yönetmek{'\n'}
+          • Oyun deneyimini kişiselleştirmek{'\n'}
+          • Lig sıralamalarını ve istatistikleri göstermek{'\n'}
+          • Uygulama güvenliğini sağlamak{'\n'}
+          • Hizmet kalitesini iyileştirmek
         </Section>
 
-        <Section title="4. Çerezler ve Yerel Depolama" C={C}>
-          Uygulama, oturum bilgilerini cihazınızdaki güvenli depolama alanında (AsyncStorage) saklar. Bu veriler yalnızca cihazınızda tutulur, dışarıya aktarılmaz.
+        <Section title="4. Veri Güvenliği">
+          Verileriniz şifrelenerek güvenli sunucularda saklanmaktadır. Parolalar hiçbir zaman düz metin olarak saklanmaz; bcrypt algoritması ile şifrelenir.
         </Section>
 
-        <Section title="5. Reklam" C={C}>
-          Uygulama, Google AdMob aracılığıyla reklam gösterebilir. Premium kullanıcılar reklamlardan muaftır. AdMob gizlilik politikası için Google'ın web sitesini ziyaret edin.
+        <Section title="5. Üçüncü Taraf Hizmetler">
+          Uygulamamız aşağıdaki üçüncü taraf hizmetleri kullanmaktadır:{'\n\n'}
+          • **Google AdMob:** Reklam gösterimi için{'\n'}
+          • **Expo Push Notifications:** Bildirim servisi için{'\n\n'}
+          Bu hizmetlerin kendi gizlilik politikaları mevcuttur.
         </Section>
 
-        <Section title="6. Hesap Silme" C={C}>
-          Hesabınızı Ayarlar ekranından silebilirsiniz. Silme işlemi geri alınamaz ve tüm verileriniz kalıcı olarak silinir. Bu hak KVKK kapsamında güvence altındadır.
+        <Section title="6. Verilerin Saklanması">
+          Hesabınız aktif olduğu sürece verileriniz saklanır. Hesabınızı silmek için ayarlar bölümünden "Hesabı Sil" seçeneğini kullanabilirsiniz.
         </Section>
 
-        <Section title="7. İletişim" C={C}>
-          Gizlilik ile ilgili sorularınız için: destek@zekameydani.com
+        <Section title="7. Çocukların Gizliliği">
+          Uygulamamız 13 yaşın altındaki çocuklara yönelik değildir. 13 yaş altı kullanıcılardan bilerek veri toplamamaktayız.
         </Section>
+
+        <Section title="8. Haklarınız">
+          KVKK kapsamında şu haklara sahipsiniz:{'\n\n'}
+          • Verilerinize erişim hakkı{'\n'}
+          • Verilerinizin düzeltilmesini talep etme hakkı{'\n'}
+          • Verilerinizin silinmesini talep etme hakkı{'\n'}
+          • Veri işlemeye itiraz hakkı
+        </Section>
+
+        <Section title="9. İletişim">
+          Gizlilik politikamızla ilgili sorularınız için:{'\n'}
+          duyanmehmet183@gmail.com
+        </Section>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Section({ title, children, C }: { title: string; children: string; C: any }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View style={{ marginBottom: 20 }}>
-      <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 15, color: C.textPrimary, marginBottom: 6 }}>{title}</Text>
-      <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: C.textSecondary, lineHeight: 22 }}>{children}</Text>
+    <View style={s.section}>
+      <Text style={s.sectionTitle}>{title}</Text>
+      <Text style={s.sectionText}>{children}</Text>
     </View>
   );
 }
 
-const styles = (C: any) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bgPrimary },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  back: { fontFamily: 'Nunito-Regular', fontSize: 15 },
-  title: { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
-  updated: { fontFamily: 'Nunito-Regular', fontSize: 12, marginBottom: 20 },
+const s = StyleSheet.create({
+  root:    { flex: 1, backgroundColor: '#fff' },
+  header:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  back:    { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
+  title:   { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#111827' },
+  content: { paddingHorizontal: 20, paddingTop: 16 },
+  updated: { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#9ca3af', marginBottom: 20 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#111827', marginBottom: 8 },
+  sectionText:  { fontFamily: 'Nunito-Regular', fontSize: 14, color: '#374151', lineHeight: 22 },
 });

@@ -1,7 +1,7 @@
 export type CategoryId =
   | 'history' | 'geography' | 'science' | 'general' | 'art' | 'cinema' | 'sports'
   | 'kids' | 'license' | 'medical' | 'economy'
-  | 'arabic' | 'french' | 'german' | 'spanish';
+  | 'arabic' | 'french' | 'german' | 'spanish' | 'english';
 
 export type GroupId = 'culture' | 'special' | 'language';
 
@@ -45,6 +45,7 @@ export const CATEGORIES: CategoryConfig[] = [
   { id: 'economy',   name: 'Ekonomi',        shortName: 'Ekonomi', icon: '📈', color: '#2ecc71', group: 'special',  description: 'Finans, borsa, ekonomi kavramları ve Türkiye ekonomisi.',             questionCount: 200 },
 
   // Dil Öğren
+  { id: 'english',   name: 'İngilizce',      shortName: 'İngilizce',icon: '🇬🇧', color: '#0055a4', group: 'language', description: 'En çok kullanılan İngilizce kelimeler, anlamları ve kullanımları.', questionCount: 300 },
   { id: 'arabic',    name: 'Arapça',         shortName: 'Arapça',  icon: '🇸🇦', color: '#1a5276', group: 'language', description: 'Temel Arapça kelimeler, sayılar ve günlük kullanım.',                 questionCount: 100 },
   { id: 'french',    name: 'Fransızca',      shortName: 'Fransız', icon: '🇫🇷', color: '#1a5276', group: 'language', description: 'Temel Fransızca kelimeler ve günlük ifadeler.',                       questionCount: 100 },
   { id: 'german',    name: 'Almanca',        shortName: 'Almanca', icon: '🇩🇪', color: '#1a5276', group: 'language', description: 'Temel Almanca kelimeler ve yaygın kullanım.',                        questionCount: 100 },

@@ -9,12 +9,12 @@ import { useUserStore } from '../../src/store/userStore';
 import { Avatar } from '../../src/components/ui/Avatar';
 import api from '../../src/services/api';
 
-const BG    = '#0d0d1a';
-const CARD  = '#13132a';
-const PURP  = '#6c3aed';
-const TEXT  = '#ffffff';
-const MUTED = '#7c7aaa';
-const BORDER= '#2e2b5a';
+const BG    = '#ffffff';
+const CARD  = '#f3f4f6';
+const PURP  = '#8b5cf6';
+const TEXT  = '#111827';
+const MUTED = '#9ca3af';
+const BORDER= '#f3f4f6';
 
 const INPUT_BAR_H = 68;
 
@@ -88,8 +88,8 @@ export default function ChatScreen() {
 
       {/* ── Header ── */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:12, bottom:12, left:12, right:12 }}>
-          <Text style={s.back}>←</Text>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:8, bottom:8, left:8, right:8 }}>
+          <Text style={s.back}>← Geri</Text>
         </TouchableOpacity>
         <Avatar avatarId={parseInt(avatar ?? '1')} size={38} />
         <Text style={s.headerName} numberOfLines={1}>{name ?? '...'}</Text>
@@ -124,7 +124,7 @@ export default function ChatScreen() {
             return (
               <View style={{ alignItems: isMe ? 'flex-end' : 'flex-start', marginBottom: 6 }}>
                 <View style={[s.bubble, isMe ? s.bMe : s.bThem]}>
-                  <Text style={s.bubbleTxt}>{item?.content}</Text>
+                  <Text style={[s.bubbleTxt, { color: isMe ? '#ffffff' : '#111827' }]}>{item?.content}</Text>
                 </View>
                 <Text style={[s.time, isMe ? { textAlign: 'right' } : {}]}>
                   {item?.created_at ? fmt(item.created_at) : ''}
@@ -163,50 +163,51 @@ export default function ChatScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
+  root: { flex: 1, backgroundColor: '#ffffff' },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: BORDER,
-    backgroundColor: BG, gap: 10,
+    borderBottomWidth: 1, borderBottomColor: '#f3f4f6',
+    backgroundColor: '#ffffff', gap: 10,
   },
-  back:      { fontFamily: 'Nunito-ExtraBold', fontSize: 26, color: MUTED },
-  headerName:{ fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: TEXT, flex: 1 },
-  duelBtn:   { backgroundColor: '#6c3aed22', borderRadius: 10, width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#6c3aed55' },
+  back:      { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
+  headerName:{ fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: '#111827', flex: 1 },
+  duelBtn:   { backgroundColor: '#ede9fe', borderRadius: 10, width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#c4b5fd' },
 
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  centerlabel:{ fontFamily: 'Nunito-Regular', fontSize: 14, color: MUTED },
-  emptyTitle:{ fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: TEXT },
-  emptySub:  { fontFamily: 'Nunito-Regular', fontSize: 14, color: MUTED },
+  centerlabel:{ fontFamily: 'Nunito-Regular', fontSize: 14, color: '#9ca3af' },
+  emptyTitle:{ fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#111827' },
+  emptySub:  { fontFamily: 'Nunito-Regular', fontSize: 14, color: '#9ca3af' },
 
-  listPad: { paddingHorizontal: 14, paddingTop: 10 },
+  listPad: { paddingHorizontal: 14, paddingTop: 14, gap: 2 },
 
-  bubble:  { maxWidth: '78%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
-  bMe:     { backgroundColor: '#6c3aed', borderBottomRightRadius: 4 },
-  bThem:   { backgroundColor: '#13132a', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: BORDER },
-  bubbleTxt:{ fontFamily: 'Nunito-Regular', fontSize: 15, color: TEXT, lineHeight: 22 },
-  time:    { fontFamily: 'Nunito-Regular', fontSize: 10, color: MUTED, marginTop: 2, paddingHorizontal: 4 },
+  bubble:  { maxWidth: '78%', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 11 },
+  bMe:     { backgroundColor: '#8b5cf6', borderBottomRightRadius: 5 },
+  bThem:   { backgroundColor: '#f3f4f6', borderBottomLeftRadius: 5 },
+  bubbleTxt:{ fontFamily: 'Nunito-Regular', fontSize: 15, lineHeight: 22 },
+  time:    { fontFamily: 'Nunito-Regular', fontSize: 10, color: '#9ca3af', marginTop: 3, paddingHorizontal: 4 },
 
-  // Absolute input — her zaman görünür
+  // Absolute input
   inputBar: {
     position: 'absolute', left: 0, right: 0,
     flexDirection: 'row', alignItems: 'flex-end',
     paddingHorizontal: 12, paddingVertical: 10,
-    borderTopWidth: 1, borderTopColor: BORDER,
-    backgroundColor: BG, gap: 10,
+    borderTopWidth: 1, borderTopColor: '#f3f4f6',
+    backgroundColor: '#ffffff', gap: 10,
   },
   input: {
     flex: 1, minHeight: 46, maxHeight: 100,
-    backgroundColor: '#13132a', borderRadius: 23,
-    paddingHorizontal: 16, paddingVertical: 12,
-    fontFamily: 'Nunito-Regular', fontSize: 15, color: TEXT,
-    borderWidth: 1, borderColor: BORDER,
+    backgroundColor: '#f9fafb', borderRadius: 24,
+    paddingHorizontal: 18, paddingVertical: 12,
+    fontFamily: 'Nunito-Regular', fontSize: 15, color: '#111827',
+    borderWidth: 1, borderColor: '#e5e7eb',
   },
   sendBtn: {
     width: 46, height: 46, borderRadius: 23,
-    backgroundColor: '#6c3aed', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#8b5cf6', alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
+    shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4,
   },
-  sendTxt: { fontSize: 18, color: TEXT },
+  sendTxt: { fontSize: 18, color: '#ffffff' },
 });

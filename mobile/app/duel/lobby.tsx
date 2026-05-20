@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   FlatList, ActivityIndicator, Alert, ScrollView,
+  TextInput, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -10,14 +11,14 @@ import { socketService } from '../../src/services/socket.service';
 import { Avatar } from '../../src/components/ui/Avatar';
 import api from '../../src/services/api';
 
-const BG    = '#0d0d1a';
-const CARD  = '#13132a';
+const BG    = '#ffffff';
+const CARD  = '#ffffff';
 const PURP  = '#6c3aed';
 const PURP2 = '#8b5cf6';
-const TEXT  = '#ffffff';
-const MUTED = '#7c7aaa';
+const TEXT  = '#111827';
+const MUTED = '#9ca3af';
 const GOLD  = '#f59e0b';
-const BORDER= '#2e2b5a';
+const BORDER= '#f3f4f6';
 
 const RANKS = [
   { min: 0,    label: 'Bronz',   icon: '🥉', color: '#cd7f32' },
@@ -47,6 +48,8 @@ export default function DuelLobbyScreen() {
   const [selectedStake,   setSelectedStake]   = useState(50);
   const [loading,         setLoading]         = useState(true);
   const [waiting,         setWaiting]         = useState(false);
+  const [customModal,     setCustomModal]     = useState(false);
+  const [customInput,     setCustomInput]     = useState('');
 
   const duelRank = (user as any)?.duelRank ?? 0;
   const rank     = getRank(duelRank);
@@ -116,6 +119,19 @@ export default function DuelLobbyScreen() {
     router.push(`/duel/matchmaking?stake=${selectedStake}` as any);
   };
 
+  const confirmCustomStake = () => {
+    const val = parseInt(customInput.replace(/[^0-9]/g, ''), 10);
+    if (!val || val < 10) {
+      Alert.alert('Geçersiz', 'En az 10 🪙 girmelisin.'); return;
+    }
+    if (val > (user?.coins ?? 0)) {
+      Alert.alert('Yetersiz Coin', `Bakiyen: ${user?.coins ?? 0} 🪙`); return;
+    }
+    setSelectedStake(val);
+    setCustomModal(false);
+    setCustomInput('');
+  };
+
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
@@ -172,7 +188,71 @@ export default function DuelLobbyScreen() {
               )}
             </TouchableOpacity>
           ))}
+
+          {/* Özel Miktar kartı */}
+          <TouchableOpacity
+            style={[s.tableCard, s.customCard,
+              !TABLES.find(t => t.stake === selectedStake) && {
+                borderColor: '#8b5cf6', backgroundColor: '#f5f3ff'
+              }
+            ]}
+            onPress={() => { setCustomInput(String(selectedStake)); setCustomModal(true); }}
+            activeOpacity={0.8}
+          >
+            <Text style={[s.tableStake, { color: !TABLES.find(t => t.stake === selectedStake) ? '#8b5cf6' : TEXT }]}>
+              {!TABLES.find(t => t.stake === selectedStake)
+                ? `${selectedStake.toLocaleString('tr-TR')} 🪙`
+                : '✏️ Özel'}
+            </Text>
+            <Text style={[s.tableLabel, { color: MUTED }]}>İstediğin kadar</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Özel Miktar Modal */}
+        <Modal visible={customModal} transparent animationType="slide">
+          <View style={s.customOverlay}>
+            <View style={s.customSheet}>
+              <Text style={s.customTitle}>Özel Masa Tutarı</Text>
+              <Text style={s.customSub}>Bakiye: {(user?.coins ?? 0).toLocaleString('tr-TR')} 🪙</Text>
+
+              <View style={s.customInputWrap}>
+                <Text style={s.customInputIcon}>🪙</Text>
+                <TextInput
+                  style={s.customInput}
+                  value={customInput}
+                  onChangeText={setCustomInput}
+                  keyboardType="number-pad"
+                  placeholder="Tutar gir (min. 10)"
+                  placeholderTextColor={MUTED}
+                  maxLength={8}
+                  autoFocus
+                />
+              </View>
+
+              {/* Hızlı seç */}
+              <View style={s.quickRow}>
+                {[100, 500, 1000, 5000].map(v => (
+                  <TouchableOpacity
+                    key={v}
+                    style={s.quickChip}
+                    onPress={() => setCustomInput(String(v))}
+                  >
+                    <Text style={s.quickChipTxt}>{v.toLocaleString('tr-TR')}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={s.customBtns}>
+                <TouchableOpacity style={s.customCancel} onPress={() => setCustomModal(false)}>
+                  <Text style={s.customCancelTxt}>İptal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.customConfirm} onPress={confirmCustomStake}>
+                  <Text style={s.customConfirmTxt}>Masayı Aç</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* İki buton */}
         <View style={s.actionRow}>
@@ -238,12 +318,12 @@ export default function DuelLobbyScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  back:   { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
+  back:   { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
   title:  { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT },
   rankBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
   rankTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 12 },
 
-  rankCard: { marginHorizontal: 16, marginBottom: 12, backgroundColor: CARD, borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: BORDER },
+  rankCard: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#fff', borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   rankLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rankName: { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
   rankPts:  { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
@@ -257,26 +337,44 @@ const s = StyleSheet.create({
   label: { fontFamily: 'Nunito-Bold', fontSize: 13, color: MUTED, paddingHorizontal: 16, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   tablesGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, gap: 10, marginBottom: 20 },
-  tableCard:  { width: '47%', backgroundColor: CARD, borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 2, borderColor: BORDER, gap: 4 },
+  tableCard:  { width: '47%', backgroundColor: '#f9fafb', borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 2, borderColor: '#e5e7eb', gap: 4 },
   tableStake: { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
   tableLabel: { fontFamily: 'Nunito-Regular', fontSize: 12 },
   tableSelected:    { position: 'absolute', top: 8, right: 8, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   tableSelectedTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 11, color: '#fff' },
 
+  // Özel masa
+  customCard: { borderStyle: 'dashed' },
+  customOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  customSheet: { backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40, gap: 14 },
+  customTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: '#111827', textAlign: 'center' },
+  customSub:   { fontFamily: 'Nunito-Regular', fontSize: 13, color: '#9ca3af', textAlign: 'center', marginTop: -8 },
+  customInputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', borderRadius: 16, borderWidth: 2, borderColor: '#e5e7eb', paddingHorizontal: 16, gap: 10 },
+  customInputIcon: { fontSize: 22 },
+  customInput: { flex: 1, fontFamily: 'Nunito-ExtraBold', fontSize: 26, color: '#111827', paddingVertical: 14 },
+  quickRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
+  quickChip: { backgroundColor: '#ede9fe', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#c4b5fd' },
+  quickChipTxt: { fontFamily: 'Nunito-Bold', fontSize: 13, color: '#7c3aed' },
+  customBtns: { flexDirection: 'row', gap: 12, marginTop: 4 },
+  customCancel: { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
+  customCancelTxt: { fontFamily: 'Nunito-Bold', fontSize: 15, color: '#6b7280' },
+  customConfirm: { flex: 2, backgroundColor: '#8b5cf6', borderRadius: 16, paddingVertical: 16, alignItems: 'center', shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 6 },
+  customConfirmTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#fff' },
+
   actionRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginBottom: 24 },
   randomBtn: { flex: 1, backgroundColor: PURP, borderRadius: 18, padding: 18, alignItems: 'center', gap: 4,
                shadowColor: PURP2, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 12, elevation: 8 },
-  friendBtn: { flex: 1, backgroundColor: CARD, borderRadius: 18, padding: 18, alignItems: 'center', gap: 4, borderWidth: 1.5, borderColor: PURP2 },
+  friendBtn: { flex: 1, backgroundColor: PURP, borderRadius: 18, padding: 18, alignItems: 'center', gap: 4, shadowColor: PURP2, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 12, elevation: 8 },
   randomIcon:  { fontSize: 28 },
-  randomTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT },
-  randomSub:   { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#a78bfa' },
+  randomTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#fff' },
+  randomSub:   { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#e9d5ff' },
 
-  friendRow:         { marginHorizontal: 16, marginBottom: 8, backgroundColor: CARD, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: BORDER },
-  friendRowSelected: { borderColor: PURP2, backgroundColor: PURP + '18' },
-  friendName:  { fontFamily: 'Nunito-Bold', fontSize: 15, color: TEXT },
-  friendLevel: { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED, marginTop: 2 },
+  friendRow:         { marginHorizontal: 16, marginBottom: 8, backgroundColor: '#fff', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
+  friendRowSelected: { borderColor: PURP2, backgroundColor: '#f5f3ff' },
+  friendName:  { fontFamily: 'Nunito-Bold', fontSize: 15, color: '#111827' },
+  friendLevel: { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#9ca3af', marginTop: 2 },
   emptyBox: { alignItems: 'center', gap: 10, padding: 32 },
-  emptyTxt: { fontFamily: 'Nunito-Regular', fontSize: 14, color: MUTED },
+  emptyTxt: { fontFamily: 'Nunito-Regular', fontSize: 14, color: '#9ca3af' },
   addBtn:   { backgroundColor: PURP, borderRadius: 14, paddingHorizontal: 20, paddingVertical: 12 },
   addBtnTxt:{ fontFamily: 'Nunito-Bold', fontSize: 14, color: TEXT },
 });

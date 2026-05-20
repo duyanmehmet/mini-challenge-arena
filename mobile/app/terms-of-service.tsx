@@ -1,76 +1,96 @@
 import { ScrollView, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useSettingsStore } from '../src/store/settingsStore';
-import { Colors } from '../src/constants/colors';
 
 export default function TermsOfServiceScreen() {
-  const { theme } = useSettingsStore();
-  const C = Colors[theme];
-  const s = styles(C);
-
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.root}>
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={[s.back, { color: C.textSecondary }]}>← Geri</Text>
+          <Text style={s.back}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={[s.title, { color: C.textPrimary }]}>Kullanım Koşulları</Text>
-        <View style={{ width: 40 }} />
+        <Text style={s.title}>Kullanım Şartları</Text>
+        <View style={{ width: 70 }} />
       </View>
+
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <Text style={[s.updated, { color: C.textSecondary }]}>Son güncelleme: Mayıs 2026</Text>
+        <Text style={s.updated}>Son güncelleme: 20 Mayıs 2026</Text>
 
-        <Section title="1. Kabul" C={C}>
-          Zeka Meydanı uygulamasını kullanarak bu kullanım koşullarını kabul etmiş sayılırsınız. Kabul etmiyorsanız uygulamayı kullanmayınız.
+        <Section title="1. Kabul">
+          Zeka Meydanı uygulamasını indirerek veya kullanarak bu kullanım şartlarını kabul etmiş olursunuz. Şartları kabul etmiyorsanız uygulamayı kullanmayınız.
         </Section>
 
-        <Section title="2. Hesap" C={C}>
-          Hesabınızı güvenli tutmaktan siz sorumlusunuz. Şifrenizi kimseyle paylaşmayın. Hesabınızda gerçekleşen tüm işlemler size aittir.
+        <Section title="2. Hizmet Tanımı">
+          Zeka Meydanı; bilgi yarışması, düello modu ve haftalık lig sistemi içeren bir mobil oyun uygulamasıdır. Uygulama iOS ve Android platformlarında ücretsiz olarak sunulmaktadır.
         </Section>
 
-        <Section title="3. Yasak Kullanımlar" C={C}>
-          Uygulamayı; hile yazılımı, bot veya otomatik araçlarla kullanmak, başka kullanıcıları taciz etmek, sistemin güvenliğini tehdit eden eylemler gerçekleştirmek kesinlikle yasaktır. İhlal durumunda hesabınız askıya alınır.
+        <Section title="3. Hesap Oluşturma">
+          • Hesap oluşturmak için geçerli bir e-posta adresi gereklidir{'\n'}
+          • Kullanıcı adınız başkalarını yanıltıcı veya hakaret içerici olamaz{'\n'}
+          • Hesap güvenliğiniz sizin sorumluluğunuzdadır{'\n'}
+          • 13 yaşın altındaysanız hesap oluşturamazsınız
         </Section>
 
-        <Section title="4. Sanal Para (Coin)" C={C}>
-          Uygulama içi coin'ler gerçek parayla satın alınabilir. Coin'lerin gerçek para karşılığı yoktur, iade edilemez. Hesap silindiğinde coin bakiyesi sıfırlanır.
+        <Section title="4. Kullanım Kuralları">
+          Aşağıdaki davranışlar yasaktır:{'\n\n'}
+          • Hile veya bot kullanımı{'\n'}
+          • Diğer kullanıcılara hakaret veya taciz{'\n'}
+          • Sistemin açıklarını istismar etmek{'\n'}
+          • Birden fazla hesap oluşturmak{'\n'}
+          • Uygulamayı tersine mühendislik yapmak
         </Section>
 
-        <Section title="5. Fikri Mülkiyet" C={C}>
-          Uygulama içeriği, tasarım, logo ve soru bankası Zeka Meydanı'na aittir. İzinsiz kopyalanamaz, dağıtılamaz.
+        <Section title="5. Sanal Para Birimi (Coin)">
+          • Coin'ler uygulamanın içindeki sanal para birimidir{'\n'}
+          • Gerçek para ile satın alınan coin'ler iade edilemez{'\n'}
+          • Coin'lerin gerçek dünya değeri yoktur{'\n'}
+          • Hesap silindiğinde tüm coin'ler kaybedilir
         </Section>
 
-        <Section title="6. Sorumluluk Sınırı" C={C}>
-          Zeka Meydanı, hizmet kesintisi, veri kaybı veya kullanıcı hataları nedeniyle oluşan zararlardan sorumlu değildir.
+        <Section title="6. Fikri Mülkiyet">
+          Uygulama içeriği, tasarımı ve kodu Zeka Meydanı'na aittir. İzinsiz kopyalanması veya dağıtılması yasaktır.
         </Section>
 
-        <Section title="7. Değişiklikler" C={C}>
-          Bu koşullar önceden bildirmeksizin güncellenebilir. Güncel koşullara uygulama üzerinden erişilebilir.
+        <Section title="7. Sorumluluk Sınırlaması">
+          Zeka Meydanı; hizmet kesintileri, veri kayıpları veya üçüncü taraf hizmetlerden kaynaklanan sorunlar için sorumluluk kabul etmez.
         </Section>
 
-        <Section title="8. İletişim" C={C}>
-          Sorularınız için: destek@zekameydani.com
+        <Section title="8. Hesap Askıya Alma">
+          Kurallara aykırı davranış tespit edildiğinde hesabınız uyarı verilmeksizin askıya alınabilir veya silinebilir.
         </Section>
+
+        <Section title="9. Değişiklikler">
+          Bu şartlar zaman zaman güncellenebilir. Önemli değişiklikler uygulama bildirimiyle duyurulacaktır.
+        </Section>
+
+        <Section title="10. İletişim">
+          Sorularınız için:{'\n'}
+          duyanmehmet183@gmail.com
+        </Section>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Section({ title, children, C }: { title: string; children: string; C: any }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View style={{ marginBottom: 20 }}>
-      <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 15, color: C.textPrimary, marginBottom: 6 }}>{title}</Text>
-      <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: C.textSecondary, lineHeight: 22 }}>{children}</Text>
+    <View style={s.section}>
+      <Text style={s.sectionTitle}>{title}</Text>
+      <Text style={s.sectionText}>{children}</Text>
     </View>
   );
 }
 
-const styles = (C: any) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bgPrimary },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  back: { fontFamily: 'Nunito-Regular', fontSize: 15 },
-  title: { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
-  updated: { fontFamily: 'Nunito-Regular', fontSize: 12, marginBottom: 20 },
+const s = StyleSheet.create({
+  root:    { flex: 1, backgroundColor: '#fff' },
+  header:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  back:    { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
+  title:   { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#111827' },
+  content: { paddingHorizontal: 20, paddingTop: 16 },
+  updated: { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#9ca3af', marginBottom: 20 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#111827', marginBottom: 8 },
+  sectionText:  { fontFamily: 'Nunito-Regular', fontSize: 14, color: '#374151', lineHeight: 22 },
 });

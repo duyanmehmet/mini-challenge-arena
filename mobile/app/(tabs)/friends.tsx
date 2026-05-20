@@ -178,20 +178,28 @@ export default function FriendsScreen() {
 }
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bgPrimary },
-  title: { color: C.textPrimary, fontSize: 22, fontFamily: 'Nunito-ExtraBold', padding: 16, paddingBottom: 8 },
+  safe: { flex: 1, backgroundColor: '#ffffff' },
+  title: { color: '#111827', fontSize: 22, fontFamily: 'Nunito-ExtraBold', padding: 16, paddingBottom: 8 },
   searchSection: { paddingHorizontal: 16, marginBottom: 16 },
-  input: { borderRadius: 12, padding: 12, fontSize: 14, borderWidth: 1 },
+  input: {
+    borderRadius: 14, padding: 14, fontSize: 14, borderWidth: 1,
+    backgroundColor: '#f9fafb', borderColor: '#e5e7eb', color: '#111827',
+    fontFamily: 'Nunito-Regular',
+  },
   section: { paddingHorizontal: 16, marginBottom: 24 },
-  sectionTitle: { color: C.textPrimary, fontFamily: 'Nunito-Bold', fontSize: 15, marginBottom: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, gap: 12 },
-  username: { flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14 },
+  sectionTitle: { color: '#111827', fontFamily: 'Nunito-Bold', fontSize: 15, marginBottom: 12 },
+  row: {
+    flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 12, marginBottom: 8,
+    borderWidth: 1, gap: 12, backgroundColor: '#ffffff', borderColor: '#f3f4f6',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
+  },
+  username: { flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: '#111827' },
   actionBtn: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6 },
   actionBtnText: { color: '#fff', fontSize: 12, fontFamily: 'Nunito-Bold' },
-  rank: { width: 28, fontFamily: 'Nunito-Bold', fontSize: 13 },
-  leagueText: { fontFamily: 'Nunito-Regular', fontSize: 12 },
-  score: { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
+  rank: { width: 28, fontFamily: 'Nunito-Bold', fontSize: 13, color: '#9ca3af' },
+  leagueText: { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#9ca3af' },
+  score: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#f59e0b' },
   duelBtn: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, marginTop: 4 },
   duelText: { fontFamily: 'Nunito-Bold', fontSize: 11 },
-  msgBtn:  { padding: 6 },
+  msgBtn:  { padding: 6, backgroundColor: '#f5f3ff', borderRadius: 10, marginLeft: 2 },
 });

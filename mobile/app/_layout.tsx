@@ -62,6 +62,23 @@ export default function RootLayout() {
       } catch {}
     };
     initNotifications();
+
+    // Günlük giriş ödülü
+    import('../src/services/api').then(({ default: api }) => {
+      api.post('/user/daily-login').then(r => {
+        if (!r.data.alreadyClaimed) {
+          const streak = r.data.newStreak;
+          const coins  = r.data.coinReward;
+          import('react-native').then(({ Alert }) => {
+            Alert.alert(
+              streak >= 7 ? '🔥 7 Günlük Seri!' : `🎁 Günlük Ödül!`,
+              `+${coins} 🪙 coin kazandın!\n${streak >= 2 ? `${streak} günlük seri 🔥` : 'Yarın tekrar gir, ödül artar!'}`,
+              [{ text: 'Harika!' }]
+            );
+          });
+        }
+      }).catch(() => {});
+    });
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -121,7 +138,8 @@ export default function RootLayout() {
     const inOnboarding = segments[0] === 'onboarding';
 
     if (isAuthenticated) {
-      if (inAuthGroup || inOnboarding) {
+      const isVerifyEmail = segments[0] === '(auth)' && segments[1] === 'verify-email';
+      if (!isVerifyEmail && (inAuthGroup || inOnboarding)) {
         router.replace('/(tabs)');
       }
       return;
@@ -187,7 +205,7 @@ export default function RootLayout() {
           <Stack.Screen name="clan"       options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="battlepass" options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="tasks"      options={{ animation: 'slide_from_right', animationDuration: 260 }} />
-          <Stack.Screen name="settings"       options={{ headerShown: true, title: 'Ayarlar', animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="settings"       options={{ headerShown: false, animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="reset-password"   options={{ animation: 'fade', animationDuration: 300 }} />
           <Stack.Screen name="kategoriler"      options={{ animation: 'slide_from_bottom', animationDuration: 300 }} />
           <Stack.Screen name="friend/[userId]"  options={{ animation: 'slide_from_right', animationDuration: 260 }} />

@@ -27,7 +27,7 @@ const LEAGUE_ORDER = [
 ];
 
 const MAX_HEARTS  = 5;
-const REGEN_MS    = 2 * 60 * 60 * 1000; // 2 saat
+const REGEN_MS    = 30 * 60 * 1000; // 30 dakika
 
 // Paylaşılan kalp havuzu — 2 saatte 1 yenilenir, max 5
 function computeLives(ligLives: number, ligLivesAt: string | Date | null): number {
@@ -226,6 +226,31 @@ router.post("/revive", authMiddleware, async (req: AuthRequest, res) => {
     });
 
     return res.json({ hearts: newHearts, maxHearts: MAX_HEARTS });
+  } catch {
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
+// ── POST /refill-hearts — 250 coin ile 5 kalbi birden doldur ────────
+router.post("/refill-hearts", authMiddleware, async (req: AuthRequest, res) => {
+  const COST = 250;
+  try {
+    const user = await db("users")
+      .where("id", req.userId)
+      .select("lig_lives", "lig_lives_at", "coins")
+      .first();
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+    if ((user.coins ?? 0) < COST)
+      return res.status(400).json({ message: "Yetersiz altın. En az 250 🪙 gerekli." });
+
+    await db("users").where("id", req.userId).update({
+      lig_lives:    MAX_HEARTS,
+      lig_lives_at: new Date().toISOString(),
+      coins:        db.raw(`coins - ${COST}`),
+    });
+
+    const updated = await db("users").where("id", req.userId).select("coins").first();
+    return res.json({ hearts: MAX_HEARTS, maxHearts: MAX_HEARTS, coins: updated.coins });
   } catch {
     res.status(500).json({ message: "Sunucu hatası." });
   }

@@ -2,6 +2,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User, PersonalBest, DailyTask } from '../types/user.types';
 
+export interface JokerInventory {
+  fifty:  number; // 50:50 joker sayısı
+  change: number; // Değiştir joker sayısı
+  pass:   number; // Pas joker sayısı
+}
+
 interface UserState {
   user: User | null;
   token: string | null;
@@ -9,7 +15,8 @@ interface UserState {
   personalBests: PersonalBest[];
   dailyTasks: DailyTask[];
   isAuthenticated: boolean;
-  categoryPlayCounts: Record<string, number>; // kaç kez oynandı → rotasyon için
+  categoryPlayCounts: Record<string, number>;
+  jokers: JokerInventory;
   setUser: (user: User, token: string) => Promise<void>;
   updateUser: (partial: Partial<User>) => void;
   logout: () => Promise<void>;
@@ -20,6 +27,8 @@ interface UserState {
   setDailyTasks: (tasks: DailyTask[]) => void;
   loadAuth: () => Promise<void>;
   incrementCategoryPlayCount: (categoryId: string) => void;
+  addJoker: (type: keyof JokerInventory, count?: number) => void;
+  useJoker: (type: keyof JokerInventory) => boolean;
 }
 
 const XP_THRESHOLDS = [0,100,250,500,1000,1500,2500,4000,6000,10000,15000,25000,40000,60000,80000,100000];
@@ -58,6 +67,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   dailyTasks: [],
   isAuthenticated: false,
   categoryPlayCounts: {},
+  jokers: { fifty: 0, change: 0, pass: 0 },
 
   setUser: async (user, token) => {
     const normalized = normalizeUser(user);
@@ -106,6 +116,22 @@ export const useUserStore = create<UserState>((set, get) => ({
   setPersonalBests: (pbs) => set({ personalBests: pbs }),
   setDailyTasks: (tasks) => set({ dailyTasks: tasks }),
 
+  addJoker: (type, count = 1) => {
+    const j = { ...get().jokers };
+    j[type] = (j[type] ?? 0) + count;
+    set({ jokers: j });
+    AsyncStorage.setItem('jokers', JSON.stringify(j));
+  },
+
+  useJoker: (type) => {
+    const j = { ...get().jokers };
+    if ((j[type] ?? 0) <= 0) return false;
+    j[type]--;
+    set({ jokers: j });
+    AsyncStorage.setItem('jokers', JSON.stringify(j));
+    return true;
+  },
+
   incrementCategoryPlayCount: (categoryId) => {
     const counts = { ...get().categoryPlayCounts };
     counts[categoryId] = (counts[categoryId] ?? 0) + 1;
@@ -121,6 +147,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     const countsJson = await AsyncStorage.getItem('categoryPlayCounts');
     if (countsJson) {
       try { set({ categoryPlayCounts: JSON.parse(countsJson) }); } catch {}
+    }
+    const jokersJson = await AsyncStorage.getItem('jokers');
+    if (jokersJson) {
+      try { set({ jokers: JSON.parse(jokersJson) }); } catch {}
     }
     if (token && userJson) {
       try {

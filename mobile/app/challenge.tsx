@@ -166,8 +166,8 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
 
   header:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
-  backBtn:      { width: 60 },
-  backTxt:      { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
+  backBtn:      { },
+  backTxt:      { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: TEXT },
   headerDate:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED, marginTop: 2 },

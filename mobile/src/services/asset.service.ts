@@ -1,5 +1,5 @@
 import { Audio } from 'expo-av';
-import { Vibration } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useSettingsStore } from '../store/settingsStore';
 
 const SOUNDS: Record<string, any> = {
@@ -39,10 +39,30 @@ class AssetService {
     } catch {}
   }
 
-  vibrate(pattern: number | number[] = 50) {
+  vibrate(type: 'success' | 'error' | 'light' | 'medium' | 'heavy' | 'combo' = 'light') {
     const { vibrationEnabled } = useSettingsStore.getState();
     if (!vibrationEnabled) return;
-    Vibration.vibrate(pattern);
+    switch (type) {
+      case 'success':
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        break;
+      case 'error':
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        break;
+      case 'light':
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        break;
+      case 'medium':
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        break;
+      case 'heavy':
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        break;
+      case 'combo':
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 80);
+        break;
+    }
   }
 
   getAnimation(name: string) {

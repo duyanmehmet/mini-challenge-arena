@@ -16,14 +16,14 @@ const GOOGLE_CLIENT_ID = '74921537013-lr1636vf8ljjho8t63alr6dcolm4pg1o.apps.goog
 
 const { width } = Dimensions.get('window');
 
-const BG     = '#0d0d1a';
-const CARD   = '#13132a';
-const INPUT  = '#1c1b3a';
-const BORDER = '#2e2b5a';
+const BG     = '#ffffff';
+const CARD   = '#ffffff';
+const INPUT  = '#f9fafb';
+const BORDER = '#e5e7eb';
 const PURP   = '#6c3aed';
 const PURP2  = '#8b5cf6';
-const TEXT   = '#ffffff';
-const MUTED  = '#7c7aaa';
+const TEXT   = '#111827';
+const MUTED  = '#9ca3af';
 const LAVAND = '#a78bfa';
 
 const AVATARS = ['🐺', '🦊', '🐯', '🦁', '🐻', '🐼', '🦝', '🐨', '🦄', '🐲'];

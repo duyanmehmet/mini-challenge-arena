@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions, Modal, Alert } from 'react-native';
 import { useGameStore } from '../../../store/gameStore';
 import { useUserStore } from '../../../store/userStore';
 import type { CategoryId } from '../../../constants/categories';
@@ -9,14 +9,14 @@ import { assetService } from '../../../services/asset.service';
 
 const { width } = Dimensions.get('window');
 
-const BG      = '#0d0d1a';
-const CARD    = '#13132a';
-const BORDER  = '#2e2b5a';
+const BG      = '#ffffff';
+const CARD    = '#ffffff';
+const BORDER  = '#e5e7eb';
 const PURP    = '#6c3aed';
 const GREEN   = '#22c55e';
 const RED     = '#ef4444';
-const TEXT    = '#ffffff';
-const MUTED   = '#7c7aaa';
+const TEXT    = '#111827';
+const MUTED   = '#9ca3af';
 const LETTERS = ['A', 'B', 'C', 'D'];
 
 function speedScore(elapsedMs: number): number {
@@ -43,22 +43,30 @@ export interface Props {
   onEnd: () => void;
   externalPool?: QuizQuestion[];
   lives?: number;
+  questionCount?: number; // Kaç soru sonra bitsin (antrenman modu için)
   onLifeLost?: () => void;
   onAnswer?: (correct: boolean, pts: number, qIndex: number) => void;
   onPause?: () => void;
   catIcon?: string;
 }
 
-export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, onLifeLost, onAnswer, onPause, catIcon }: Props) {
+export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, questionCount, onLifeLost, onAnswer, onPause, catIcon }: Props) {
   const { addScore, score, combo } = useGameStore();
-  const { categoryPlayCounts } = useUserStore();
+  const { categoryPlayCounts, jokers, useJoker, addJoker, addCoins, user } = useUserStore();
+
+  const [buyModal, setBuyModal] = useState<{ type: 'fifty'|'change'|'pass'; price: number; label: string; emoji: string } | null>(null);
+
+  const JOKER_PRICES = { fifty: 40, change: 30, pass: 20 };
+  const JOKER_LABELS = { fifty: '50:50', change: 'Değiştir', pass: 'Pas' };
+  const JOKER_EMOJIS = { fifty: '✂️', change: '🔀', pass: '✕' };
 
   const [pool] = useState<QuizQuestion[]>(() => {
     if (externalPool) return externalPool;
     const playCount = categoryPlayCounts[categoryId] ?? 0;
     const all = getAdaptiveQuestions(categoryId, playCount);
-    // Live modda (lig) sadece 10 soru
-    return initialLives !== undefined ? all.slice(0, 10) : all;
+    if (questionCount) return all.slice(0, questionCount); // Antrenman: istenen sayı
+    if (initialLives !== undefined) return all.slice(0, 10); // Lig: 10 soru
+    return all; // Normal: süre bazlı
   });
 
   const [qIndex, setQIndex]           = useState(0);
@@ -66,7 +74,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const [streak, setStreak]           = useState(0);
   const [answered, setAnswered]       = useState(0);
   const [lives, setLives]             = useState(initialLives ?? 999);
-  const [jokers, setJokers]           = useState<Jokers>({ half: true, skip: true, time: true });
+  const [jokersUsed, setJokersUsed]   = useState<Jokers>({ half: false, skip: false, time: false });
   const [eliminated, setElim]         = useState<number[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [qTimeLeft, setQTimeLeft]     = useState(QUESTION_TIME);
@@ -122,6 +130,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const handleTimeOut = () => {
     if (feedback || endCalled.current) return;
     assetService.playSound('miss');
+    assetService.vibrate('error');
     setStreak(0);
     const newLives = lives - 1;
     if (isLiveMode) { setLives(newLives); onLifeLost?.(); }
@@ -133,7 +142,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
       if (isLiveMode && newLives <= 0) {
         if (!endCalled.current) { endCalled.current = true; onEnd(); }
       } else { nextQuestion(); }
-    }, 1500);
+    }, 2500); // Süre dolunca 2.5sn bekle
   };
 
   const nextQuestion = () => {
@@ -172,11 +181,11 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     if (isCorrect) {
       addScore(pts);
       assetService.playSound('hit');
-      assetService.vibrate(40);
+      assetService.vibrate(streak >= 3 ? 'combo' : 'success');
       setStreak(s => s + 1);
     } else {
       assetService.playSound('miss');
-      assetService.vibrate([0, 80]);
+      assetService.vibrate('error');
       setStreak(0);
       const newLives = lives - 1;
       if (isLiveMode) { setLives(newLives); onLifeLost?.(); }
@@ -191,31 +200,69 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
       if (isLiveMode && !isCorrect && lives - 1 <= 0) {
         if (!endCalled.current) { endCalled.current = true; onEnd(); }
       } else { nextQuestion(); }
-    }, isCorrect ? 1000 : 1500);
+    }, isCorrect ? 1800 : 2500); // Doğru: 1.8sn, Yanlış: 2.5sn
   };
 
-  const useHalf = () => {
-    if (!jokers.half || !current || feedback) return;
+  const openBuyOrUse = (type: 'fifty'|'change'|'pass', used: boolean, action: () => void) => {
+    if (used || feedback) return;
+    if ((jokers[type] ?? 0) > 0) {
+      action();
+    } else {
+      // Joker yok → satın alma modal aç
+      setBuyModal({
+        type,
+        price: JOKER_PRICES[type],
+        label: JOKER_LABELS[type],
+        emoji: JOKER_EMOJIS[type],
+      });
+    }
+  };
+
+  const confirmBuyJoker = () => {
+    if (!buyModal) return;
+    if ((user?.coins ?? 0) < buyModal.price) {
+      setBuyModal(null);
+      Alert.alert('Yetersiz Coin', `${buyModal.label} için ${buyModal.price} 🪙 gerekiyor.`);
+      return;
+    }
+    addCoins(-buyModal.price);
+    addJoker(buyModal.type, 1);
+    // Satın alındı, hemen kullan
+    const type = buyModal.type;
+    setBuyModal(null);
+    if (type === 'fifty') { triggerHalf(); }
+    else if (type === 'change') { triggerChange(); }
+    else if (type === 'pass') { triggerPass(); }
+  };
+
+  const triggerHalf = () => {
+    if (jokersUsed.half || !current) return;
+    useJoker('fifty');
     const wrongs = current.a.map((_, i) => i).filter(i => i !== current.c && !eliminated.includes(i));
     setElim(shuffle(wrongs).slice(0, 2));
-    setJokers(j => ({ ...j, half: false }));
+    setJokersUsed(j => ({ ...j, half: true }));
   };
 
-  const useSkip = () => {
-    if (!jokers.skip || feedback) return;
+  const triggerChange = () => {
+    if (jokersUsed.time) return;
+    useJoker('change');
     stopQTimer();
-    setJokers(j => ({ ...j, skip: false }));
+    setJokersUsed(j => ({ ...j, time: true }));
+    nextQuestion();
+  };
+
+  const triggerPass = () => {
+    if (jokersUsed.skip) return;
+    useJoker('pass');
+    stopQTimer();
+    setJokersUsed(j => ({ ...j, skip: true }));
     setAnswered(n => n + 1);
     nextQuestion();
   };
 
-  const useTime = () => {
-    if (!jokers.time || feedback) return;
-    stopQTimer();
-    setJokers(j => ({ ...j, time: false }));
-    // Soruyu değiştir — ceza yok, can gitmiyor, sadece sonraki soruya geç
-    nextQuestion();
-  };
+  const useHalf  = () => openBuyOrUse('fifty',  jokersUsed.half, triggerHalf);
+  const useTime  = () => openBuyOrUse('change', jokersUsed.time, triggerChange);
+  const useSkip  = () => openBuyOrUse('pass',   jokersUsed.skip, triggerPass);
 
   if (!current) return null;
 
@@ -235,8 +282,8 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
         <View style={s.topRow}>
           <Text style={s.catIconTxt}>{catIcon ?? '🎮'}</Text>
           <Text style={s.soruTxt}>Soru {qIndex + 1} / {total}</Text>
-          {/* Can ikonları — sadece lig modunda (initialLives verilmişse) */}
-          {isLiveMode && (
+          {/* Can ikonları — sadece lig modunda (antrenman 999 can = sonsuz, gösterme) */}
+          {isLiveMode && initialLives !== 999 && (
             <View style={s.livesRow}>
               {Array.from({ length: 5 }).map((_, i) => (
                 <Text key={i} style={{ fontSize: 15, opacity: i < lives ? 1 : 0.18 }}>❤️</Text>
@@ -281,11 +328,11 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
           const isCorrect  = i === current.c;
           const isSelected = i === selectedIdx;
 
-          let bg       = CARD;
-          let border   = BORDER;
-          let textClr  = TEXT;
-          let letterBg = '#1e1b3a';
-          let letterClr= MUTED;
+          let bg       = '#ffffff';
+          let border   = '#e5e7eb';
+          let textClr  = '#111827';
+          let letterBg = '#f3f4f6';
+          let letterClr= '#6b7280';
 
           if (feedback && !isElim) {
             if (isCorrect) {
@@ -301,9 +348,9 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
             <TouchableOpacity
               key={i}
               style={[s.optionBtn, {
-                backgroundColor: isElim ? '#0d0d1a' : bg,
-                borderColor: isElim ? BORDER : border,
-                opacity: isElim ? 0.3 : 1,
+                backgroundColor: isElim ? '#f9fafb' : bg,
+                borderColor: isElim ? '#e5e7eb' : border,
+                opacity: isElim ? 0.4 : 1,
               }]}
               onPress={() => handleChoice(i)}
               disabled={isElim || !!feedback}
@@ -322,111 +369,150 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
 
       {/* ── Jokerler ── */}
       <View style={s.jokers}>
-        <JokerBtn
-          emoji="✂️" label="50:50"
-          active={jokers.half} color="#ef4444"
-          onPress={useHalf}
-        />
-        <JokerBtn
-          emoji="🔀" label="Değiştir"
-          active={jokers.time} color="#6c3aed"
-          onPress={useTime}
-        />
-        <JokerBtn
-          emoji="✕" label="Pas"
-          active={jokers.skip} color="#7c7aaa"
-          onPress={useSkip}
-        />
+        <JokerBtn emoji="✂️" label="50:50"   count={jokers.fifty  ?? 0} used={jokersUsed.half} color="#ef4444" price={40}  onPress={useHalf} />
+        <JokerBtn emoji="🔀" label="Değiştir" count={jokers.change ?? 0} used={jokersUsed.time} color="#6c3aed" price={30}  onPress={useTime} />
+        <JokerBtn emoji="✕"  label="Pas"      count={jokers.pass   ?? 0} used={jokersUsed.skip} color="#7c7aaa" price={20}  onPress={useSkip} />
       </View>
+
+      {/* Joker Satın Alma Modal */}
+      <Modal visible={!!buyModal} transparent animationType="fade">
+        <View style={s.buyOverlay}>
+          <View style={s.buySheet}>
+            <Text style={s.buyEmoji}>{buyModal?.emoji}</Text>
+            <Text style={s.buyTitle}>{buyModal?.label} Joker</Text>
+            <Text style={s.buySub}>Joker stokun bitti. Şimdi satın alıp kullan!</Text>
+            <View style={s.buyPriceRow}>
+              <Text style={s.buyPrice}>{buyModal?.price} 🪙</Text>
+              <Text style={s.buyBalance}>Bakiye: {(user?.coins ?? 0).toLocaleString('tr-TR')} 🪙</Text>
+            </View>
+            <View style={s.buyBtns}>
+              <TouchableOpacity style={s.buyCancelBtn} onPress={() => setBuyModal(null)}>
+                <Text style={s.buyCancelTxt}>İptal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.buyConfirmBtn} onPress={confirmBuyJoker}>
+                <Text style={s.buyConfirmTxt}>Satın Al & Kullan</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
     </View>
   );
 }
 
-function JokerBtn({ emoji, label, active, color, onPress }: {
-  emoji: string; label: string; active: boolean; color: string; onPress: () => void;
+function JokerBtn({ emoji, label, used, color, count, price, onPress }: {
+  emoji: string; label: string; used: boolean; color: string; count: number; price: number; onPress: () => void;
 }) {
+  const hasStock = count > 0;
+  const canUse   = !used;
   return (
     <TouchableOpacity
-      style={[js.btn, { borderColor: active ? color : '#2e2b5a', opacity: active ? 1 : 0.35 }]}
+      style={[js.btn, { borderColor: used ? '#e5e7eb' : (hasStock ? color : color + '66') }]}
       onPress={onPress}
-      disabled={!active}
+      disabled={used}
       activeOpacity={0.75}
     >
-      <Text style={js.emoji}>{emoji}</Text>
-      <Text style={[js.label, { color: active ? color : MUTED }]}>{label}</Text>
+      <Text style={[js.emoji, { opacity: used ? 0.3 : 1 }]}>{emoji}</Text>
+      <Text style={[js.label, { color: used ? '#9ca3af' : color }]}>{label}</Text>
+      {/* Stok varsa sayı, yoksa fiyat */}
+      <View style={[js.countBadge, { backgroundColor: used ? '#f3f4f6' : (hasStock ? color + '18' : '#fef9c3') }]}>
+        <Text style={[js.countTxt, { color: used ? '#9ca3af' : (hasStock ? color : '#d97706') }]}>
+          {used ? '✓' : hasStock ? `${count}` : `${price}🪙`}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const js = StyleSheet.create({
-  btn:   { flex: 1, backgroundColor: CARD, borderRadius: 14, borderWidth: 1.5, paddingVertical: 12, alignItems: 'center', gap: 4 },
-  emoji: { fontSize: 20 },
-  label: { fontFamily: 'Nunito-Bold', fontSize: 12 },
+  btn:        { flex: 1, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#e5e7eb', paddingVertical: 10, alignItems: 'center', gap: 3 },
+  emoji:      { fontSize: 20 },
+  label:      { fontFamily: 'Nunito-Bold', fontSize: 11 },
+  countBadge: { borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
+  countTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 11 },
 });
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG, paddingHorizontal: 16 },
+  root: { flex: 1, backgroundColor: '#ffffff', paddingHorizontal: 16 },
 
   // Üst bar
   topBar: { paddingTop: 10, marginBottom: 6 },
   topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
   catIconTxt: { fontSize: 20 },
-  soruTxt: { fontFamily: 'Nunito-Bold', fontSize: 13, color: MUTED, flex: 1 },
-  puanTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: TEXT },
-  pauseBtn:  { backgroundColor: '#1e1b3a', padding: 7, borderRadius: 20, marginLeft: 4 },
+  soruTxt: { fontFamily: 'Nunito-Bold', fontSize: 13, color: '#9ca3af', flex: 1 },
+  puanTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#111827' },
+  pauseBtn:  { backgroundColor: '#f3f4f6', padding: 7, borderRadius: 20, marginLeft: 4 },
   livesRow:  { flexDirection: 'row', gap: 2, alignItems: 'center' },
-  progressBg:   { height: 4, backgroundColor: '#1e1b3a', borderRadius: 2, overflow: 'hidden', marginBottom: 8 },
+  progressBg:   { height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, overflow: 'hidden', marginBottom: 8 },
   progressFill: { height: 4, backgroundColor: PURP, borderRadius: 2 },
 
   // Süre çubuğu
   qTimerBg: {
-    height: 8, backgroundColor: '#1e1b3a', borderRadius: 4,
+    height: 8, backgroundColor: '#f3f4f6', borderRadius: 4,
     overflow: 'hidden', marginBottom: 16, flexDirection: 'row',
   },
   qTimerFill: { height: 8, borderRadius: 4 },
   qTimerNum: {
     position: 'absolute', right: 6, top: -4,
-    fontFamily: 'Nunito-Bold', fontSize: 10, color: MUTED,
+    fontFamily: 'Nunito-Bold', fontSize: 10, color: '#9ca3af',
   },
 
   // Soru
   questionBox: {
-    backgroundColor: CARD,
+    backgroundColor: '#f9fafb',
     borderRadius: 20, padding: 22,
     marginBottom: 12,
-    borderWidth: 1, borderColor: BORDER,
+    borderWidth: 1, borderColor: '#e5e7eb',
     minHeight: 90, justifyContent: 'center',
   },
   questionTxt: {
     fontFamily: 'Nunito-ExtraBold',
-    fontSize: 17, color: TEXT,
+    fontSize: 17, color: '#111827',
     textAlign: 'center', lineHeight: 26,
   },
 
   // Açıklama
   explBox: {
-    backgroundColor: '#1a1a35', borderRadius: 14,
-    padding: 12, marginBottom: 10, borderWidth: 1,
+    backgroundColor: '#ede9fe', borderRadius: 14,
+    padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#c4b5fd',
   },
-  explTxt: { fontFamily: 'Nunito-Regular', fontSize: 13, color: '#c4b5fd', textAlign: 'center', lineHeight: 20 },
+  explTxt: { fontFamily: 'Nunito-Regular', fontSize: 13, color: '#7c3aed', textAlign: 'center', lineHeight: 20 },
 
   // Seçenekler
   options: { gap: 10, marginBottom: 14 },
   optionBtn: {
     flexDirection: 'row', alignItems: 'center',
-    borderRadius: 16, borderWidth: 1.5,
+    borderRadius: 16, borderWidth: 1.5, borderColor: '#e5e7eb',
+    backgroundColor: '#ffffff',
     paddingVertical: 16, paddingHorizontal: 14,
     gap: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1,
   },
   letter: {
     width: 34, height: 34, borderRadius: 10,
+    backgroundColor: '#f3f4f6',
     alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  letterTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
-  optionTxt: { fontFamily: 'Nunito-Bold', fontSize: 15, flex: 1 },
+  letterTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#6b7280' },
+  optionTxt: { fontFamily: 'Nunito-Bold', fontSize: 15, flex: 1, color: '#111827' },
 
   // Jokerler
   jokers: { flexDirection: 'row', gap: 10 },
+
+  // Satın alma modal
+  buyOverlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },
+  buySheet:    { backgroundColor: '#fff', borderRadius: 24, padding: 24, width: '100%', alignItems: 'center', gap: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 12 },
+  buyEmoji:    { fontSize: 48 },
+  buyTitle:    { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: '#111827' },
+  buySub:      { fontFamily: 'Nunito-Regular', fontSize: 13, color: '#9ca3af', textAlign: 'center' },
+  buyPriceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: '#f9fafb', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, marginTop: 4 },
+  buyPrice:    { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: '#6c3aed' },
+  buyBalance:  { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#9ca3af' },
+  buyBtns:     { flexDirection: 'row', gap: 10, width: '100%', marginTop: 4 },
+  buyCancelBtn:  { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  buyCancelTxt:  { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#6b7280' },
+  buyConfirmBtn: { flex: 2, backgroundColor: '#6c3aed', borderRadius: 14, paddingVertical: 14, alignItems: 'center', shadowColor: '#6c3aed', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 5 },
+  buyConfirmTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#fff' },
 });

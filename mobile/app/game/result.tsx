@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useUserStore } from '../../src/store/userStore';
@@ -93,10 +93,11 @@ const tw = StyleSheet.create({
 
 /* ── Ana Ekran ── */
 export default function ResultScreen() {
-  const { mode, score, maxCombo, duration, challengeId, ligMode, ligFailed } = useLocalSearchParams<{
+  const { mode, score, maxCombo, duration, challengeId, ligMode, ligFailed, antrenmanMode } = useLocalSearchParams<{
     mode: string; score: string; maxCombo: string; duration: string;
-    challengeId?: string; ligMode?: string; ligFailed?: string;
+    challengeId?: string; ligMode?: string; ligFailed?: string; antrenmanMode?: string;
   }>();
+  const isAntrenman = antrenmanMode === '1';
   const { personalBests, setPersonalBests, addXP, addCoins, updateUser, incrementCategoryPlayCount } = useUserStore();
 
   const numScore    = parseInt(score    ?? '0');
@@ -127,7 +128,7 @@ export default function ResultScreen() {
       Animated.timing(counterAnim, { toValue: numScore, duration: 1500, useNativeDriver: false }),
     ]).start();
 
-    if (!isLigFailed) {
+    if (!isLigFailed && !isAntrenman) {
       addXP(xpEarned);
       addCoins(coinsEarned);
     }
@@ -142,11 +143,20 @@ export default function ResultScreen() {
     if (challengeId) {
       api.post('/challenge/submit', { challengeId, score: numScore }).catch(() => {});
     }
-    // Lig: sadece başarılıysa gönder
+    // Lig: sadece başarılıysa gönder (3 retry)
     if (isLig && !isLigFailed) {
-      api.post('/lig/submit', { score: numScore, categoryId: mode })
-        .then(r => setLigResult(r.data))
-        .catch(() => {});
+      const submitLig = async (retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const r = await api.post('/lig/submit', { score: numScore, categoryId: mode });
+            setLigResult(r.data);
+            return;
+          } catch {
+            if (i < retries - 1) await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+          }
+        }
+      };
+      submitLig();
     }
 
     const submit = async (retries = 3) => {
@@ -175,12 +185,49 @@ export default function ResultScreen() {
     const rec = isNewRecord ? ' 🏆 Yeni rekor!' : '';
     try {
       await Share.share({
-        message: `${cat} kategorisinde ${numScore.toLocaleString('tr-TR')} puan yaptım!${rec}\n\nZeka Meydanı'nda beni geçebilir misin? ⚡`,
+        message: `${cat} kategorisinde ${numScore.toLocaleString('tr-TR')} puan yaptım!${rec}\n\nMini Challenge Arena'da beni geçebilir misin? ⚡`,
       });
     } catch {}
   };
 
-  // ── Lig Başarısız Ekranı ──────────────────────────────────────────
+  // ── Antrenman Sonuç Ekranı ──────────────────────────────────────────
+  if (isAntrenman) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f3ff' }}>
+        <Animated.View style={[s.inner, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <Text style={{ fontSize: 72 }}>📚</Text>
+          <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 26, color: '#111827', marginBottom: 4 }}>Antrenman Bitti!</Text>
+          <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: '#9ca3af', marginBottom: 24, textAlign: 'center' }}>
+            15 soruyu tamamladın. Tekrar oynayarak gelişebilirsin!
+          </Text>
+          <View style={{ backgroundColor: '#6c3aed', borderRadius: 20, padding: 24, width: '100%', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontFamily: 'Nunito-Regular' }}>Toplam Puan</Text>
+            <Text style={{ color: '#fff', fontSize: 52, fontFamily: 'Nunito-ExtraBold' }}>{numScore.toLocaleString('tr-TR')}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12, width: '100%', marginBottom: 24 }}>
+            <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
+              <Text style={{ fontSize: 22, fontFamily: 'Nunito-ExtraBold', color: '#22c55e' }}>{Math.round(numScore / Math.max(parseInt(duration ?? '1'), 1))} puan/sn</Text>
+              <Text style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'Nunito-Regular', marginTop: 2 }}>Hız</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
+              <Text style={{ fontSize: 22, fontFamily: 'Nunito-ExtraBold', color: '#f59e0b' }}>{parseInt(duration ?? '0')}sn</Text>
+              <Text style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'Nunito-Regular', marginTop: 2 }}>Süre</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={{ backgroundColor: '#6c3aed', borderRadius: 16, paddingVertical: 18, width: '100%', alignItems: 'center', marginBottom: 10 }}
+            onPress={() => router.replace({ pathname: `/game/${mode}` as any, params: { antrenmanMode: '1' } })}>
+            <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: '#fff' }}>🔄 Tekrar Oyna</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{ backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' }}
+            onPress={() => router.replace('/antrenman' as any)}>
+            <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#374151' }}>Kategori Değiştir</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Lig Başarısız Ekranı ─────────────────────────────────────────────
   if (isLig && isLigFailed) {
     const handleWatchAd = async () => {
       await admobService.showRewarded(async () => {
@@ -189,66 +236,87 @@ export default function ResultScreen() {
       router.replace('/lig' as any);
     };
 
+    const handleRefillHearts = async () => {
+      const { user } = useUserStore.getState();
+      if ((user?.coins ?? 0) < 250) {
+        Alert.alert('Yetersiz Altın', '5 kalbi doldurmak için 250 🪙 gerekli.');
+        return;
+      }
+      try {
+        const res = await api.post('/lig/refill-hearts');
+        updateUser({ coins: res.data.coins });
+        router.replace('/lig' as any);
+      } catch (e: any) {
+        Alert.alert('Hata', e?.response?.data?.message ?? 'İşlem başarısız.');
+      }
+    };
+
     return (
-      <SafeAreaView style={[s.root, fs.root]}>
+      <SafeAreaView style={fs.root}>
+        {['❤️','💕','❤️','💗','❤️'].map((h, i) => (
+          <Animated.Text key={i} style={[fs.floatHeart, {
+            left: `${10 + i * 20}%` as any,
+            top: `${5 + (i % 3) * 8}%` as any,
+            opacity: 0.15,
+            fontSize: 16 + (i % 3) * 8,
+          }]}>{h}</Animated.Text>
+        ))}
+
         <Animated.View style={[fs.wrap, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
 
-          {/* Başlık */}
           <Text style={fs.emoji}>💔</Text>
-          <Text style={fs.title}>Kalpler Bitti!</Text>
-          <Text style={fs.sub}>Skor kaydedilmedi. Kalp kazanarak tekrar dene.</Text>
+          <Text style={fs.title}>Üzgünüm! 💔</Text>
+          <Text style={fs.sub}>Tüm kalplerin bitti.</Text>
 
-          {/* Seçenekler */}
           <View style={fs.cards}>
 
-            {/* Reklam */}
-            <TouchableOpacity style={[fs.card, fs.cardGreen]} onPress={handleWatchAd} activeOpacity={0.85}>
-              <View style={fs.cardLeft}>
-                <Text style={fs.cardIcon}>📺</Text>
-                <View>
-                  <Text style={fs.cardTitle}>Reklam İzle</Text>
-                  <Text style={fs.cardSub}>Ücretsiz · 30 saniye</Text>
-                </View>
+            {/* Reklam İzle — 1 kalp */}
+            <TouchableOpacity style={fs.card} onPress={handleWatchAd} activeOpacity={0.85}>
+              <View style={fs.cardIconWrap}>
+                <Text style={{ fontSize: 22 }}>▶️</Text>
               </View>
-              <View style={fs.cardBadge}>
-                <Text style={fs.cardBadgeTxt}>+1 ❤️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={fs.cardTitle}>Reklam İzle</Text>
+                <Text style={fs.cardSub}>1 kalp kazan</Text>
+              </View>
+              <View style={fs.badge}>
+                <Text style={fs.badgeTxt}>Ücretsiz</Text>
               </View>
             </TouchableOpacity>
 
-            {/* Mağaza */}
-            <TouchableOpacity style={[fs.card, fs.cardGold]} onPress={() => router.replace('/shop' as any)} activeOpacity={0.85}>
-              <View style={fs.cardLeft}>
-                <Text style={fs.cardIcon}>🏪</Text>
-                <View>
-                  <Text style={fs.cardTitle}>Mağaza</Text>
-                  <Text style={fs.cardSub}>Coin veya reklam ile doldur</Text>
-                </View>
+            {/* 5 Kalbi Anında Doldur — 250 coin */}
+            <TouchableOpacity style={[fs.card, fs.cardHighlight]} onPress={handleRefillHearts} activeOpacity={0.85}>
+              <View style={[fs.cardIconWrap, { backgroundColor: '#fef3c7' }]}>
+                <Text style={{ fontSize: 22 }}>❤️‍🔥</Text>
               </View>
-              <Text style={fs.cardArrow}>›</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={fs.cardTitle}>5 Kalbi Doldur</Text>
+                <Text style={fs.cardSub}>Anında 5 kalp kazan</Text>
+              </View>
+              <View style={fs.coinBadge}>
+                <Text style={{ fontSize: 14 }}>🪙</Text>
+                <Text style={fs.coinBadgeTxt}>250</Text>
+              </View>
             </TouchableOpacity>
 
-            {/* Bekle */}
+            {/* Biraz Bekle */}
             <TouchableOpacity style={fs.card} onPress={() => router.replace('/lig' as any)} activeOpacity={0.85}>
-              <View style={fs.cardLeft}>
-                <Text style={fs.cardIcon}>⏳</Text>
-                <View>
-                  <Text style={[fs.cardTitle, { color: MUTED }]}>Bekle</Text>
-                  <Text style={fs.cardSub}>2 saatte 1 kalp yenilenir</Text>
-                </View>
+              <View style={fs.cardIconWrap}>
+                <Text style={{ fontSize: 22 }}>⏱️</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={fs.cardTitle}>Biraz Bekle</Text>
+                <Text style={fs.cardSub}>2 saatte 1 kalp yenilenir</Text>
+              </View>
+              <View style={fs.badge}>
+                <Text style={fs.badgeTxt}>Bekle</Text>
               </View>
             </TouchableOpacity>
 
           </View>
 
-          {/* Ana sayfa */}
-          <TouchableOpacity style={fs.card} onPress={() => router.replace('/(tabs)')} activeOpacity={0.85}>
-            <View style={fs.cardLeft}>
-              <Text style={fs.cardIcon}>🏠</Text>
-              <View>
-                <Text style={[fs.cardTitle, { color: MUTED }]}>Ana Sayfaya Dön</Text>
-                <Text style={fs.cardSub}>Oyuna ara ver</Text>
-              </View>
-            </View>
+          <TouchableOpacity style={fs.homeBtn} onPress={() => router.replace('/(tabs)')} activeOpacity={0.85}>
+            <Text style={fs.homeBtnTxt}>Ana Sayfa</Text>
           </TouchableOpacity>
 
         </Animated.View>
@@ -415,33 +483,48 @@ const s = StyleSheet.create({
   ligDivider: { height: 1, backgroundColor: '#2e2b5a' },
 });
 
-// ── Başarısız lig ekranı stilleri ────────────────────────────────────
+// ── Başarısız lig ekranı stilleri — Pembe mockup teması ──────────────
 const fs = StyleSheet.create({
-  root: { backgroundColor: '#0d0d1a' },
-  wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, gap: 10 },
+  root: { flex: 1, backgroundColor: '#fdf2f8' },
 
-  emoji: { fontSize: 72, marginBottom: 4 },
+  floatHeart: { position: 'absolute', zIndex: 0 },
+
+  wrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 12, zIndex: 1 },
+
+  emoji: { fontSize: 80, marginBottom: 6 },
   title: { fontFamily: 'Nunito-ExtraBold', fontSize: 28, color: '#ef4444', textAlign: 'center' },
-  sub:   { fontFamily: 'Nunito-Regular', fontSize: 14, color: '#7c7aaa', textAlign: 'center', lineHeight: 21, marginBottom: 8 },
+  sub:   { fontFamily: 'Nunito-Regular', fontSize: 15, color: '#9ca3af', textAlign: 'center', lineHeight: 22, marginBottom: 4 },
 
   cards: { width: '100%', gap: 10 },
 
   card: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#13132a', borderRadius: 18,
-    padding: 16, borderWidth: 1, borderColor: '#2e2b5a',
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#ffffff', borderRadius: 20,
+    padding: 16, gap: 14,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07, shadowRadius: 8, elevation: 3,
   },
-  cardGreen: { borderColor: '#22c55e55', backgroundColor: '#22c55e0d' },
-  cardGold:  { borderColor: '#f59e0b55', backgroundColor: '#f59e0b0d' },
 
-  cardLeft:  { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  cardIcon:  { fontSize: 30 },
-  cardTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#ffffff' },
-  cardSub:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#7c7aaa', marginTop: 2 },
+  cardIconWrap: {
+    width: 48, height: 48, borderRadius: 14,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cardTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#111827', marginBottom: 2 },
+  cardSub:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#9ca3af' },
 
-  cardBadge:    { backgroundColor: '#22c55e22', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#22c55e55' },
-  cardBadgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#22c55e' },
+  badge:    { backgroundColor: '#6c3aed', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 7 },
+  badgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 13, color: '#fff' },
 
-  cardArrow: { fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: '#f59e0b' },
+  coinBadge:    { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef3c7', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: '#fde68a' },
+  coinBadgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#d97706' },
+  cardHighlight:{ borderWidth: 2, borderColor: '#fde68a' },
 
+  homeBtn: {
+    width: '100%', backgroundColor: '#6c3aed', borderRadius: 20,
+    paddingVertical: 18, alignItems: 'center', marginTop: 4,
+    shadowColor: '#6c3aed', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35, shadowRadius: 12, elevation: 8,
+  },
+  homeBtnTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#fff' },
 });

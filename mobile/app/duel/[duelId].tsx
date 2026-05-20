@@ -17,16 +17,16 @@ import { assetService } from '../../src/services/asset.service';
 
 const { width } = Dimensions.get('window');
 
-const BG    = '#0d0d1a';
-const CARD  = '#13132a';
+const BG    = '#ffffff';
+const CARD  = '#f9fafb';
 const PURP  = '#6c3aed';
 const PURP2 = '#8b5cf6';
-const TEXT  = '#ffffff';
-const MUTED = '#7c7aaa';
+const TEXT  = '#111827';
+const MUTED = '#9ca3af';
 const GREEN = '#22c55e';
 const RED   = '#ef4444';
 const GOLD  = '#f59e0b';
-const BORDER= '#2e2b5a';
+const BORDER= '#e5e7eb';
 
 // ── Çark segmentleri ─────────────────────────────────────────────────
 const WHEEL_SEGS = [
@@ -582,15 +582,15 @@ const g = StyleSheet.create({
   myEmoji:     { position: 'absolute', top: -20, left: -10, fontSize: 28 },
   oppEmoji:    { position: 'absolute', top: -20, right: -10, fontSize: 28 },
   flashDot:    { position: 'absolute', top: 0, right: 0, width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: BG },
-  catBadge:    { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#1a1040' },
+  catBadge:    { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#f5f3ff' },
   catIcon:     { fontSize: 16 },
-  catName:     { fontFamily: 'Nunito-Bold', fontSize: 13, color: TEXT },
+  catName:     { fontFamily: 'Nunito-Bold', fontSize: 13, color: '#4c1d95' },
   x2mini:      { backgroundColor: GOLD + '33', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: GOLD + '66' },
   x2miniTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 10, color: GOLD },
-  notifBar:    { backgroundColor: '#1a0040', paddingHorizontal: 16, paddingVertical: 8, alignItems: 'center' },
-  notifTxt:    { fontFamily: 'Nunito-Bold', fontSize: 13, color: '#a78bfa' },
-  emojiToggle: { position: 'absolute', bottom: 100, right: 16, backgroundColor: '#1a1040', width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: BORDER },
-  emojiBar:    { position: 'absolute', bottom: 150, right: 16, backgroundColor: CARD, borderRadius: 20, padding: 10, flexDirection: 'row', gap: 8, borderWidth: 1, borderColor: BORDER },
+  notifBar:    { backgroundColor: '#ede9fe', paddingHorizontal: 16, paddingVertical: 8, alignItems: 'center' },
+  notifTxt:    { fontFamily: 'Nunito-Bold', fontSize: 13, color: '#7c3aed' },
+  emojiToggle: { position: 'absolute', bottom: 100, right: 16, backgroundColor: '#6c3aed', width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', shadowColor: '#6c3aed', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 5 },
+  emojiBar:    { position: 'absolute', bottom: 154, right: 16, backgroundColor: '#fff', borderRadius: 20, padding: 10, flexDirection: 'row', gap: 8, borderWidth: 1, borderColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 8 },
   emojiBtn:    { padding: 4 },
 });
 

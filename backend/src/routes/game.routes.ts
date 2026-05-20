@@ -59,8 +59,14 @@ router.post("/result", authMiddleware, async (req: AuthRequest, res) => {
     const today = new Date().toISOString().slice(0, 10);
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     let newStreak = 1;
-    if (user.last_played_date === today) newStreak = user.streak_count || 1;
-    else if (user.last_played_date === yesterday) newStreak = (user.streak_count || 0) + 1;
+    if (user.last_played_date === today) {
+      newStreak = user.streak_count || 1;
+    } else if (user.last_played_date === yesterday) {
+      newStreak = (user.streak_count || 0) + 1;
+    } else if (user.streak_freeze_date === yesterday) {
+      // Dün freeze kullanıldı, seri korundu — bugün oynadığı için artı 1
+      newStreak = (user.streak_count || 0) + 1;
+    }
 
     const xpGained = 10 + (isPersonalBest ? 25 : 0);
     const coinsGained = Math.floor(score / 100) + 5;

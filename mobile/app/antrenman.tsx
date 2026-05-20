@@ -6,10 +6,10 @@ import { CATEGORIES, CATEGORY_GROUPS, getCategoriesByGroup } from '../src/consta
 const { width } = Dimensions.get('window');
 const CARD_W = (width - 48) / 2;
 
-const BG    = '#0d0d1a';
-const CARD  = '#13132a';
-const TEXT  = '#ffffff';
-const MUTED = '#7c7aaa';
+const BG    = '#ffffff';
+const CARD  = '#ffffff';
+const TEXT  = '#111827';
+const MUTED = '#9ca3af';
 const BORDER= '#2e2b5a';
 
 export default function AntrenmanScreen() {
@@ -26,8 +26,8 @@ export default function AntrenmanScreen() {
 
       {/* Açıklama */}
       <View style={s.infoCard}>
-        <Text style={s.infoTxt}>Can yok · Puan yok · Sadece pratik</Text>
-        <Text style={s.infoSub}>Kategori seç, istediğin kadar oyna.</Text>
+        <Text style={s.infoTxt}>15 Soru · Can yok · Sadece pratik</Text>
+        <Text style={s.infoSub}>Kategori seç, istediğin kadar tekrar oyna.</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
@@ -41,7 +41,7 @@ export default function AntrenmanScreen() {
                   <TouchableOpacity
                     key={cat.id}
                     style={[s.catCard, { borderColor: cat.color + '55' }]}
-                    onPress={() => router.push(`/game/${cat.id}` as any)}
+                    onPress={() => router.push({ pathname: `/game/${cat.id}` as any, params: { antrenmanMode: '1' } })}
                     activeOpacity={0.8}
                   >
                     <View style={[s.iconBg, { backgroundColor: cat.color + '22' }]}>
@@ -66,8 +66,8 @@ const s = StyleSheet.create({
   scroll: { paddingBottom: 20 },
 
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
-  backBtn:     { width: 60 },
-  backTxt:     { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
+  backBtn:     { },
+  backTxt:     { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
   headerTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT },
 
   infoCard: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#06b6d415', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#06b6d430', alignItems: 'center', gap: 4 },
@@ -78,7 +78,7 @@ const s = StyleSheet.create({
   groupTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: TEXT, marginBottom: 12 },
   grid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
 
-  catCard:  { width: CARD_W, backgroundColor: CARD, borderRadius: 18, padding: 14, borderWidth: 1.5, alignItems: 'center', gap: 6 },
+  catCard:  { width: CARD_W, backgroundColor: '#fff', borderRadius: 18, padding: 14, borderWidth: 1.5, alignItems: 'center', gap: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 },
   iconBg:   { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   catName:  { fontFamily: 'Nunito-ExtraBold', fontSize: 13, color: TEXT, textAlign: 'center' },
   catCount: { fontFamily: 'Nunito-Regular', fontSize: 11, textAlign: 'center' },

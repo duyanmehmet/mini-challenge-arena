@@ -15,7 +15,7 @@ const SLIDES = [
     emojiSize: 120,
     bg: '#0f0a20',
     accent: '#6c3aed',
-    title: 'Zeka Meydanı',
+    title: 'Mini Challenge Arena',
     titleColor: '#ffd600',
     subtitle: 'Türkiye\'nin en heyecanlı\nbilgi yarışması!',
     desc: '3.000\'den fazla soru, onlarca kategori\nve gerçek rakipler seni bekliyor.',

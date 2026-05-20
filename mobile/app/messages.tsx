@@ -6,13 +6,13 @@ import { useUserStore } from '../src/store/userStore';
 import { Avatar } from '../src/components/ui/Avatar';
 import api from '../src/services/api';
 
-const BG    = '#0d0d1a';
-const CARD  = '#13132a';
-const PURP  = '#6c3aed';
-const PURP2 = '#8b5cf6';
-const TEXT  = '#ffffff';
-const MUTED = '#7c7aaa';
-const BORDER= '#2e2b5a';
+const BG    = '#ffffff';
+const CARD  = '#f9fafb';
+const PURP  = '#8b5cf6';
+const PURP2 = '#7c3aed';
+const TEXT  = '#111827';
+const MUTED = '#9ca3af';
+const BORDER= '#f3f4f6';
 const GREEN = '#22c55e';
 
 function timeAgo(iso: string) {
@@ -48,7 +48,7 @@ export default function MessagesScreen() {
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Text style={s.backTxt}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={s.title}>💬 Mesajlar</Text>
+        <Text style={s.title}>Sohbet</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -100,27 +100,27 @@ export default function MessagesScreen() {
 }
 
 const s = StyleSheet.create({
-  root:  { flex: 1, backgroundColor: BG },
-  header:{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: BORDER },
-  backBtn: { width: 60 },
-  backTxt: { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
-  title:   { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT },
+  root:  { flex: 1, backgroundColor: '#ffffff' },
+  header:{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', backgroundColor: '#fff' },
+  backBtn: { },
+  backTxt: { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
+  title:   { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: '#111827' },
 
   empty:      { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32 },
   emptyIcon:  { fontSize: 56 },
-  emptyTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: TEXT },
-  emptySub:   { fontFamily: 'Nunito-Regular', fontSize: 14, color: MUTED },
-  goFriends:  { backgroundColor: PURP, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12, marginTop: 8 },
-  goFriendsTxt: { fontFamily: 'Nunito-Bold', fontSize: 14, color: TEXT },
+  emptyTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#111827' },
+  emptySub:   { fontFamily: 'Nunito-Regular', fontSize: 14, color: '#9ca3af' },
+  goFriends:  { backgroundColor: '#8b5cf6', borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12, marginTop: 8 },
+  goFriendsTxt: { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff' },
 
-  row:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: BORDER, gap: 14 },
-  rowUnread:{ backgroundColor: PURP + '0d' },
+  row:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f9fafb', gap: 14, backgroundColor: '#fff' },
+  rowUnread:{ backgroundColor: '#faf5ff' },
   avatarWrap: { position: 'relative' },
-  badge:    { position: 'absolute', top: -4, right: -4, backgroundColor: '#ef4444', borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: BG },
-  badgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 10, color: TEXT },
+  badge:    { position: 'absolute', top: -4, right: -4, backgroundColor: '#ef4444', borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: '#fff' },
+  badgeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 10, color: '#fff' },
   rowContent: { flex: 1 },
   rowTop:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 },
-  friendName:{ fontFamily: 'Nunito-Bold', fontSize: 15, color: TEXT },
-  time:     { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
-  lastMsg:  { fontFamily: 'Nunito-Regular', fontSize: 13, color: MUTED },
+  friendName:{ fontFamily: 'Nunito-Bold', fontSize: 15, color: '#111827' },
+  time:     { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#9ca3af' },
+  lastMsg:  { fontFamily: 'Nunito-Regular', fontSize: 13, color: '#9ca3af' },
 });

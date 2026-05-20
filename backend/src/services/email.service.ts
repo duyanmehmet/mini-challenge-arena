@@ -15,24 +15,25 @@ const transporter = nodemailer.createTransport({
 export const emailService = {
   async sendPasswordReset(to: string, token: string): Promise<void> {
     // Deep link — uygulamayı doğrudan reset-password ekranında açar
-    const deepLink = `zekameydani://reset-password?token=${token}`;
-    const webFallback = `${process.env.APP_URL ?? "https://zekameydani.com"}/reset-password?token=${token}`;
+    const resetUrl = `${process.env.APP_URL ?? "https://minichallengearena.com"}/v1/auth/reset-password?token=${token}`;
     await transporter.sendMail({
-      from: `"Zeka Meydanı" <${process.env.EMAIL_USER}>`,
+      from: `"Mini Challenge Arena" <${process.env.EMAIL_USER}>`,
       to,
-      subject: "Şifre Sıfırlama",
+      subject: "Şifre Sıfırlama — Mini Challenge Arena",
       html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
-          <h2 style="color:#e94560">🧠 Zeka Meydanı</h2>
-          <p>Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
-          <a href="${deepLink}" style="display:inline-block;background:#e94560;color:#fff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:16px">
+        <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px;background:#f9fafb;border-radius:16px">
+          <h2 style="color:#6c3aed">🏆 Mini Challenge Arena</h2>
+          <p style="color:#374151">Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
+          <a href="${resetUrl}" style="display:inline-block;background:#6c3aed;color:#fff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:16px;margin:16px 0">
             🔑 Şifremi Sıfırla
           </a>
-          <p style="color:#888;font-size:12px;margin-top:16px">
+          <p style="color:#9ca3af;font-size:12px;margin-top:16px">
             Buton çalışmazsa şu bağlantıyı kopyalayın:<br>
-            <a href="${webFallback}" style="color:#e94560">${webFallback}</a>
+            <a href="${resetUrl}" style="color:#6c3aed">${resetUrl}</a>
           </p>
-          <p style="color:#888;font-size:12px">Bu bağlantı <strong>1 saat</strong> geçerlidir. Siz talep etmediyseniz bu e-postayı görmezden gelin.</p>
+          <p style="color:#9ca3af;font-size:12px">Bu bağlantı <strong>1 saat</strong> geçerlidir. Siz talep etmediyseniz bu e-postayı görmezden gelin.</p>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
+          <p style="color:#9ca3af;font-size:11px;text-align:center">Mini Challenge Arena · destek@minichallengearena.com</p>
         </div>
       `,
     });
@@ -40,12 +41,12 @@ export const emailService = {
 
   async sendVerificationCode(to: string, username: string, code: string): Promise<void> {
     await transporter.sendMail({
-      from: `"Zeka Meydanı" <${process.env.EMAIL_USER}>`,
+      from: `"Mini Challenge Arena" <${process.env.EMAIL_USER}>`,
       to,
       subject: `${code} — E-posta Doğrulama Kodu`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
-          <h2 style="color:#e94560">🧠 Zeka Meydanı</h2>
+          <h2 style="color:#e94560">🏆 Mini Challenge Arena</h2>
           <p>Merhaba <strong>${username}</strong>,</p>
           <p>E-posta adresinizi doğrulamak için aşağıdaki 6 haneli kodu kullanın:</p>
           <div style="background:#f4f4f4;border-radius:12px;padding:20px;text-align:center;margin:16px 0">

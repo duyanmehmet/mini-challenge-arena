@@ -6,14 +6,19 @@ import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
 import { userService } from '../src/services/user.service';
+import api from '../src/services/api';
 
 export default function SettingsScreen() {
   const { theme, setTheme, soundEnabled, toggleSound, vibrationEnabled, toggleVibration } = useSettingsStore();
-  const { user, logout } = useUserStore();
+  const { user, logout, updateUser } = useUserStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const [usernameModal, setUsernameModal] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [usernameLoading, setUsernameLoading] = useState(false);
 
   const C = Colors[theme];
 
@@ -25,6 +30,26 @@ export default function SettingsScreen() {
         onPress: () => { logout(); router.replace('/(auth)/login'); },
       },
     ]);
+  };
+
+  const handleChangeUsername = async () => {
+    const trimmed = newUsername.trim();
+    if (trimmed.length < 3 || trimmed.length > 20) {
+      Alert.alert('Hata', 'Kullanıcı adı 3-20 karakter olmalı.');
+      return;
+    }
+    setUsernameLoading(true);
+    try {
+      await api.patch('/user/profile', { username: trimmed });
+      updateUser({ username: trimmed });
+      setUsernameModal(false);
+      setNewUsername('');
+      Alert.alert('✅ Güncellendi!', 'Kullanıcı adın değiştirildi.');
+    } catch (e: any) {
+      Alert.alert('Hata', e?.response?.data?.message ?? 'İşlem başarısız.');
+    } finally {
+      setUsernameLoading(false);
+    }
   };
 
   const handleChangePassword = async () => {
@@ -58,6 +83,7 @@ export default function SettingsScreen() {
             <Text style={s.backText}>← Geri</Text>
           </TouchableOpacity>
           <Text style={s.title}>⚙️ Ayarlar</Text>
+          <View style={{ width: 70 }} />
         </View>
 
         <View style={s.section}>
@@ -96,16 +122,57 @@ export default function SettingsScreen() {
         <View style={s.section}>
           <Text style={s.sectionTitle}>Hesap</Text>
           {user && (
-            <View style={[s.infoRow, { backgroundColor: C.bgSecondary }]}>
+            <TouchableOpacity
+              style={[s.infoRow, { backgroundColor: C.bgSecondary }]}
+              onPress={() => { setNewUsername(user.username ?? ''); setUsernameModal(true); }}
+            >
               <Text style={[s.label, { color: C.textSecondary }]}>Kullanıcı adı</Text>
-              <Text style={[s.value, { color: C.textPrimary }]}>{user.username}</Text>
-            </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={[s.value, { color: C.textPrimary }]}>{user.username}</Text>
+                <Text style={{ color: C.textSecondary, fontSize: 12 }}>✏️</Text>
+              </View>
+            </TouchableOpacity>
           )}
           <TouchableOpacity style={[s.infoRow, { backgroundColor: C.bgSecondary }]} onPress={() => setModalVisible(true)}>
             <Text style={[s.label, { color: C.textPrimary }]}>🔑 Şifreyi Değiştir</Text>
             <Text style={{ color: C.textSecondary }}>›</Text>
           </TouchableOpacity>
         </View>
+
+        <Modal visible={usernameModal} transparent animationType="fade">
+          <View style={s.modalOverlay}>
+            <View style={[s.modalContent, { backgroundColor: C.bgSecondary }]}>
+              <Text style={s.modalTitle}>✏️ Kullanıcı Adı</Text>
+              <TextInput
+                style={[s.input, { borderColor: C.border }]}
+                placeholder="Yeni kullanıcı adı"
+                placeholderTextColor={C.textSecondary}
+                value={newUsername}
+                onChangeText={setNewUsername}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={20}
+              />
+              <Text style={{ color: C.textSecondary, fontSize: 11, marginTop: -8, marginBottom: 12 }}>
+                3-20 karakter, sadece harf, rakam ve alt çizgi
+              </Text>
+              <View style={s.modalButtons}>
+                <TouchableOpacity style={s.cancelBtn} onPress={() => setUsernameModal(false)}>
+                  <Text style={{ color: C.textSecondary }}>Vazgeç</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.confirmBtn, { backgroundColor: '#6c3aed', opacity: usernameLoading ? 0.6 : 1 }]}
+                  onPress={handleChangeUsername}
+                  disabled={usernameLoading}
+                >
+                  <Text style={{ color: '#fff', fontFamily: 'Nunito-Bold' }}>
+                    {usernameLoading ? '...' : 'Kaydet'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         <Modal visible={modalVisible} transparent animationType="fade">
           <View style={s.modalOverlay}>
@@ -139,9 +206,31 @@ export default function SettingsScreen() {
           </View>
         </Modal>
 
+        {/* Destek */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>Destek</Text>
+          <View style={[s.menuGroup, { borderColor: C.border }]}>
+            <TouchableOpacity
+              style={[s.menuRow, { borderBottomWidth: 1, borderBottomColor: C.border }]}
+              onPress={() => Linking.openURL('mailto:destek@minichallengeareana.com?subject=Yardım%20Merkezi')}
+            >
+              <Text style={[s.label, { color: C.textPrimary }]}>🙋 Yardım Merkezi</Text>
+              <Text style={{ color: C.textSecondary, fontSize: 18 }}>›</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.menuRow}
+              onPress={() => Linking.openURL(`mailto:destek@minichallengeareana.com?subject=Geri%20Bildirim&body=Kullanıcı:%20${user?.username ?? ''}`)}
+            >
+              <Text style={[s.label, { color: C.textPrimary }]}>💬 Geri Bildirim</Text>
+              <Text style={{ color: C.textSecondary, fontSize: 18 }}>›</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Hakkında */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>Hakkında</Text>
-          <Text style={[s.meta, { color: C.textSecondary }]}>Zeka Meydanı v1.0.0</Text>
+          <Text style={[s.meta, { color: C.textSecondary }]}>Mini Challenge Arena v1.0.0</Text>
           <TouchableOpacity onPress={() => router.push('/privacy-policy' as any)}>
             <Text style={[s.link, { color: C.accentTeal }]}>Gizlilik Politikası</Text>
           </TouchableOpacity>
@@ -184,10 +273,10 @@ export default function SettingsScreen() {
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bgPrimary },
-  header: { padding: 16, paddingTop: 8 },
-  back: { marginBottom: 4 },
-  backText: { color: C.textSecondary, fontFamily: 'Nunito-Regular', fontSize: 15 },
-  title: { color: C.textPrimary, fontSize: 22, fontFamily: 'Nunito-ExtraBold' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  back: { backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
+  backText: { color: '#fff', fontFamily: 'Nunito-Bold', fontSize: 14 },
+  title: { color: C.textPrimary, fontSize: 18, fontFamily: 'Nunito-ExtraBold', textAlign: 'center' },
   section: { paddingHorizontal: 16, marginBottom: 20 },
   sectionTitle: { color: C.textSecondary, fontFamily: 'Nunito-SemiBold', fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
@@ -198,6 +287,8 @@ const styles = (C: typeof Colors.dark) => StyleSheet.create({
   value: { fontFamily: 'Nunito-Regular', fontSize: 14 },
   meta: { fontFamily: 'Nunito-Regular', fontSize: 14, marginBottom: 8 },
   link: { fontFamily: 'Nunito-Regular', fontSize: 14, marginBottom: 6 },
+  menuGroup: { borderRadius: 14, borderWidth: 1, overflow: 'hidden', backgroundColor: C.bgSecondary },
+  menuRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
   logoutBtn: { marginHorizontal: 16, borderRadius: 12, padding: 16, borderWidth: 1.5, alignItems: 'center' },
   logoutText: { fontFamily: 'Nunito-Bold', fontSize: 15 },
   modalOverlay: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'center', padding: 24 },

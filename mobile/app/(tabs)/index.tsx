@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Dimensions, Animated, Easing,
@@ -49,10 +50,10 @@ function StreakBadge({ count }: { count: number }) {
     ])).start();
   }, []);
   return (
-    <View style={s.statChip}>
+    <TouchableOpacity style={s.statChip} onPress={() => router.push('/streak' as any)} activeOpacity={0.8}>
       <Animated.Text style={[{ fontSize: 16 }, { transform: [{ scale }] }]}>🔥</Animated.Text>
       <Text style={s.statNum}>{count}</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -217,8 +218,11 @@ export default function HomeScreen() {
           <View style={s.headerRight}>
             {user.streakCount > 0 && <StreakBadge count={user.streakCount} />}
             <CoinBadge amount={user.coins} onPress={() => router.push('/shop' as any)} />
+            <TouchableOpacity style={s.vipBtn} onPress={() => router.push('/vip' as any)} activeOpacity={0.8}>
+              <Text style={s.vipBtnTxt}>👑</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={s.msgBtn} onPress={() => router.push('/messages' as any)}>
-              <Text style={{ fontSize: 20 }}>💬</Text>
+              <Ionicons name="chatbubble-ellipses-outline" size={20} color="#6c3aed" />
               {unread > 0 && <View style={s.badge}><Text style={s.badgeTxt}>{unread > 9 ? '9+' : unread}</Text></View>}
             </TouchableOpacity>
           </View>
@@ -265,22 +269,28 @@ export default function HomeScreen() {
         {/* ── SMALL CARDS ── */}
         <View style={s.smallRow}>
           <AnimCard delay={240} style={{ flex: 1 }} onPress={() => router.push('/challenge' as any)}>
-            <LinearGradient colors={['#1c1c3a','#13132a']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.smallCard}>
-              <Text style={s.smallIcon}>🎯</Text>
+            <View style={s.smallCard}>
+              <View style={[s.smallIconWrap, { backgroundColor: '#fef3c7' }]}>
+                <Ionicons name="flag-outline" size={26} color="#f59e0b" />
+              </View>
               <Text style={s.smallTitle}>Challenge</Text>
               <Text style={s.smallSub}>Günlük liderlik</Text>
               <Text style={s.smallXP}>+100 XP</Text>
-            </LinearGradient>
+            </View>
           </AnimCard>
           <AnimCard delay={310} style={{ flex: 1 }} onPress={() => router.push('/antrenman' as any)}>
-            <LinearGradient colors={['#0a2a2a','#13132a']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.smallCard}>
-              <Text style={s.smallIcon}>📚</Text>
+            <View style={s.smallCard}>
+              <View style={[s.smallIconWrap, { backgroundColor: '#e0f2fe' }]}>
+                <Ionicons name="book-outline" size={26} color="#0ea5e9" />
+              </View>
               <Text style={s.smallTitle}>Antrenman</Text>
               <Text style={s.smallSub}>Kategori seç</Text>
               <Text style={[s.smallXP, { color: '#06b6d4' }]}>Serbest oyna</Text>
-            </LinearGradient>
+            </View>
           </AnimCard>
         </View>
+
+
 
         {/* ── GÜNLÜK GÖREVLER ── */}
         {dailyTasks && dailyTasks.length > 0 && (
@@ -325,8 +335,8 @@ export default function HomeScreen() {
 }
 
 const s = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: '#0d0d1a' },
-  scroll: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 20 },
+  root:   { flex: 1, backgroundColor: '#ffffff' },
+  scroll: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 20, backgroundColor: '#ffffff' },
 
   header:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   avatarBtn:  { position: 'relative' },
@@ -334,19 +344,19 @@ const s = StyleSheet.create({
   lvlTxt:     { color: '#fff', fontSize: 9, fontWeight: '900' },
   headerRight:{ flexDirection: 'row', alignItems: 'center', gap: 8 },
 
-  statChip:   { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1a1030', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 7, borderWidth: 1, borderColor: '#2e2b5a' },
+  statChip:   { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1e1b3a', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 7, borderWidth: 1, borderColor: '#2e2b5a' },
   statNum:    { color: '#fff', fontWeight: '900', fontSize: 14 },
 
-  coinChip:   { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1a1008', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 7, borderWidth: 1.5, borderColor: '#f59e0b88' },
+  coinChip:   { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1a1008', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 7, borderWidth: 1.5, borderColor: '#f59e0baa' },
   coinNum:    { color: '#fff', fontSize: 13, fontWeight: '900' },
   coinPlus:   { width: 16, height: 16, borderRadius: 8, backgroundColor: '#f59e0b', alignItems: 'center', justifyContent: 'center' },
   floatNum:   { position: 'absolute', top: -10, left: 20, color: '#f59e0b', fontSize: 13, fontWeight: '900', zIndex: 99 },
 
-  msgBtn:     { width: 38, height: 38, borderRadius: 19, backgroundColor: '#13132a', borderWidth: 1, borderColor: '#2e2b5a', alignItems: 'center', justifyContent: 'center' },
+  msgBtn:     { width: 38, height: 38, borderRadius: 19, backgroundColor: '#ede9fe', borderWidth: 1, borderColor: '#c4b5fd', alignItems: 'center', justifyContent: 'center' },
   badge:      { position: 'absolute', top: -4, right: -4, backgroundColor: '#ef4444', borderRadius: 9, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 2, borderColor: '#0d0d1a' },
   badgeTxt:   { color: '#fff', fontSize: 9, fontWeight: '900' },
 
-  sectionLabel: { color: '#fff', fontSize: 17, fontWeight: '900', marginBottom: 10 },
+  sectionLabel: { color: '#111827', fontSize: 17, fontWeight: '900', marginBottom: 10 },
 
   bigRow:   { flexDirection: 'row', gap: 10, marginBottom: 10 },
   bigCard:  { borderRadius: 22, padding: 16, minHeight: 200, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
@@ -372,20 +382,24 @@ const s = StyleSheet.create({
 
   // Small cards
   smallRow:  { flexDirection: 'row', gap: 10, marginBottom: 22 },
-  smallCard: { borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  smallCard: { borderRadius: 18, padding: 16, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#fff' },
+  smallIconWrap: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   smallIcon: { fontSize: 28, marginBottom: 8 },
-  smallTitle:{ color: '#fff', fontSize: 14, fontWeight: '900', marginBottom: 2 },
-  smallSub:  { color: '#7c7aaa', fontSize: 10, marginBottom: 8 },
+  smallTitle:{ color: '#111827', fontSize: 14, fontWeight: '900', marginBottom: 2 },
+  smallSub:  { color: '#9ca3af', fontSize: 10, marginBottom: 8 },
   smallXP:   { color: '#f59e0b', fontSize: 11, fontWeight: '800' },
+
+  vipBtn:    { width: 38, height: 38, borderRadius: 19, backgroundColor: '#fef3c7', borderWidth: 1.5, borderColor: '#f59e0b', alignItems: 'center', justifyContent: 'center' },
+  vipBtnTxt: { fontSize: 18 },
 
   // Tasks
   taskHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   tumumTxt:   { color: '#8b5cf6', fontSize: 13, fontWeight: '700' },
-  taskCard:   { backgroundColor: '#13132a', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#2e2b5a', marginBottom: 8 },
-  taskTitle:  { color: '#fff', fontSize: 12, fontWeight: '700', marginBottom: 5 },
-  taskBarBg:  { height: 5, backgroundColor: '#1e1b3a', borderRadius: 3, marginBottom: 3 },
+  taskCard:   { backgroundColor: '#fff', borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8 },
+  taskTitle:  { color: '#111827', fontSize: 12, fontWeight: '700', marginBottom: 5 },
+  taskBarBg:  { height: 5, backgroundColor: '#f3f4f6', borderRadius: 3, marginBottom: 3 },
   taskBarFill:{ height: 5, backgroundColor: '#6c3aed', borderRadius: 3 },
-  taskProg:   { color: '#7c7aaa', fontSize: 10 },
-  xpBadge:    { backgroundColor: 'rgba(245,158,11,0.15)', borderRadius: 9, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(245,158,11,0.4)' },
+  taskProg:   { color: '#9ca3af', fontSize: 10 },
+  xpBadge:    { backgroundColor: 'rgba(245,158,11,0.12)', borderRadius: 9, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, borderColor: 'rgba(245,158,11,0.35)' },
   xpBadgeTxt: { color: '#f59e0b', fontSize: 10, fontWeight: '800' },
 });

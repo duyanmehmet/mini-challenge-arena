@@ -176,7 +176,7 @@ function StatCol({ label, value }: { label: string; value: string }) {
 const s = StyleSheet.create({
   root:  { flex: 1, backgroundColor: BG },
   back:  { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
-  backTxt: { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
+  backTxt: { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
 
   inner: { flex: 1, paddingHorizontal: 20, paddingTop: 16, gap: 14 },
 

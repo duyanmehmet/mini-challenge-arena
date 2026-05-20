@@ -216,17 +216,17 @@ export default function MatchmakingScreen() {
 }
 
 const s = StyleSheet.create({
-  root:       { flex: 1, backgroundColor: BG },
+  root:       { flex: 1, backgroundColor: '#ffffff' },
   cancelBtn:  { padding: 16, alignSelf: 'flex-end' },
-  cancelTxt:  { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
+  cancelTxt:  { fontFamily: 'Nunito-Regular', fontSize: 15, color: '#9ca3af' },
   center:     { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
   radar:      { width: 200, height: 200, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  radarCore:  { width: 90, height: 90, borderRadius: 45, backgroundColor: '#1a1040', alignItems: 'center', justifyContent: 'center',
-                shadowColor: PURP2, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 20, elevation: 10 },
-  searchTxt:  { fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: TEXT },
-  elapsed:    { fontFamily: 'Nunito-Regular', fontSize: 13, color: MUTED },
-  stakeBadge: { backgroundColor: GOLD + '22', borderRadius: 20, paddingHorizontal: 18, paddingVertical: 8, borderWidth: 1, borderColor: GOLD + '66' },
-  stakeTxt:   { fontFamily: 'Nunito-Bold', fontSize: 14, color: GOLD },
+  radarCore:  { width: 90, height: 90, borderRadius: 45, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center',
+                shadowColor: PURP2, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 8, borderWidth: 2, borderColor: '#ede9fe' },
+  searchTxt:  { fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: '#111827' },
+  elapsed:    { fontFamily: 'Nunito-Regular', fontSize: 13, color: '#9ca3af' },
+  stakeBadge: { backgroundColor: '#fef9c3', borderRadius: 20, paddingHorizontal: 18, paddingVertical: 8, borderWidth: 1, borderColor: '#fde68a' },
+  stakeTxt:   { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#d97706' },
 });
 
 const vs = StyleSheet.create({

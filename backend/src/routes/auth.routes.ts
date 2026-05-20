@@ -225,7 +225,93 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
   }
 });
 
-// ── Şifre sıfırlama onay ──
+// ── Şifre sıfırlama — tarayıcıda HTML form (e-posta linkinden gelir) ──
+router.get("/reset-password", async (req, res) => {
+  const { token } = req.query as { token?: string };
+
+  const errorHtml = (msg: string) => res.send(`
+    <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Hata — Mini Challenge Arena</title>
+    <style>body{font-family:sans-serif;background:#0d0d1a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+    .box{background:#13132a;border-radius:20px;padding:32px;max-width:400px;width:90%;text-align:center}
+    h2{color:#ef4444}p{color:#9ca3af;line-height:1.6}</style></head>
+    <body><div class="box"><h2>❌ Hata</h2><p>${msg}</p></div></body></html>
+  `);
+
+  if (!token) return errorHtml("Geçersiz bağlantı. Lütfen yeni bir sıfırlama isteği gönderin.");
+
+  try {
+    const user = await db("users").where("reset_token", token).first();
+    if (!user) return errorHtml("Bu bağlantı geçersiz veya daha önce kullanılmış.");
+    if (user.reset_token_expires && new Date(user.reset_token_expires) < new Date())
+      return errorHtml("Bu bağlantının süresi dolmuş. Lütfen yeni bir sıfırlama isteği gönderin.");
+
+    res.send(`
+      <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>Şifre Sıfırla — Mini Challenge Arena</title>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:sans-serif;background:#0d0d1a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh}
+        .box{background:#13132a;border-radius:20px;padding:32px;max-width:420px;width:90%}
+        h2{color:#8b5cf6;margin-bottom:8px;font-size:22px}
+        p{color:#7c7aaa;font-size:14px;margin-bottom:24px}
+        label{display:block;color:#c4b5fd;font-size:13px;margin-bottom:6px}
+        input{width:100%;background:#0d0d1a;border:1.5px solid #2e2b5a;border-radius:12px;padding:14px;color:#fff;font-size:16px;margin-bottom:16px;outline:none}
+        input:focus{border-color:#8b5cf6}
+        button{width:100%;background:#6c3aed;color:#fff;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:4px}
+        button:hover{background:#7c3aed}
+        .success{background:#13132a;border-radius:20px;padding:32px;max-width:420px;width:90%;text-align:center}
+        .success h2{color:#22c55e;margin-bottom:12px}
+        .success p{color:#7c7aaa}
+        .err{color:#ef4444;font-size:13px;margin-top:-8px;margin-bottom:12px;display:none}
+      </style></head>
+      <body>
+        <div class="box" id="formBox">
+          <h2>🔑 Şifre Sıfırla</h2>
+          <p>Mini Challenge Arena hesabın için yeni şifreni belirle.</p>
+          <label>Yeni Şifre</label>
+          <input type="password" id="pw1" placeholder="En az 6 karakter" />
+          <label>Şifre Tekrar</label>
+          <input type="password" id="pw2" placeholder="Şifreyi tekrar gir" />
+          <div class="err" id="errMsg"></div>
+          <button onclick="submit()">Şifremi Güncelle</button>
+        </div>
+        <div class="success" id="successBox" style="display:none">
+          <h2>✅ Başarılı!</h2>
+          <p>Şifren güncellendi.<br>Uygulamayı açıp giriş yapabilirsin.</p>
+        </div>
+        <script>
+          async function submit() {
+            const pw1 = document.getElementById('pw1').value;
+            const pw2 = document.getElementById('pw2').value;
+            const err = document.getElementById('errMsg');
+            err.style.display = 'none';
+            if (pw1.length < 6) { err.textContent = 'Şifre en az 6 karakter olmalı.'; err.style.display='block'; return; }
+            if (pw1 !== pw2) { err.textContent = 'Şifreler eşleşmiyor.'; err.style.display='block'; return; }
+            const res = await fetch(window.location.origin + '/v1/auth/reset-password', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ token: '${token}', newPassword: pw1 })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              document.getElementById('formBox').style.display = 'none';
+              document.getElementById('successBox').style.display = 'block';
+            } else {
+              err.textContent = data.message ?? 'Bir hata oluştu.';
+              err.style.display = 'block';
+            }
+          }
+        </script>
+      </body></html>
+    `);
+  } catch {
+    errorHtml("Sunucu hatası. Lütfen tekrar deneyin.");
+  }
+});
+
+// ── Şifre sıfırlama onay (API — uygulama içinden) ──
 router.post("/reset-password", authLimiter, async (req, res) => {
   const { token, newPassword } = req.body;
   if (!token || !newPassword || newPassword.length < 6)

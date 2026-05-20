@@ -72,13 +72,10 @@ router.get("/daily-tasks", authMiddleware, async (req: AuthRequest, res) => {
 
     const tasks = await db("daily_tasks")
       .where({ user_id: req.userId, date: new Date().toISOString().slice(0, 10) })
-      .select("task_type","task_description","current_value","target_value","coin_reward","xp_reward","is_completed");
+      .select("id","task_type","task_description","current_value","target_value","coin_reward","xp_reward","is_completed")
+      .orderBy("is_completed", "asc");
 
-    res.json(tasks.map((r: any) => ({
-      taskType: r.task_type, description: r.task_description,
-      currentValue: r.current_value, targetValue: r.target_value,
-      coinReward: r.coin_reward, xpReward: r.xp_reward, isCompleted: r.is_completed,
-    })));
+    res.json(tasks);
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
@@ -115,6 +112,36 @@ router.get("/friend-stats/:friendId", authMiddleware, async (req: AuthRequest, r
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
+// ── Günlük giriş ödülü ───────────────────────────────────────────────
+router.post("/daily-login", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const user = await db("users").where("id", req.userId).select("id","coins","streak_count","last_login_at").first();
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+
+    const now   = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const lastLogin = user.last_login_at ? new Date(user.last_login_at).toISOString().slice(0, 10) : null;
+
+    if (lastLogin === today) return res.json({ alreadyClaimed: true });
+
+    const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+    const yestStr   = yesterday.toISOString().slice(0, 10);
+    const isStreak  = lastLogin === yestStr;
+    const newStreak = isStreak ? (user.streak_count ?? 0) + 1 : 1;
+
+    // Ödül: seri uzadıkça artar
+    const coinReward = newStreak >= 7 ? 100 : newStreak >= 3 ? 50 : 25;
+
+    await db("users").where("id", req.userId).update({
+      last_login_at: now.toISOString(),
+      streak_count:  newStreak,
+      coins:         db.raw(`coins + ${coinReward}`),
+    });
+
+    return res.json({ alreadyClaimed: false, coinReward, newStreak });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
 router.post("/push-token", authMiddleware, async (req: AuthRequest, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ message: "Token gerekli." });
@@ -125,6 +152,65 @@ router.post("/push-token", authMiddleware, async (req: AuthRequest, res) => {
 });
 
 // Hesap silme (KVKK)
+// ── POST /buy-streak-freeze — 100 coin ile bugünkü seriyi dondur ────
+router.post("/buy-streak-freeze", authMiddleware, async (req: AuthRequest, res) => {
+  const COST = 100;
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const user = await db("users")
+      .where("id", req.userId)
+      .select("coins", "streak_freeze_date", "streak_count")
+      .first();
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+    if ((user.coins ?? 0) < COST)
+      return res.status(400).json({ message: "Yetersiz altın. 100 🪙 gerekli." });
+    if (user.streak_freeze_date === today)
+      return res.status(400).json({ message: "Bugün için zaten bir dondurman var." });
+
+    await db("users").where("id", req.userId).update({
+      coins: db.raw(`coins - ${COST}`),
+      streak_freeze_date: today,
+    });
+
+    const updated = await db("users").where("id", req.userId).select("coins").first();
+    return res.json({ coins: updated.coins, freezeDate: today, streakCount: user.streak_count });
+  } catch {
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
+// ── GET /streak-history — seri takvimi için oynanmış günler ─────────
+router.get("/streak-history", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const user = await db("users")
+      .where("id", req.userId)
+      .select("streak_count", "max_streak", "last_played_date", "streak_freeze_date")
+      .first();
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+
+    // Son 90 günde oynanmış benzersiz tarihler
+    const rows = await db("game_results")
+      .where("user_id", req.userId)
+      .whereRaw("played_at >= date('now', '-90 days')")
+      .select(db.raw("DATE(played_at) as played_date"))
+      .groupByRaw("DATE(played_at)")
+      .orderBy("played_date", "desc");
+
+    const playedDates: string[] = rows.map((r: any) => r.played_date);
+
+    return res.json({
+      streakCount:     user.streak_count ?? 0,
+      maxStreak:       user.max_streak ?? 0,
+      lastPlayedDate:  user.last_played_date ?? null,
+      freezeDate:      user.streak_freeze_date ?? null,
+      playedDates,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
 router.delete("/account", authMiddleware, async (req: AuthRequest, res) => {
   try {
     const userId = req.userId!;

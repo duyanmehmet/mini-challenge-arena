@@ -2,8 +2,6 @@ import { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { useSettingsStore } from '../src/store/settingsStore';
-import { Colors } from '../src/constants/colors';
 import api from '../src/services/api';
 
 interface DailyTask {
@@ -17,18 +15,38 @@ interface DailyTask {
   is_completed: boolean;
 }
 
-export default function TasksScreen() {
-  const { theme } = useSettingsStore();
-  const C = Colors[theme];
-  const s = styles(C);
+const TASK_ICONS: Record<string, string> = {
+  play_count:     '🎮',
+  score_any:      '⭐',
+  score_history:  '🏺',
+  score_science:  '🔬',
+  score_sports:   '⚽',
+  score_geography:'🌍',
+  score_cinema:   '🎬',
+  score_general:  '💡',
+  score_turkey:   '🇹🇷',
+  score_economy:  '📈',
+  score_art:      '🎨',
+  score_medical:  '🩺',
+  score_license:  '🚗',
+  score_kids:     '🧒',
+  word_count:     '📝',
+};
 
-  const [tasks, setTasks] = useState<DailyTask[]>([]);
+export default function TasksScreen() {
+  const [tasks,   setTasks]   = useState<DailyTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(false);
 
   useFocusEffect(useCallback(() => {
+    setLoading(true);
+    setError(false);
     api.get('/daily-tasks/today')
-      .then(r => setTasks(r.data ?? []))
-      .catch(() => {})
+      .then(r => {
+        setTasks(r.data ?? []);
+        setError(false);
+      })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []));
 
@@ -36,79 +54,90 @@ export default function TasksScreen() {
   const allDone = tasks.length > 0 && completedCount === tasks.length;
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.root}>
+      {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={[s.back, { color: C.textSecondary }]}>←</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={s.back}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={[s.title, { color: C.textPrimary }]}>📋 Günlük Görevler</Text>
-        <View style={{ width: 32 }} />
+        <Text style={s.title}>Günlük Görevler</Text>
+        <View style={{ width: 70 }} />
       </View>
 
       {/* Özet */}
-      <View style={[s.summaryBar, { backgroundColor: C.bgSecondary }]}>
-        <Text style={[s.summaryText, { color: C.textSecondary }]}>
+      <View style={s.summaryBar}>
+        <Text style={s.summaryTxt}>
           {allDone ? '🎉 Tüm görevleri tamamladın!' : `${completedCount}/${tasks.length} tamamlandı`}
         </Text>
-        <View style={[s.progressTrack, { backgroundColor: C.bgTertiary }]}>
-          <View style={[s.progressFill, {
-            backgroundColor: allDone ? C.success : C.accentTeal,
-            width: tasks.length ? `${(completedCount / tasks.length) * 100}%` : '0%',
+        <View style={s.track}>
+          <View style={[s.trackFill, {
+            width: tasks.length ? `${(completedCount / tasks.length) * 100}%` as any : '0%',
+            backgroundColor: allDone ? '#22c55e' : '#6c3aed',
           }]} />
         </View>
       </View>
 
       {loading ? (
-        <ActivityIndicator color={C.accentTeal} style={{ marginTop: 40 }} />
+        <ActivityIndicator color="#6c3aed" size="large" style={{ marginTop: 60 }} />
+      ) : error ? (
+        <View style={s.emptyWrap}>
+          <Text style={{ fontSize: 48 }}>⚠️</Text>
+          <Text style={s.emptyTitle}>Bağlantı Hatası</Text>
+          <Text style={s.emptySub}>Backend'e bağlanılamadı. Sunucunun çalıştığından emin ol.</Text>
+        </View>
+      ) : tasks.length === 0 ? (
+        <View style={s.emptyWrap}>
+          <Text style={{ fontSize: 48 }}>📋</Text>
+          <Text style={s.emptyTitle}>Görev Bulunamadı</Text>
+          <Text style={s.emptySub}>Görevler yüklenemedi. Çıkıp tekrar gir.</Text>
+        </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} showsVerticalScrollIndicator={false}>
-          {tasks.map((task) => {
-            const pct = Math.min((task.current_value / task.target_value) * 100, 100);
+        <ScrollView contentContainerStyle={s.list} showsVerticalScrollIndicator={false}>
+          {tasks.map(task => {
+            const pct  = Math.min((task.current_value / task.target_value) * 100, 100);
+            const icon = TASK_ICONS[task.task_type] ?? '🎯';
             return (
-              <View key={task.id} style={[s.card, {
-                backgroundColor: C.bgSecondary,
-                borderColor: task.is_completed ? C.success : C.border,
-                borderWidth: task.is_completed ? 1.5 : 1,
-                opacity: task.is_completed ? 0.75 : 1,
-              }]}>
+              <View key={task.id ?? task.task_type} style={[s.card, task.is_completed && s.cardDone]}>
                 <View style={s.cardTop}>
-                  <Text style={[s.cardDesc, { color: C.textPrimary }]}>
-                    {task.is_completed ? '✅ ' : '🎯 '}{task.task_description}
-                  </Text>
+                  <View style={[s.iconWrap, { backgroundColor: task.is_completed ? '#d1fae5' : '#ede9fe' }]}>
+                    <Text style={{ fontSize: 22 }}>{task.is_completed ? '✅' : icon}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.desc, task.is_completed && { color: '#6b7280' }]} numberOfLines={2}>
+                      {task.task_description}
+                    </Text>
+                    <View style={s.barBg}>
+                      <View style={[s.barFill, {
+                        width: `${pct}%` as any,
+                        backgroundColor: task.is_completed ? '#22c55e' : '#6c3aed',
+                      }]} />
+                    </View>
+                    <Text style={s.progress}>
+                      {task.current_value.toLocaleString('tr-TR')} / {task.target_value.toLocaleString('tr-TR')}
+                    </Text>
+                  </View>
                 </View>
 
-                {/* Progress bar */}
-                <View style={[s.bar, { backgroundColor: C.bgTertiary }]}>
-                  <View style={[s.barFill, {
-                    width: `${pct}%`,
-                    backgroundColor: task.is_completed ? C.success : C.accentTeal,
-                  }]} />
-                </View>
-                <View style={s.cardBottom}>
-                  <Text style={[s.progress, { color: C.textSecondary }]}>
-                    {task.current_value.toLocaleString('tr-TR')} / {task.target_value.toLocaleString('tr-TR')}
-                  </Text>
-                  <View style={s.rewards}>
-                    <Text style={[s.reward, { color: '#f0c040' }]}>🪙 +{task.coin_reward}</Text>
-                    <Text style={[s.reward, { color: C.accentTeal }]}>⚡ +{task.xp_reward} XP</Text>
+                <View style={s.rewards}>
+                  <View style={s.rewardChip}>
+                    <Text style={s.rewardTxt}>🪙 +{task.coin_reward}</Text>
                   </View>
+                  <View style={[s.rewardChip, { backgroundColor: '#e0f2fe' }]}>
+                    <Text style={[s.rewardTxt, { color: '#0284c7' }]}>⚡ +{task.xp_reward} XP</Text>
+                  </View>
+                  {task.is_completed && (
+                    <View style={[s.rewardChip, { backgroundColor: '#d1fae5' }]}>
+                      <Text style={[s.rewardTxt, { color: '#059669' }]}>Tamamlandı ✓</Text>
+                    </View>
+                  )}
                 </View>
               </View>
             );
           })}
 
-          {tasks.length === 0 && (
-            <View style={{ alignItems: 'center', marginTop: 60, gap: 12 }}>
-              <Text style={{ fontSize: 48 }}>📋</Text>
-              <Text style={[s.cardDesc, { color: C.textSecondary, textAlign: 'center' }]}>
-                Görevler yüklenemedi.{'\n'}İnternet bağlantını kontrol et.
-              </Text>
-            </View>
-          )}
-
-          <View style={[s.infoBox, { backgroundColor: C.bgSecondary }]}>
-            <Text style={[s.infoText, { color: C.textSecondary }]}>
-              💡 Görevler her gün sıfırlanır. Kategorileri oynayarak görevleri tamamla ve ödüllerini kazan!
+          <View style={s.infoBox}>
+            <Text style={s.infoTxt}>
+              💡 Görevler her gün sıfırlanır. Lig, Antrenman ve Challenge oynayarak görevleri tamamla!
             </Text>
           </View>
           <View style={{ height: 20 }} />
@@ -118,24 +147,38 @@ export default function TasksScreen() {
   );
 }
 
-const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: C.bgPrimary },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  back:         { fontSize: 22 },
-  title:        { fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
-  summaryBar:   { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
-  summaryText:  { fontFamily: 'Nunito-Bold', fontSize: 13 },
-  progressTrack:{ height: 6, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
-  card:         { borderRadius: 16, padding: 16, gap: 10 },
-  cardTop:      { flexDirection: 'row', alignItems: 'flex-start' },
-  cardDesc:     { fontFamily: 'Nunito-Bold', fontSize: 14, flex: 1, lineHeight: 20 },
-  bar:          { height: 8, borderRadius: 4, overflow: 'hidden' },
-  barFill:      { height: '100%', borderRadius: 4 },
-  cardBottom:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  progress:     { fontFamily: 'Nunito-Regular', fontSize: 12 },
-  rewards:      { flexDirection: 'row', gap: 10 },
-  reward:       { fontFamily: 'Nunito-Bold', fontSize: 13 },
-  infoBox:      { borderRadius: 14, padding: 14 },
-  infoText:     { fontFamily: 'Nunito-Regular', fontSize: 12, lineHeight: 18, textAlign: 'center' },
+const s = StyleSheet.create({
+  root:   { flex: 1, backgroundColor: '#ffffff' },
+
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  back:   { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
+  title:  { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#111827' },
+
+  summaryBar: { paddingHorizontal: 16, paddingVertical: 12, gap: 8, backgroundColor: '#f9fafb', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  summaryTxt: { fontFamily: 'Nunito-Bold', fontSize: 13, color: '#374151' },
+  track:      { height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' },
+  trackFill:  { height: 6, borderRadius: 3 },
+
+  list: { padding: 16, gap: 12 },
+
+  emptyWrap:  { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32 },
+  emptyTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: '#111827' },
+  emptySub:   { fontFamily: 'Nunito-Regular', fontSize: 14, color: '#9ca3af', textAlign: 'center', lineHeight: 22 },
+
+  card: { backgroundColor: '#fff', borderRadius: 18, padding: 14, gap: 12, borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 },
+  cardDone: { borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' },
+
+  cardTop:  { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  iconWrap: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  desc:     { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#111827', marginBottom: 8, lineHeight: 20 },
+  barBg:    { height: 6, backgroundColor: '#f3f4f6', borderRadius: 3, overflow: 'hidden', marginBottom: 4 },
+  barFill:  { height: 6, borderRadius: 3 },
+  progress: { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#9ca3af' },
+
+  rewards:    { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  rewardChip: { backgroundColor: '#fef9c3', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
+  rewardTxt:  { fontFamily: 'Nunito-Bold', fontSize: 12, color: '#d97706' },
+
+  infoBox: { backgroundColor: '#f9fafb', borderRadius: 14, padding: 14, marginTop: 4 },
+  infoTxt: { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#6b7280', textAlign: 'center', lineHeight: 18 },
 });

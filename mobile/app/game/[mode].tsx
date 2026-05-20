@@ -13,13 +13,14 @@ import api from '../../src/services/api';
 const QUIZ_CATEGORIES: CategoryId[] = [
   'history','geography','science','general','art','cinema','sports','turkey',
   'kids','license','medical','economy',
-  'arabic','french','german','spanish',
+  'arabic','french','german','spanish','english',
 ];
 
 export default function GameScreen() {
-  const { mode, challengeId, ligMode } = useLocalSearchParams<{
-    mode: string; challengeId?: string; ligMode?: string;
+  const { mode, challengeId, ligMode, antrenmanMode } = useLocalSearchParams<{
+    mode: string; challengeId?: string; ligMode?: string; antrenmanMode?: string;
   }>();
+  const isAntrenman = antrenmanMode === '1';
   const { startGame, endGame, pauseGame, resumeGame } = useGameStore();
   const { theme } = useSettingsStore();
   const C = Colors[theme];
@@ -84,6 +85,7 @@ export default function GameScreen() {
           ligFailed: failed ? '1' : '0',
           ligWrong:  String(wrongCount.current),
         } : {}),
+        ...(isAntrenman ? { antrenmanMode: '1' } : {}),
       },
     });
   };
@@ -119,7 +121,7 @@ export default function GameScreen() {
   // Kalp 0 — oyna butonu engelli
   if (heartBlocked) {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: '#0d0d1a' }]}>
+      <SafeAreaView style={[s.safe, { backgroundColor: '#ffffff' }]}>
         <View style={s.blockedWrap}>
           <Text style={{ fontSize: 64 }}>🖤🖤🖤🖤🖤</Text>
           <Text style={s.blockedTitle}>Kalplerin Bitti!</Text>
@@ -136,7 +138,7 @@ export default function GameScreen() {
   }
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: '#0d0d1a' }]}>
+    <SafeAreaView style={[s.safe, { backgroundColor: '#ffffff' }]}>
       <View style={{ flex: 1 }}>
         {!paused && isQuizMode && (
           <QuizMode
@@ -144,7 +146,8 @@ export default function GameScreen() {
             onEnd={handleEnd}
             onPause={handlePause}
             catIcon={catCfg?.icon}
-            lives={isLigMode ? (ligHearts ?? 5) : undefined}
+            lives={isLigMode ? (ligHearts ?? 5) : isAntrenman ? 999 : undefined}
+            questionCount={isAntrenman ? 15 : undefined}
             onLifeLost={isLigMode ? handleLifeLost : undefined}
           />
         )}
