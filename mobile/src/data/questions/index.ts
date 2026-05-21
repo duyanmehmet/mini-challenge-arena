@@ -43,31 +43,50 @@ export function getQuestions(categoryId: CategoryId): QuizQuestion[] {
   return QUESTION_BANKS[categoryId] ?? [];
 }
 
+// Fisher-Yates — güvenli karıştırma
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export function getShuffledQuestions(categoryId: CategoryId): QuizQuestion[] {
-  return [...getQuestions(categoryId)].sort(() => Math.random() - 0.5);
+  return shuffle(getQuestions(categoryId));
 }
 
 /**
- * Rotasyon tabanlı adaptif soru seçimi.
- * Her oyunda farklı bir grup soru öne çıkar — kullanıcı hep yeni sorularla karşılaşır.
- * playCount: kaç kez bu kategoride oynandığı (userStore.categoryPlayCounts[categoryId])
+ * Her oyunda farklı sorular gelir.
+ * playCount: kaç kez bu kategoride oynandığı — her oyunda başlangıç noktasını kaydırır.
+ * Hem rotasyon hem karıştırma kullanır — soru bankası büyüdükçe çeşitlilik artar.
  */
 export function getAdaptiveQuestions(categoryId: CategoryId, playCount: number): QuizQuestion[] {
   const all = getQuestions(categoryId);
   if (all.length === 0) return [];
 
-  // Zorluk içinde hafif karıştır (sabit seed yok, her oynayışta biraz farklı)
-  const byDifficulty = [...all].sort((a, b) => {
-    const diff = (a.d ?? 2) - (b.d ?? 2);
-    return diff !== 0 ? diff : Math.random() - 0.5;
-  });
+  // Bankayı 3 zorluk grubuna ayır
+  const easy   = shuffle(all.filter(q => (q.d ?? 2) <= 1));
+  const medium = shuffle(all.filter(q => (q.d ?? 2) === 2 || (q.d ?? 2) === 3));
+  const hard   = shuffle(all.filter(q => (q.d ?? 2) >= 4));
 
-  // Her oynayışta başlangıç noktasını kaydır (20 soru atlama)
-  const STEP = 20;
-  const startIdx = (playCount * STEP) % byDifficulty.length;
+  // Her oyun için: 3 kolay + 5 orta + 2 zor (10 soru lig/duel için ideal)
+  // Pool'u rotasyon + shuffle ile seç — playCount ile başlangıcı kaydır
+  const BLOCK = 15;
+  const offset = (playCount * BLOCK) % Math.max(medium.length, 1);
 
-  // Rotasyon: startIdx'ten başla, sona ulaşınca başa dön
-  return [...byDifficulty.slice(startIdx), ...byDifficulty.slice(0, startIdx)];
+  const easyPick  = [...easy.slice(offset % Math.max(easy.length, 1)),   ...easy].slice(0, easy.length);
+  const medPick   = [...medium.slice(offset), ...medium.slice(0, offset)];
+  const hardPick  = [...hard.slice(offset % Math.max(hard.length, 1)),   ...hard].slice(0, hard.length);
+
+  // Tüm soruları karıştır: kolay → orta → zor sıralaması kabaca korunur ama her oyun farklı
+  return [...easyPick, ...medPick, ...hardPick];
+}
+
+/** Belirli sayıda rastgele soru — düello turları için */
+export function getRandomQuestions(categoryId: CategoryId, count: number): QuizQuestion[] {
+  return shuffle(getQuestions(categoryId)).slice(0, count);
 }
 
 /** Tüm kategorilerden karışık n soru döndürür (Klasik Tur için) */

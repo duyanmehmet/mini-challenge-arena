@@ -40,17 +40,15 @@ export default function AuthScreen() {
   const [loading, setLoading]   = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  // Google OAuth
-  const redirectUri = AuthSession.makeRedirectUri({
-    useProxy: true,
-    projectNameForProxy: '@duyanmehmet/zekameydani',
-  } as any);
+  // Google OAuth — redirect URI Google Cloud Console'daki ile birebir aynı olmalı
+  const redirectUri = 'https://auth.expo.io/@duyanmehmet/zekameydani';
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId:     GOOGLE_CLIENT_ID,
     androidClientId: GOOGLE_CLIENT_ID,
     iosClientId:     GOOGLE_CLIENT_ID,
     redirectUri,
+    scopes: ['openid', 'profile', 'email'],
   });
 
   useEffect(() => {

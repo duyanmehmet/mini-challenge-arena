@@ -134,6 +134,12 @@ export default function ResultScreen() {
     }
     if (mode) incrementCategoryPlayCount(mode);
 
+    // Reklam — lig: her 2 oyunda 1, antrenman: her 3 oyunda 1
+    if (!isLigFailed) {
+      if (isLig)       admobService.maybeShowInterstitial('lig').catch(() => {});
+      if (isAntrenman) admobService.maybeShowInterstitial('antrenman').catch(() => {});
+    }
+
     if (!isLigFailed && isNewRecord) {
       assetService.playSound('levelup');
       const updated = personalBests.filter(p => p.mode !== mode);

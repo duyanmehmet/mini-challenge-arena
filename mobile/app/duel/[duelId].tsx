@@ -38,7 +38,8 @@ const WHEEL_SEGS = [
   { id: 'general',   label: 'Genel',    icon: '💡', color: '#8e44ad' },
   { id: 'turkey',    label: 'Türkiye',  icon: '🇹🇷', color: '#dc2626' },
   { id: 'economy',   label: 'Ekonomi',  icon: '📈', color: '#2ecc71' },
-  { id: '2x',        label: '2X PUAN', icon: '⭐', color: '#f59e0b' },
+  { id: 'fun',       label: 'Eğlence',  icon: '🎉', color: '#f97316' },
+  { id: '2x',        label: '2X PUAN',  icon: '⭐', color: '#f59e0b' },
   { id: 'joker',     label: 'JOKER',    icon: '🃏', color: '#7c3aed' },
 ];
 const WHEEL_SIZE   = width - 80;

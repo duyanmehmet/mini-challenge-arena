@@ -5,11 +5,11 @@ import { getSeedQuestions } from '../data/questions';
 import { pushService } from '../services/push.service';
 
 // ── Çark segmentleri ─────────────────────────────────────────────────
-const WHEEL_CATEGORIES = ['history', 'science', 'sports', 'geography', 'cinema', 'general', 'turkey', 'economy'];
+const WHEEL_CATEGORIES = ['history', 'science', 'sports', 'geography', 'cinema', 'general', 'turkey', 'economy', 'fun'];
 const WHEEL_SEGMENTS = [
   ...WHEEL_CATEGORIES.map((id, i) => ({ id, type: 'category' as const, segmentIndex: i })),
-  { id: '2x',    type: 'special' as const, segmentIndex: 8 },
-  { id: 'joker', type: 'special' as const, segmentIndex: 9 },
+  { id: '2x',    type: 'special' as const, segmentIndex: 9 },
+  { id: 'joker', type: 'special' as const, segmentIndex: 10 },
 ];
 
 function spinWheel(): { segmentId: string; segmentIndex: number; category: string; is2x: boolean } {
@@ -143,7 +143,7 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
         const spin = spinWheel();
         return {
           ...spin,
-          questions: getSeedQuestions(spin.category, Math.floor(Date.now() / 86400000), 3),
+          questions: getSeedQuestions(spin.category, Date.now() + Math.floor(Math.random() * 999983), 3),
           answers: new Map(),
         };
       });

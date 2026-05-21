@@ -1,11 +1,25 @@
 import { Platform } from 'react-native';
 
-// Test ID'leri — yayına almadan önce gerçek ID ile değiştir
+// Test ID'leri — yayına almadan önce gerçek AdMob ID ile değiştir
 const REWARDED_ID = Platform.select({
-  android: 'ca-app-pub-3940256099942544/5224354917', // Google test
-  ios:     'ca-app-pub-3940256099942544/1712485313', // Google test
+  android: 'ca-app-pub-3940256099942544/5224354917',
+  ios:     'ca-app-pub-3940256099942544/1712485313',
   default: 'ca-app-pub-3940256099942544/5224354917',
 });
+
+export const BANNER_ID = Platform.select({
+  android: __DEV__ ? 'ca-app-pub-3940256099942544/6300978111' : 'ca-app-pub-XXXX/XXXX',
+  ios:     __DEV__ ? 'ca-app-pub-3940256099942544/2934735716' : 'ca-app-pub-XXXX/XXXX',
+  default: 'ca-app-pub-3940256099942544/6300978111',
+});
+
+// Oyun sayaçları — interstitial göstermek için
+const counters: Record<string, number> = {};
+
+function shouldShowInterstitial(key: string, every: number): boolean {
+  counters[key] = (counters[key] ?? 0) + 1;
+  return counters[key] % every === 0;
+}
 
 type RewardCallback = () => void;
 
@@ -58,6 +72,14 @@ export const admobService = {
       }
       return false;
     }
+  },
+
+  // Antrenman: her 3 oyunda 1, Lig: her 2 oyunda 1
+  async maybeShowInterstitial(mode: 'antrenman' | 'lig', isVip = false): Promise<void> {
+    if (isVip) return;
+    const every = mode === 'lig' ? 2 : 3;
+    if (!shouldShowInterstitial(mode, every)) return;
+    await this.showInterstitial();
   },
 
   async showInterstitial(): Promise<void> {

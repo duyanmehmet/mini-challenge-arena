@@ -1,14 +1,15 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Share } from 'react-native';
 import {
   View, Text, StyleSheet, FlatList, ActivityIndicator,
-  ScrollView, Animated, Dimensions,
+  ScrollView, Animated, Dimensions, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { useUserStore } from '../../src/store/userStore';
 import { Avatar } from '../../src/components/ui/Avatar';
 import api from '../../src/services/api';
+import { BANNER_ID } from '../../src/services/admob.service';
 
 const { width } = Dimensions.get('window');
 
@@ -270,7 +271,33 @@ export default function SiralamaScreen() {
           <View style={{ height: 32 }} />
         </Animated.ScrollView>
       )}
+
+      {/* Banner reklam — ekranın en altında */}
+      <BannerAdView />
     </SafeAreaView>
+  );
+}
+
+function BannerAdView() {
+  const [BannerAd, setBannerAd] = useState<any>(null);
+  const [BannerAdSize, setBannerAdSize] = useState<any>(null);
+
+  useEffect(() => {
+    import('react-native-google-mobile-ads').then(m => {
+      setBannerAd(() => m.BannerAd);
+      setBannerAdSize(m.BannerAdSize);
+    }).catch(() => {});
+  }, []);
+
+  if (!BannerAd || !BannerAdSize) return null;
+  return (
+    <View style={{ alignItems: 'center', backgroundColor: '#f9fafb', borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingVertical: 4 }}>
+      <BannerAd
+        unitId={BANNER_ID ?? ''}
+        size={BannerAdSize.BANNER}
+        requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+      />
+    </View>
   );
 }
 
