@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "build": "tsc",
-    "start": "node dist/app.js",
+    "start": "npx ts-node src/app.ts",
     "migrate": "echo 'Migrations run at startup'",
     "seed": "ts-node seeds/seed.ts"
   },
