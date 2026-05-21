@@ -88,6 +88,14 @@ cron.schedule("0 21 * * 0", async () => {
 });
 
 async function main() {
+  // Startup migrations
+  try {
+    await db.migrate.latest();
+    console.log("✅ Migrations tamamlandı");
+  } catch (err) {
+    console.warn("⚠️ Migration hatası:", err);
+  }
+
   try {
     await connectRedis();
   } catch {
