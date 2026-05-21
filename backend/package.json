@@ -5,7 +5,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
-    "migrate": "ts-node migrations/migrate.ts",
+    "migrate": "npx knex migrate:latest",
     "seed": "ts-node seeds/seed.ts"
   },
   "dependencies": {
