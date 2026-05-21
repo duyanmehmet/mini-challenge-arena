@@ -30,6 +30,7 @@ const io = new Server(httpServer, { cors: { origin: "*", methods: ["GET","POST"]
 
 setupSocket(io);
 
+app.set('trust proxy', 1); // Railway/Railway reverse proxy
 app.use(cors({ origin: "*", methods: ["GET","POST","PATCH","DELETE"] }));
 app.use(express.json());
 app.use("/v1", apiLimiter);

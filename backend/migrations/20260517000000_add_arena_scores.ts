@@ -4,7 +4,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('arena_scores', (t) => {
     t.string('id').primary();
     t.string('arena_id').notNullable();
-    t.string('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
+    t.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     t.integer('score').defaultTo(0);
     t.integer('correct_answers').defaultTo(0);
     t.integer('total_questions').defaultTo(10);

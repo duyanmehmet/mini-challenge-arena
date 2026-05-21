@@ -3,7 +3,7 @@ import type { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('email_verifications', (t) => {
     t.string('id').primary();
-    t.string('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
+    t.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     t.string('code', 6).notNullable();
     t.timestamp('expires_at').notNullable();
     t.boolean('used').defaultTo(false);
