@@ -92,15 +92,14 @@ export default function GameScreen() {
 
   const handleEnd = () => goToResult(failedRef.current);
 
-  // Yanlış cevap → sadece local say, sunucuya toplu göndereceğiz
+  // Yanlış cevap → her seferinde 1 can düş
   const handleLifeLost = () => {
     wrongCount.current += 1;
-    const next = (ligHearts ?? 5) - wrongCount.current;
-    setLigHearts(Math.max(0, next));
-    if (next <= 0) {
-      failedRef.current = true;
-      // QuizMode zaten onEnd çağıracak
-    }
+    setLigHearts(prev => {
+      const next = Math.max(0, (prev ?? 5) - 1);
+      if (next <= 0) failedRef.current = true;
+      return next;
+    });
   };
 
   const handlePause  = () => { setPaused(true);  pauseGame(); };
