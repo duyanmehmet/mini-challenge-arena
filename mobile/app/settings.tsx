@@ -212,14 +212,14 @@ export default function SettingsScreen() {
           <View style={[s.menuGroup, { borderColor: C.border }]}>
             <TouchableOpacity
               style={[s.menuRow, { borderBottomWidth: 1, borderBottomColor: C.border }]}
-              onPress={() => Linking.openURL('mailto:destek@minichallengeareana.com?subject=Yardım%20Merkezi')}
+              onPress={() => router.push('/help' as any)}
             >
               <Text style={[s.label, { color: C.textPrimary }]}>🙋 Yardım Merkezi</Text>
               <Text style={{ color: C.textSecondary, fontSize: 18 }}>›</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={s.menuRow}
-              onPress={() => Linking.openURL(`mailto:destek@minichallengeareana.com?subject=Geri%20Bildirim&body=Kullanıcı:%20${user?.username ?? ''}`)}
+              onPress={() => router.push('/feedback' as any)}
             >
               <Text style={[s.label, { color: C.textPrimary }]}>💬 Geri Bildirim</Text>
               <Text style={{ color: C.textSecondary, fontSize: 18 }}>›</Text>

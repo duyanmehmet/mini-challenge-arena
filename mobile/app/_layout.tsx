@@ -222,6 +222,8 @@ export default function RootLayout() {
           <Stack.Screen name="friend/[userId]"  options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="privacy-policy"   options={{ animation: 'slide_from_right', animationDuration: 260 }} />
           <Stack.Screen name="terms-of-service" options={{ animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="help"             options={{ animation: 'slide_from_right', animationDuration: 260 }} />
+          <Stack.Screen name="feedback"         options={{ animation: 'slide_from_right', animationDuration: 260 }} />
         </Stack>
       </View>
     </ErrorBoundary>
