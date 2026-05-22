@@ -19,7 +19,7 @@ async function sendMail(to: string, subject: string, html: string): Promise<void
   }
   const transporter = createTransporter();
   await transporter.sendMail({
-    from: '"Mini Challenge Arena" <noreply@minichallengearena.com>',
+    from: `"Mini Challenge Arena" <${process.env.BREVO_USER}>`,
     to,
     subject,
     html,
