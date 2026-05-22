@@ -89,7 +89,7 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       await authService.register(username.trim(), email.trim().toLowerCase(), password, avatarId);
-      router.replace({ pathname: '/(auth)/verify-email', params: { email: email.trim().toLowerCase() } });
+      router.replace('/(tabs)');
     } catch (e: any) {
       Alert.alert('Kayıt Başarısız', e.response?.data?.message ?? 'Tekrar dene.');
     } finally { setLoading(false); }
