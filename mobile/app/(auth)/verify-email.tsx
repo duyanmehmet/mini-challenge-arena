@@ -193,6 +193,6 @@ const s = StyleSheet.create({
   resend: { marginBottom: 12 },
   resendText: { fontFamily: 'Nunito-Regular', fontSize: 14, color: PURP2, textDecorationLine: 'underline' },
 
-  skip: { marginTop: 4 },
-  skipText: { fontFamily: 'Nunito-Regular', fontSize: 13, color: MUTED },
+  skip: { marginTop: 12, paddingVertical: 10, paddingHorizontal: 24 },
+  skipText: { fontFamily: 'Nunito-Bold', fontSize: 16, color: MUTED },
 });
