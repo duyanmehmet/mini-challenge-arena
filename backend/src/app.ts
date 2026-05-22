@@ -1,10 +1,10 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cron from "node-cron";
-import "./database"; // Knex + Objection başlat
+import "./database";
 import db from "./database";
 import { connectRedis } from "./redis";
 import { apiLimiter } from "./middleware/rateLimit.middleware";
@@ -19,19 +19,22 @@ import clanRoutes from "./routes/clan.routes";
 import battlepassRoutes from "./routes/battlepass.routes";
 import dailyTaskRoutes from "./routes/dailytask.routes";
 import { setupSocket } from "./socket";
-import ligRoutes      from "./routes/lig.routes";
+import ligRoutes, { processLigReset } from "./routes/lig.routes";
 import messagesRoutes from "./routes/messages.routes";
 
 dotenv.config();
 
+const isProd = process.env.NODE_ENV === "production";
+const log = (...args: any[]) => { if (!isProd) console.log(...args); };
+
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: "*", methods: ["GET","POST"] } });
+const io = new Server(httpServer, { cors: { origin: "*", methods: ["GET", "POST"] } });
 
 setupSocket(io);
 
-app.set('trust proxy', 1); // Railway/Railway reverse proxy
-app.use(cors({ origin: "*", methods: ["GET","POST","PATCH","DELETE"] }));
+app.set("trust proxy", 1);
+app.use(cors({ origin: "*", methods: ["GET", "POST", "PATCH", "DELETE"] }));
 app.use(express.json());
 app.use("/v1", apiLimiter);
 
@@ -46,11 +49,11 @@ app.use("/v1/clan",        clanRoutes);
 app.use("/v1/battlepass",  battlepassRoutes);
 app.use("/v1/daily-tasks", dailyTaskRoutes);
 app.use("/v1/lig",         ligRoutes);
-app.use("/v1/messages",   messagesRoutes);
+app.use("/v1/messages",    messagesRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 
-// Haftalık özet bildirimi — Cumartesi 20:00 TR (17:00 UTC)
+// ── Haftalık özet bildirimi — Cumartesi 20:00 TR ─────────────────
 cron.schedule("0 17 * * 6", async () => {
   try {
     const topUsers = await db("users")
@@ -76,34 +79,32 @@ cron.schedule("0 17 * * 6", async () => {
   } catch (err) { console.error("Haftalık özet hatası:", err); }
 });
 
-// Haftalık lig sıfırlama — Her Pazartesi 00:00 TR (UTC+3 = 21:00 UTC Pazar)
+// ── Haftalık lig sıfırlama — Pazartesi 00:00 TR ──────────────────
 cron.schedule("0 21 * * 0", async () => {
   try {
     const { LeagueResetService } = await import("./services/LeagueResetService");
     await LeagueResetService.processWeeklyReset();
-    // Lig tier terfi/düşme
-    const { processLigReset } = await import("./routes/lig.routes");
     await processLigReset(db);
-    console.log("✅ Haftalık lig sıfırlama ve terfi tamamlandı");
   } catch (err) { console.error("League reset error:", err); }
 });
 
 async function main() {
-  // Startup migrations
   try {
     await db.migrate.latest();
-    console.log("✅ Migrations tamamlandı");
+    log("✅ Migrations OK");
   } catch (err) {
-    console.warn("⚠️ Migration hatası:", err);
+    console.error("⚠️ Migration hatası:", err);
   }
 
   try {
     await connectRedis();
+    log("✅ Redis OK");
   } catch {
-    console.warn("Redis bağlanamadı, önbellek devre dışı.");
+    log("Redis bağlanamadı, önbellek devre dışı.");
   }
+
   const PORT = parseInt(process.env.PORT ?? "3000");
-  httpServer.listen(PORT, () => console.log(`MCA Backend: http://localhost:${PORT}`));
+  httpServer.listen(PORT, () => log(`MCA Backend: http://localhost:${PORT}`));
 }
 
 main().catch(console.error);

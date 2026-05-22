@@ -1,4 +1,4 @@
-﻿{
+{
   "cli": {
     "version": ">= 5.9.1"
   },
@@ -17,6 +17,9 @@
     },
     "production": {
       "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://mini-challenge-arena-production.up.railway.app/v1"
       }
@@ -26,11 +29,11 @@
     "production": {
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
-        "track": "internal"
+        "track": "production"
       },
       "ios": {
-        "appleId": "your@apple.com",
-        "ascAppId": "YOUR_APP_ID"
+        "appleId": "duyanmehmet183@gmail.com",
+        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID"
       }
     }
   }

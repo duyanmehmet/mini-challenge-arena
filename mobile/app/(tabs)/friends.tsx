@@ -77,7 +77,13 @@ export default function FriendsScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <Text style={s.title}>👥 Arkadaşlar</Text>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Text style={s.backTxt}>← Geri</Text>
+        </TouchableOpacity>
+        <Text style={s.title}>👥 Arkadaşlar</Text>
+        <View style={{ width: 70 }} />
+      </View>
 
       {/* Arama Barı */}
       <View style={s.searchSection}>
@@ -178,8 +184,11 @@ export default function FriendsScreen() {
 }
 
 const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#ffffff' },
-  title: { color: '#111827', fontSize: 22, fontFamily: 'Nunito-ExtraBold', padding: 16, paddingBottom: 8 },
+  safe:    { flex: 1, backgroundColor: '#ffffff' },
+  header:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  backBtn: { backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
+  backTxt: { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff' },
+  title:   { color: '#111827', fontSize: 18, fontFamily: 'Nunito-ExtraBold', textAlign: 'center' },
   searchSection: { paddingHorizontal: 16, marginBottom: 16 },
   input: {
     borderRadius: 14, padding: 14, fontSize: 14, borderWidth: 1,

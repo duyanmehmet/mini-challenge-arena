@@ -60,9 +60,7 @@ class SocketService {
         });
       });
 
-      this.socket.on('connect',       () => console.log(`✅ Socket bağlandı: ${API_URL}`));
-      this.socket.on('disconnect',    () => console.log('🔌 Socket koptu'));
-      this.socket.on('connect_error', (err) => console.warn('❌ Socket hatası:', err.message));
+      this.socket.on('connect_error', () => {});
 
       this.connecting = false;
       return this.socket;
