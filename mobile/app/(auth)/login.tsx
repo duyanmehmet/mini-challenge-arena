@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
-  ScrollView, Dimensions,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -12,9 +12,9 @@ import { authService } from '../../src/services/auth.service';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const GOOGLE_CLIENT_ID = '74921537013-lr1636vf8ljjho8t63alr6dcolm4pg1o.apps.googleusercontent.com';
-
-const { width } = Dimensions.get('window');
+const GOOGLE_WEB_CLIENT_ID     = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? '';
+const GOOGLE_IOS_CLIENT_ID     = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '';
 
 const BG     = '#ffffff';
 const CARD   = '#ffffff';
@@ -24,7 +24,6 @@ const PURP   = '#6c3aed';
 const PURP2  = '#8b5cf6';
 const TEXT   = '#111827';
 const MUTED  = '#9ca3af';
-const LAVAND = '#a78bfa';
 
 const AVATARS = ['🐺', '🦊', '🐯', '🦁', '🐻', '🐼', '🦝', '🐨', '🦄', '🐲'];
 
@@ -40,32 +39,30 @@ export default function AuthScreen() {
   const [loading, setLoading]   = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  // Google OAuth — redirect URI Google Cloud Console'daki ile birebir aynı olmalı
-  const redirectUri = 'https://auth.expo.io/@duyanmehmet/zekameydani';
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'zekameydani', path: 'auth' });
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId:     GOOGLE_CLIENT_ID,
-    androidClientId: GOOGLE_CLIENT_ID,
-    iosClientId:     GOOGLE_CLIENT_ID,
-    redirectUri,
+    webClientId:     GOOGLE_WEB_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID || GOOGLE_WEB_CLIENT_ID,
+    iosClientId:     GOOGLE_IOS_CLIENT_ID     || GOOGLE_WEB_CLIENT_ID,
     scopes: ['openid', 'profile', 'email'],
   });
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { authentication } = response;
-      if (authentication?.accessToken) {
-        handleGoogleSuccess(authentication.accessToken);
-      }
+      if (authentication?.accessToken) handleGoogleSuccess(authentication.accessToken);
     } else if (response?.type === 'error') {
-      Alert.alert('Hata', 'Google ile giriş başarısız.');
+      Alert.alert(
+        'Google Girişi Başarısız',
+        'Google ile giriş şu an kullanılamıyor.\nE-posta ve şifrenizle giriş yapabilirsiniz.',
+      );
     }
   }, [response]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      Alert.alert('Eksik Bilgi', 'E-posta ve şifre giriniz.');
-      return;
+      Alert.alert('Eksik Bilgi', 'E-posta ve şifre giriniz.'); return;
     }
     setLoading(true);
     try {
@@ -102,9 +99,7 @@ export default function AuthScreen() {
       router.replace('/(tabs)');
     } catch (e: any) {
       Alert.alert('Hata', e.response?.data?.message ?? 'Google ile giriş başarısız.');
-    } finally {
-      setGoogleLoading(false);
-    }
+    } finally { setGoogleLoading(false); }
   };
 
   const switchMode = () => {
@@ -114,106 +109,95 @@ export default function AuthScreen() {
 
   return (
     <View style={s.root}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={s.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* ── Header: Beyin + Marka ── */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+          {/* Logo */}
           <View style={s.header}>
-            <View style={s.iconRing}>
-              <Text style={s.iconEmoji}>🧠</Text>
+            <View style={s.logoWrap}>
+              <Text style={s.logoEmoji}>🧠</Text>
             </View>
-            <Text style={s.brandTitle}>ZEKA MEYDANI</Text>
-            <Text style={s.welcome}>
-              {mode === 'login' ? 'Hoş Geldin!' : 'Hesap Oluştur'}
-            </Text>
+            <Text style={s.brand}>ZEKA MEYDANI</Text>
+            <Text style={s.title}>{mode === 'login' ? 'Hoş Geldin!' : 'Hesap Oluştur'}</Text>
             <Text style={s.sub}>
-              {mode === 'login'
-                ? 'Devam etmek için giriş yap.'
-                : 'Ücretsiz, 1 dakikada hazır.'}
+              {mode === 'login' ? 'Devam etmek için giriş yap.' : 'Ücretsiz, 1 dakikada hazır.'}
             </Text>
           </View>
 
-          {/* ── Form Alanı ── */}
+          {/* Form */}
           <View style={s.form}>
 
-            {/* Kullanıcı adı (yalnızca kayıt) */}
             {mode === 'register' && (
-              <TextInput
-                style={s.input}
-                placeholder="Kullanıcı Adı"
-                placeholderTextColor={MUTED}
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                autoCorrect={false}
-                maxLength={20}
-              />
+              <View style={s.inputWrap}>
+                <Text style={s.inputLabel}>Kullanıcı Adı</Text>
+                <TextInput
+                  style={s.input}
+                  placeholder="en az 3 karakter"
+                  placeholderTextColor={MUTED}
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  maxLength={20}
+                />
+              </View>
             )}
 
-            {/* E-posta */}
-            <TextInput
-              style={s.input}
-              placeholder="E-posta"
-              placeholderTextColor={MUTED}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-
-            {/* Şifre */}
-            <View style={s.passRow}>
+            <View style={s.inputWrap}>
+              <Text style={s.inputLabel}>E-posta</Text>
               <TextInput
-                style={s.passInput}
-                placeholder="Şifre"
+                style={s.input}
+                placeholder="ornek@mail.com"
                 placeholderTextColor={MUTED}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPass}
-                returnKeyType="done"
-                onSubmitEditing={mode === 'login' ? handleLogin : handleRegister}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
               />
-              <TouchableOpacity onPress={() => setShowPass(v => !v)} style={s.eyeBtn}>
-                <Text style={{ fontSize: 18 }}>{showPass ? '🙈' : '👁️'}</Text>
-              </TouchableOpacity>
             </View>
 
-            {/* Şifremi Unuttum */}
+            <View style={s.inputWrap}>
+              <Text style={s.inputLabel}>Şifre</Text>
+              <View style={s.passRow}>
+                <TextInput
+                  style={s.passInput}
+                  placeholder={mode === 'register' ? 'en az 6 karakter' : '••••••••'}
+                  placeholderTextColor={MUTED}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPass}
+                  returnKeyType="done"
+                  onSubmitEditing={mode === 'login' ? handleLogin : handleRegister}
+                />
+                <TouchableOpacity onPress={() => setShowPass(v => !v)} style={s.eyeBtn}>
+                  <Text style={{ fontSize: 18 }}>{showPass ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {mode === 'login' && (
-              <TouchableOpacity
-                onPress={() => router.push('/(auth)/forgot-password')}
-                style={s.forgotRow}
-              >
+              <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')} style={s.forgotRow}>
                 <Text style={s.forgotText}>Şifremi Unuttum?</Text>
               </TouchableOpacity>
             )}
 
-            {/* Avatar seçimi (kayıt) */}
+            {/* Avatar seçimi */}
             {mode === 'register' && (
-              <>
-                <Text style={s.avatarLabel}>Avatar Seç</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                  {AVATARS.map((emoji, i) => {
-                    const selected = avatarId === i + 1;
-                    return (
-                      <TouchableOpacity
-                        key={i}
-                        style={[s.avatarItem, selected && s.avatarSelected]}
-                        onPress={() => setAvatarId(i + 1)}
-                      >
-                        <Text style={{ fontSize: 28 }}>{emoji}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+              <View style={s.inputWrap}>
+                <Text style={s.inputLabel}>Avatar Seç</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
+                  {AVATARS.map((emoji, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={[s.avatarItem, avatarId === i + 1 && s.avatarSelected]}
+                      onPress={() => setAvatarId(i + 1)}
+                    >
+                      <Text style={{ fontSize: 26 }}>{emoji}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </ScrollView>
-              </>
+              </View>
             )}
 
             {/* Ana Buton */}
@@ -225,9 +209,7 @@ export default function AuthScreen() {
             >
               {loading
                 ? <ActivityIndicator color="#fff" />
-                : <Text style={s.primaryBtnText}>
-                    {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
-                  </Text>}
+                : <Text style={s.primaryBtnText}>{mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}</Text>}
             </TouchableOpacity>
 
             {/* Divider */}
@@ -237,28 +219,35 @@ export default function AuthScreen() {
               <View style={s.divLine} />
             </View>
 
-            {/* Sosyal Giriş */}
+            {/* Google */}
             <TouchableOpacity
-              style={[s.socialBtn, (!request || googleLoading) && { opacity: 0.6 }]}
-              onPress={() => promptAsync()}
-              disabled={!request || googleLoading}
+              style={[s.socialBtn, { opacity: googleLoading ? 0.6 : 1 }]}
+              onPress={() => {
+                if (!GOOGLE_WEB_CLIENT_ID) {
+                  Alert.alert('Yapılandırılmamış', 'Google girişi henüz aktif değil.\nE-posta ve şifrenizle giriş yapabilirsiniz.');
+                  return;
+                }
+                promptAsync();
+              }}
+              disabled={googleLoading}
               activeOpacity={0.8}
             >
               {googleLoading
                 ? <ActivityIndicator color={TEXT} size="small" />
                 : <>
-                    <Text style={s.socialIcon}>G</Text>
+                    <Text style={[s.socialIcon, { color: '#4285F4', fontFamily: 'Nunito-ExtraBold' }]}>G</Text>
                     <Text style={s.socialText}>Google ile Devam Et</Text>
                   </>
               }
             </TouchableOpacity>
 
+            {/* Apple */}
             <TouchableOpacity
               style={s.socialBtn}
-              onPress={() => Alert.alert('Yakında', 'Apple ile giriş çok yakında!')}
+              onPress={() => Alert.alert('Yakında', 'Apple ile giriş çok yakında eklenecek!')}
               activeOpacity={0.8}
             >
-              <Text style={s.socialIcon}></Text>
+              <Text style={[s.socialIcon, { fontSize: 20 }]}>🍎</Text>
               <Text style={s.socialText}>Apple ile Devam Et</Text>
             </TouchableOpacity>
 
@@ -272,6 +261,17 @@ export default function AuthScreen() {
               </Text>
             </TouchableOpacity>
 
+            {/* Gizlilik */}
+            <View style={s.legalRow}>
+              <TouchableOpacity onPress={() => router.push('/privacy-policy' as any)}>
+                <Text style={s.legalLink}>Gizlilik Politikası</Text>
+              </TouchableOpacity>
+              <Text style={s.legalDot}>·</Text>
+              <TouchableOpacity onPress={() => router.push('/terms-of-service' as any)}>
+                <Text style={s.legalLink}>Kullanım Koşulları</Text>
+              </TouchableOpacity>
+            </View>
+
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -280,186 +280,86 @@ export default function AuthScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG },
+  root:   { flex: 1, backgroundColor: BG },
+  scroll: { flexGrow: 1, paddingBottom: 40 },
 
-  scroll: {
-    flexGrow: 1,
-    paddingBottom: 40,
+  // Header
+  header: { alignItems: 'center', paddingTop: 56, paddingBottom: 32, paddingHorizontal: 24 },
+  logoWrap: {
+    width: 88, height: 88, borderRadius: 44,
+    backgroundColor: '#160d30',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: PURP2, shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9, shadowRadius: 20, elevation: 12,
+    borderWidth: 1.5, borderColor: '#4c1d95',
   },
+  logoEmoji: { fontSize: 48 },
+  brand: {
+    fontFamily: 'Nunito-ExtraBold', fontSize: 20,
+    color: TEXT, letterSpacing: 3, marginBottom: 8,
+  },
+  title: { fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: TEXT, marginBottom: 6 },
+  sub:   { fontFamily: 'Nunito-Regular', fontSize: 14, color: MUTED, textAlign: 'center' },
 
-  // ── Header ──
-  header: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 28,
-  },
-  iconRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#1a1040',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 24,
-    elevation: 12,
-    borderWidth: 1.5,
-    borderColor: '#4c1d95',
-  },
-  iconEmoji: { fontSize: 52 },
-  brandTitle: {
-    fontFamily: 'Nunito-ExtraBold',
-    fontSize: 22,
-    color: TEXT,
-    letterSpacing: 4,
-    marginBottom: 6,
-  },
-  welcome: {
-    fontFamily: 'Nunito-ExtraBold',
-    fontSize: 20,
-    color: TEXT,
-    marginBottom: 6,
-  },
-  sub: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 14,
-    color: MUTED,
-  },
-
-  // ── Form ──
-  form: {
-    paddingHorizontal: 28,
-  },
+  // Form
+  form: { paddingHorizontal: 24 },
+  inputWrap:  { marginBottom: 16 },
+  inputLabel: { fontFamily: 'Nunito-Bold', fontSize: 12, color: MUTED, marginBottom: 6, letterSpacing: 0.5, textTransform: 'uppercase' },
   input: {
-    backgroundColor: INPUT,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: BORDER,
-    color: TEXT,
-    fontFamily: 'Nunito-Regular',
-    fontSize: 15,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    marginBottom: 14,
+    backgroundColor: INPUT, borderRadius: 14,
+    borderWidth: 1.5, borderColor: BORDER,
+    color: TEXT, fontFamily: 'Nunito-Regular', fontSize: 15,
+    paddingHorizontal: 16, paddingVertical: 14,
   },
   passRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: INPUT,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: BORDER,
-    marginBottom: 8,
-    paddingRight: 12,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: INPUT, borderRadius: 14,
+    borderWidth: 1.5, borderColor: BORDER, paddingRight: 12,
   },
   passInput: {
-    flex: 1,
-    color: TEXT,
-    fontFamily: 'Nunito-Regular',
-    fontSize: 15,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
+    flex: 1, color: TEXT, fontFamily: 'Nunito-Regular',
+    fontSize: 15, paddingHorizontal: 16, paddingVertical: 14,
   },
   eyeBtn: { padding: 4 },
 
-  forgotRow: { alignSelf: 'flex-end', marginBottom: 22, marginTop: 4 },
-  forgotText: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 13,
-    color: LAVAND,
-  },
+  forgotRow: { alignSelf: 'flex-end', marginBottom: 20, marginTop: -8 },
+  forgotText: { fontFamily: 'Nunito-Regular', fontSize: 13, color: PURP2 },
 
-  avatarLabel: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 13,
-    color: MUTED,
-    marginBottom: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
   avatarItem: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: INPUT,
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    marginRight: 10,
+    width: 50, height: 50, borderRadius: 25,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: INPUT, borderWidth: 1.5, borderColor: BORDER, marginRight: 10,
   },
-  avatarSelected: {
-    borderColor: PURP2,
-    backgroundColor: PURP + '33',
-  },
+  avatarSelected: { borderColor: PURP2, backgroundColor: PURP + '33' },
 
-  // ── Butonlar ──
+  // Butonlar
   primaryBtn: {
-    backgroundColor: PURP,
-    borderRadius: 14,
-    paddingVertical: 17,
-    alignItems: 'center',
-    shadowColor: PURP2,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 8,
-    marginBottom: 20,
+    backgroundColor: PURP, borderRadius: 14, paddingVertical: 16,
+    alignItems: 'center', marginTop: 4, marginBottom: 20,
+    shadowColor: PURP2, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5, shadowRadius: 14, elevation: 8,
   },
-  primaryBtnText: {
-    fontFamily: 'Nunito-ExtraBold',
-    fontSize: 17,
-    color: '#fff',
-  },
+  primaryBtnText: { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: '#fff' },
 
-  // ── Divider ──
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 10,
-  },
+  divider: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 10 },
   divLine: { flex: 1, height: 1, backgroundColor: BORDER },
   divText: { fontFamily: 'Nunito-Regular', fontSize: 13, color: MUTED },
 
-  // ── Sosyal ──
   socialBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: CARD,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: BORDER,
-    paddingVertical: 15,
-    marginBottom: 12,
-    gap: 10,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: CARD, borderRadius: 14,
+    borderWidth: 1.5, borderColor: BORDER,
+    paddingVertical: 14, marginBottom: 12, gap: 10,
   },
-  socialIcon: {
-    fontSize: 18,
-    color: TEXT,
-    fontFamily: 'Nunito-ExtraBold',
-    width: 24,
-    textAlign: 'center',
-  },
-  socialText: {
-    fontFamily: 'Nunito-Bold',
-    fontSize: 15,
-    color: TEXT,
-  },
+  socialIcon: { fontSize: 18, width: 24, textAlign: 'center' },
+  socialText: { fontFamily: 'Nunito-Bold', fontSize: 15, color: TEXT },
 
-  // ── Geçiş ──
-  switchRow: { alignItems: 'center', marginTop: 8 },
-  switchText: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 14,
-    color: MUTED,
-  },
-  switchLink: {
-    fontFamily: 'Nunito-ExtraBold',
-    color: LAVAND,
-  },
+  switchRow: { alignItems: 'center', marginTop: 8, marginBottom: 16 },
+  switchText: { fontFamily: 'Nunito-Regular', fontSize: 14, color: MUTED },
+  switchLink: { fontFamily: 'Nunito-ExtraBold', color: PURP2 },
+
+  legalRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 4 },
+  legalLink: { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
+  legalDot:  { color: MUTED, fontSize: 12 },
 });

@@ -11,8 +11,8 @@ const CARD  = '#ffffff';
 const PURP  = '#6c3aed';
 const PURP2 = '#8b5cf6';
 const TEXT  = '#111827';
-const MUTED = '#7c7aaa';
-const BORDER= '#2e2b5a';
+const MUTED = '#9ca3af';
+const BORDER= '#e5e7eb';
 
 export default function VerifyEmailScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
@@ -89,12 +89,12 @@ export default function VerifyEmailScreen() {
       style={s.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={s.inner}>
-        {/* Geri */}
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Text style={s.backTxt}>← Geri</Text>
-        </TouchableOpacity>
+      {/* Header */}
+      <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+        <Text style={s.backTxt}>← Geri</Text>
+      </TouchableOpacity>
 
+      <View style={s.inner}>
         <Text style={s.emoji}>📧</Text>
         <Text style={s.title}>E-posta Doğrulama</Text>
 
@@ -165,7 +165,7 @@ const s = StyleSheet.create({
   root:  { flex: 1, backgroundColor: BG },
   inner: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
 
-  backBtn: { position: 'absolute', top: 16, left: 16 },
+  backBtn: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, alignSelf: 'flex-start' },
   backTxt: { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
 
   emoji: { fontSize: 64, marginBottom: 16 },
