@@ -17,6 +17,7 @@ import { Colors } from '../src/constants/colors';
 import { socketService } from '../src/services/socket.service';
 import { Alert, View, Text, StyleSheet } from 'react-native';
 import { SplashScreenView } from '../src/components/ui/SplashScreenView';
+import { DailyLoginModal } from '../src/components/ui/DailyLoginModal';
 import { CATEGORIES } from '../src/constants/categories';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { notificationService } from '../src/services/notification.service';
@@ -35,8 +36,9 @@ export default function RootLayout() {
 
   const { theme } = useSettingsStore();
   const { isAuthenticated, loadAuth } = useUserStore();
-  const [authLoaded, setAuthLoaded] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
+  const [authLoaded, setAuthLoaded]   = useState(false);
+  const [isOffline,  setIsOffline]    = useState(false);
+  const [dailyReward, setDailyReward] = useState<{ coins: number; streak: number } | null>(null);
   const segments = useSegments();
   const router = useRouter();
 
@@ -54,6 +56,17 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
+
+    // Profil senkronizasyonu — avatarId ve diğer sunucu verilerini tazele
+    import('../src/services/user.service').then(({ userService }) => {
+      userService.getProfile().then(data => {
+        const store = useUserStore.getState();
+        store.updateUser(data.user);
+        store.setBadges(data.badges);
+        store.setPersonalBests(data.personalBests);
+      }).catch(() => {});
+    });
+
     const initNotifications = async () => {
       try {
         const token = await notificationService.registerForPushNotificationsAsync();
@@ -67,15 +80,7 @@ export default function RootLayout() {
     import('../src/services/api').then(({ default: api }) => {
       api.post('/user/daily-login').then(r => {
         if (!r.data.alreadyClaimed) {
-          const streak = r.data.newStreak;
-          const coins  = r.data.coinReward;
-          import('react-native').then(({ Alert }) => {
-            Alert.alert(
-              streak >= 7 ? '🔥 7 Günlük Seri!' : `🎁 Günlük Ödül!`,
-              `+${coins} 🪙 coin kazandın!\n${streak >= 2 ? `${streak} günlük seri 🔥` : 'Yarın tekrar gir, ödül artar!'}`,
-              [{ text: 'Harika!' }]
-            );
-          });
+          setDailyReward({ coins: r.data.coinReward, streak: r.data.newStreak });
         }
       }).catch(() => {});
     });
@@ -177,6 +182,12 @@ export default function RootLayout() {
             <Text style={s.offlineText}>📵 İnternet bağlantısı yok — çevrimdışı moddasınız</Text>
           </View>
         )}
+        <DailyLoginModal
+          visible={!!dailyReward}
+          coinReward={dailyReward?.coins ?? 0}
+          newStreak={dailyReward?.streak ?? 1}
+          onClose={() => setDailyReward(null)}
+        />
         <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', animationDuration: 280 }}>
           {/* Sekmeler */}
           <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 200 }} />

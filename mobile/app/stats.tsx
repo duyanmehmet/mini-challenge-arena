@@ -1,117 +1,150 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
-import { Colors } from '../src/constants/colors';
 import { CATEGORIES as GAME_MODES } from '../src/constants/categories';
-import { LEAGUES } from '../src/constants/leagues';
-import { XPBar } from '../src/components/ui/XPBar';
-import api from '../src/services/api';
+import { userService } from '../src/services/user.service';
+
+const BG    = '#ffffff';
+const PURP  = '#6c3aed';
+const PURP2 = '#8b5cf6';
+const TEXT  = '#111827';
+const MUTED = '#9ca3af';
+const GOLD  = '#f59e0b';
+
+const LEAGUE_ICONS: Record<string, string> = {
+  filiz:'🌱',kaya:'🪨',demir:'🔩',celik:'⚔️',bronz:'🥉',
+  gumus:'🥈',altin:'🥇',safir:'🔵',zumrut:'💚',elmas:'💎',
+  platin:'🔷',kristal:'🌟',mistik:'🔮',ay:'🌙',gunes:'☀️',
+  simsek:'⚡',alev:'🔥',okyanus:'🌊',zirve:'🏔️',kartal:'🦅',
+  ejderha:'🐉',galaksi:'🌌',nova:'💫',efsane:'🦄',kral:'👑',
+  yildiz:'⭐',meteor:'🌠',zafer:'🏆',elit:'🎯',sampiyon:'🏅',
+};
+
+interface Stats {
+  totalGames: number;
+  totalDuels: number;
+  winRate: number;
+  streakCount: number;
+  maxStreak: number;
+  weeklyScore: number;
+}
 
 export default function StatsScreen() {
-  const { theme } = useSettingsStore();
   const { user, personalBests, badges } = useUserStore();
-  const C = Colors[theme];
-  const [dailyRank, setDailyRank] = useState<number | null>(null);
+  const [stats,   setStats]   = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const league = LEAGUES.find((l) => l.id === user?.currentLeague);
-
   useEffect(() => {
-    api.get('/challenge/today').then((res) => {
-      // Günün challenge sırası
-      api.get('/leaderboard/my-rank?period=weekly').then((r) => {
-        setDailyRank(r.data?.rank ?? null);
-      }).catch(() => {});
-    }).catch(() => {}).finally(() => setLoading(false));
+    userService.getStats()
+      .then(setStats)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   if (!user) return null;
-  const s = styles(C);
 
-  const totalBests = personalBests.reduce((sum, p) => sum + p.score, 0);
+  const xpNeeded = user.level * 500;
+  const xpPct    = Math.min(user.xp / xpNeeded, 1);
+  const totalBestScore = personalBests.reduce((sum, p) => sum + p.score, 0);
   const bestMode = personalBests.reduce((best, p) => (!best || p.score > best.score ? p : best), null as any);
 
   return (
-    <SafeAreaView style={s.safe}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <TouchableOpacity onPress={() => router.back()} style={s.back}>
-          <Text style={[s.backText, { color: C.textSecondary }]}>← Geri</Text>
+    <SafeAreaView style={s.root}>
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtnWrap}>
+          <Text style={s.backBtn}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={[s.title, { color: C.textPrimary }]}>📊 İstatistikler</Text>
+        <Text style={s.title}>📊 İstatistikler</Text>
+        <View style={{ width: 60 }} />
+      </View>
 
-        {/* Profil özeti */}
-        <View style={[s.card, { backgroundColor: C.bgSecondary }]}>
-          <View style={s.cardRow}>
-            <View style={s.stat}>
-              <Text style={[s.statNum, { color: C.accentRed }]}>{user.level}</Text>
-              <Text style={[s.statLabel, { color: C.textSecondary }]}>Seviye</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+
+        {/* Profil özet kartı */}
+        <View style={s.profileCard}>
+          <View style={s.profileRow}>
+            <View style={s.bigStat}>
+              <Text style={[s.bigNum, { color: PURP }]}>{user.level}</Text>
+              <Text style={s.bigLabel}>Seviye</Text>
             </View>
-            <View style={s.stat}>
-              <Text style={[s.statNum, { color: C.accentYellow }]}>{user.streakCount}</Text>
-              <Text style={[s.statLabel, { color: C.textSecondary }]}>🔥 Seri</Text>
+            <View style={s.bigStat}>
+              <Text style={[s.bigNum, { color: '#f97316' }]}>{user.streakCount}</Text>
+              <Text style={s.bigLabel}>🔥 Seri</Text>
             </View>
-            <View style={s.stat}>
-              <Text style={[s.statNum, { color: C.accentTeal }]}>{badges.length}</Text>
-              <Text style={[s.statLabel, { color: C.textSecondary }]}>Rozet</Text>
+            <View style={s.bigStat}>
+              <Text style={[s.bigNum, { color: GOLD }]}>{badges.length}</Text>
+              <Text style={s.bigLabel}>Rozet</Text>
             </View>
-            <View style={s.stat}>
-              <Text style={[s.statNum, { color: C.accentGreen }]}>{league?.icon}</Text>
-              <Text style={[s.statLabel, { color: C.textSecondary }]}>{league?.name}</Text>
+            <View style={s.bigStat}>
+              <Text style={{ fontSize: 26 }}>{LEAGUE_ICONS[user.currentLeague ?? 'bronz'] ?? '🥉'}</Text>
+              <Text style={s.bigLabel}>Lig</Text>
             </View>
           </View>
-          <View style={{ marginTop: 12 }}>
-            <XPBar xp={user.xp} level={user.level} />
+          {/* XP bar */}
+          <View style={{ marginTop: 14 }}>
+            <View style={s.xpBg}>
+              <View style={[s.xpFill, { width: `${xpPct * 100}%` as any }]} />
+            </View>
+            <Text style={s.xpTxt}>{user.xp.toLocaleString('tr-TR')} / {xpNeeded.toLocaleString('tr-TR')} XP</Text>
           </View>
         </View>
 
-        {/* Haftalık sıra — rank veya weeklyScore varsa göster */}
-        {(dailyRank || user.weeklyScore > 0) && (
-          <View style={[s.rankCard, { backgroundColor: C.accentRed + '15', borderColor: C.accentRed }]}>
-            <Text style={[s.rankIcon]}>🏆</Text>
-            <View>
-              <Text style={[s.rankTitle, { color: C.textPrimary }]}>
-                {dailyRank ? `Bu Hafta #${dailyRank}` : 'Haftalık Puan'}
-              </Text>
-              <Text style={[s.rankSub, { color: C.textSecondary }]}>Haftalık sıralama</Text>
-            </View>
-            <Text style={[s.weekScore, { color: C.accentYellow }]}>
-              {user.weeklyScore.toLocaleString('tr-TR')}
-            </Text>
+        {/* Oyun istatistikleri */}
+        {loading ? (
+          <View style={s.loadingWrap}><ActivityIndicator color={PURP2} /></View>
+        ) : stats && (
+          <View style={s.statsGrid}>
+            <StatCard icon="🎮" label="Toplam Oyun" value={stats.totalGames.toLocaleString('tr-TR')} color="#06b6d4" />
+            <StatCard icon="⚔️" label="Düello" value={stats.totalDuels.toLocaleString('tr-TR')} color="#8b5cf6" />
+            <StatCard icon="🏆" label="Kazanma Oranı" value={`%${stats.winRate}`} color="#22c55e" />
+            <StatCard icon="📅" label="Max Seri" value={`${stats.maxStreak} gün`} color="#f97316" />
+            <StatCard icon="⭐" label="Haftalık Puan" value={stats.weeklyScore.toLocaleString('tr-TR')} color={GOLD} />
+            <StatCard icon="🎖️" label="Toplam Rekor" value={totalBestScore.toLocaleString('tr-TR')} color={PURP} />
           </View>
         )}
 
-        {/* Mod bazlı en yüksek skorlar */}
-        <Text style={[s.sectionTitle, { color: C.textPrimary }]}>🎮 Mod Rekorları</Text>
-        {GAME_MODES.map((mode) => {
-          const pb = personalBests.find((p) => p.mode === mode.id);
-          return (
-            <View key={mode.id} style={[s.modeRow, { backgroundColor: C.bgSecondary, borderColor: mode.color + '44' }]}>
-              <View style={[s.modeIcon, { backgroundColor: mode.color + '22' }]}>
-                <Text style={{ fontSize: 20 }}>{mode.icon}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.modeName, { color: C.textPrimary }]}>{mode.shortName}</Text>
-                <Text style={[s.modeTag, { color: C.textSecondary }]}>{mode.questionCount}+ soru</Text>
-              </View>
-              <Text style={[s.modeScore, { color: pb ? C.accentYellow : C.textSecondary }]}>
-                {pb ? pb.score.toLocaleString('tr-TR') : '—'}
-              </Text>
-            </View>
-          );
-        })}
+        {/* En iyi mod */}
+        {bestMode && (
+          <View style={s.bestModeCard}>
+            <Text style={s.sectionTitle}>🥇 En İyi Mod</Text>
+            {(() => {
+              const m = GAME_MODES.find(x => x.id === bestMode.mode);
+              return (
+                <View style={[s.bestModeRow, { borderColor: (m?.color ?? PURP) + '40' }]}>
+                  <View style={[s.modeIconBg, { backgroundColor: (m?.color ?? PURP) + '20' }]}>
+                    <Text style={{ fontSize: 28 }}>{m?.icon ?? '🎮'}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.modeNameTxt}>{m?.name ?? bestMode.mode}</Text>
+                    <Text style={s.modeCatTxt}>{m?.questionCount}+ soru</Text>
+                  </View>
+                  <Text style={[s.modeScore, { color: GOLD }]}>{bestMode.score.toLocaleString('tr-TR')}</Text>
+                </View>
+              );
+            })()}
+          </View>
+        )}
 
-        {/* Toplam */}
-        <View style={[s.totalCard, { backgroundColor: C.bgTertiary }]}>
-          <Text style={[s.totalLabel, { color: C.textSecondary }]}>Toplam Rekor Puanı</Text>
-          <Text style={[s.totalNum, { color: C.accentYellow }]}>{totalBests.toLocaleString('tr-TR')}</Text>
-          {bestMode && (
-            <Text style={[s.bestMode, { color: C.textSecondary }]}>
-              En iyi mod: {GAME_MODES.find((m) => m.id === bestMode.mode)?.shortName}
-            </Text>
-          )}
+        {/* Mod rekorları */}
+        <Text style={[s.sectionTitle, { paddingHorizontal: 20, marginTop: 8 }]}>🎮 Mod Rekorları</Text>
+        <View style={s.modesWrap}>
+          {GAME_MODES.map(mode => {
+            const pb = personalBests.find(p => p.mode === mode.id);
+            return (
+              <View key={mode.id} style={[s.modeRow, { borderLeftColor: mode.color }]}>
+                <View style={[s.modeIconSm, { backgroundColor: mode.color + '18' }]}>
+                  <Text style={{ fontSize: 18 }}>{mode.icon}</Text>
+                </View>
+                <Text style={s.modeRowName} numberOfLines={1}>{mode.shortName}</Text>
+                <Text style={[s.modeRowScore, { color: pb ? GOLD : MUTED }]}>
+                  {pb ? pb.score.toLocaleString('tr-TR') : '—'}
+                </Text>
+              </View>
+            );
+          })}
         </View>
 
         <View style={{ height: 32 }} />
@@ -120,29 +153,84 @@ export default function StatsScreen() {
   );
 }
 
-const styles = (C: typeof Colors.dark) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bgPrimary },
-  back: { padding: 16, paddingBottom: 4 },
-  backText: { fontFamily: 'Nunito-Regular', fontSize: 15 },
-  title: { fontSize: 22, fontFamily: 'Nunito-ExtraBold', paddingHorizontal: 16, marginBottom: 12 },
-  card: { marginHorizontal: 16, borderRadius: 16, padding: 16, marginBottom: 12 },
-  cardRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  stat: { alignItems: 'center' },
-  statNum: { fontSize: 24, fontFamily: 'Nunito-ExtraBold' },
-  statLabel: { fontSize: 11, fontFamily: 'Nunito-Regular', marginTop: 2 },
-  rankCard: { marginHorizontal: 16, borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, marginBottom: 16 },
-  rankIcon: { fontSize: 28 },
-  rankTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 16 },
-  rankSub: { fontFamily: 'Nunito-Regular', fontSize: 12 },
-  weekScore: { marginLeft: 'auto', fontFamily: 'Nunito-ExtraBold', fontSize: 18 },
-  sectionTitle: { paddingHorizontal: 16, fontFamily: 'Nunito-Bold', fontSize: 16, marginBottom: 8 },
-  modeRow: { marginHorizontal: 16, marginBottom: 6, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1 },
-  modeIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  modeName: { fontFamily: 'Nunito-Bold', fontSize: 14 },
-  modeTag: { fontFamily: 'Nunito-Regular', fontSize: 11 },
-  modeScore: { fontFamily: 'Nunito-ExtraBold', fontSize: 16 },
-  totalCard: { margin: 16, borderRadius: 14, padding: 16, alignItems: 'center' },
-  totalLabel: { fontFamily: 'Nunito-Regular', fontSize: 13, marginBottom: 4 },
-  totalNum: { fontFamily: 'Nunito-ExtraBold', fontSize: 32 },
-  bestMode: { fontFamily: 'Nunito-Regular', fontSize: 12, marginTop: 6 },
+function StatCard({ icon, label, value, color }: { icon: string; label: string; value: string; color: string }) {
+  return (
+    <View style={[s.statCard, { borderTopColor: color }]}>
+      <Text style={{ fontSize: 22, marginBottom: 4 }}>{icon}</Text>
+      <Text style={[s.statCardNum, { color }]}>{value}</Text>
+      <Text style={s.statCardLabel}>{label}</Text>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  root:   { flex: 1, backgroundColor: BG },
+  scroll: { paddingBottom: 20 },
+
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  backBtnWrap: {},
+  backBtn:     { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: PURP, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
+  title:       { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT },
+
+  // Profil kartı
+  profileCard: {
+    marginHorizontal: 16, marginBottom: 16,
+    backgroundColor: '#fff', borderRadius: 20, padding: 20,
+    borderWidth: 1, borderColor: '#f3f4f6',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+  },
+  profileRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  bigStat:    { alignItems: 'center', gap: 4 },
+  bigNum:     { fontFamily: 'Nunito-ExtraBold', fontSize: 28 },
+  bigLabel:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
+  xpBg:       { height: 7, backgroundColor: '#f3f4f6', borderRadius: 4, overflow: 'hidden' },
+  xpFill:     { height: 7, backgroundColor: PURP2, borderRadius: 4 },
+  xpTxt:      { fontFamily: 'Nunito-Regular', fontSize: 11, color: MUTED, textAlign: 'right', marginTop: 4 },
+
+  loadingWrap: { alignItems: 'center', padding: 20 },
+
+  // İstatistik grid
+  statsGrid: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: 12, gap: 10, marginBottom: 16,
+  },
+  statCard: {
+    width: '30%', flexGrow: 1,
+    backgroundColor: '#fff', borderRadius: 16, padding: 14,
+    alignItems: 'center', borderTopWidth: 3,
+    borderWidth: 1, borderColor: '#f3f4f6',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+  },
+  statCardNum:   { fontFamily: 'Nunito-ExtraBold', fontSize: 18, marginBottom: 2 },
+  statCardLabel: { fontFamily: 'Nunito-Regular', fontSize: 11, color: MUTED, textAlign: 'center' },
+
+  // En iyi mod
+  bestModeCard: {
+    marginHorizontal: 16, marginBottom: 16,
+    backgroundColor: '#fff', borderRadius: 18, padding: 16,
+    borderWidth: 1, borderColor: '#f3f4f6',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+  },
+  bestModeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginTop: 10, borderRadius: 14, borderWidth: 1.5, padding: 12,
+  },
+  modeIconBg:  { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  modeNameTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: TEXT },
+  modeCatTxt:  { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED, marginTop: 2 },
+  modeScore:   { fontFamily: 'Nunito-ExtraBold', fontSize: 20 },
+
+  sectionTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: TEXT, marginBottom: 10 },
+
+  // Mod rekorları listesi
+  modesWrap: { paddingHorizontal: 16, gap: 7 },
+  modeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#fff', borderRadius: 14, padding: 12,
+    borderWidth: 1, borderColor: '#f3f4f6', borderLeftWidth: 4,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1,
+  },
+  modeIconSm:   { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  modeRowName:  { flex: 1, fontFamily: 'Nunito-Bold', fontSize: 14, color: TEXT },
+  modeRowScore: { fontFamily: 'Nunito-ExtraBold', fontSize: 15 },
 });

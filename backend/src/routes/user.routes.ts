@@ -142,6 +142,32 @@ router.post("/daily-login", authMiddleware, async (req: AuthRequest, res) => {
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 
+// ── Kullanıcı istatistikleri ─────────────────────────────────────────
+router.get("/stats", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const [user, totalGamesRow, winsRow, totalDuelsRow] = await Promise.all([
+      db("users").where("id", userId).select("streak_count","max_streak","weekly_score").first(),
+      db("game_results").where("user_id", userId).count("* as cnt").first(),
+      db("duels").where("winner_id", userId).count("* as cnt").first().catch(() => ({ cnt: 0 })),
+      db("duels")
+        .where((b: any) => b.where("challenger_id", userId).orWhere("opponent_id", userId))
+        .count("* as cnt").first().catch(() => ({ cnt: 0 })),
+    ]);
+    const totalGames  = parseInt((totalGamesRow as any)?.cnt ?? "0");
+    const totalWins   = parseInt((winsRow as any)?.cnt ?? "0");
+    const totalDuels  = parseInt((totalDuelsRow as any)?.cnt ?? "0");
+    res.json({
+      totalGames,
+      totalDuels,
+      winRate: totalDuels > 0 ? Math.round((totalWins / totalDuels) * 100) : 0,
+      streakCount: user?.streak_count ?? 0,
+      maxStreak:   user?.max_streak ?? 0,
+      weeklyScore: user?.weekly_score ?? 0,
+    });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
 router.post("/push-token", authMiddleware, async (req: AuthRequest, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ message: "Token gerekli." });

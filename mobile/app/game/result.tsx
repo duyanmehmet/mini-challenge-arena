@@ -115,8 +115,9 @@ export default function ResultScreen() {
   const slideAnim   = useRef(new Animated.Value(40)).current;
   const scaleAnim   = useRef(new Animated.Value(0.8)).current;
   const counterAnim = useRef(new Animated.Value(0)).current;
-  const [displayScore, setDisplayScore] = useState(0);
-  const [ligResult,    setLigResult]    = useState<any>(null);
+  const [displayScore,    setDisplayScore]    = useState(0);
+  const [ligResult,       setLigResult]       = useState<any>(null);
+  const [challengeResult, setChallengeResult] = useState<{ rank: number; xpBonus: number } | null>(null);
 
   useEffect(() => {
     const lid = counterAnim.addListener(({ value }) => setDisplayScore(Math.round(value)));
@@ -147,7 +148,9 @@ export default function ResultScreen() {
     }
 
     if (challengeId) {
-      api.post('/challenge/submit', { challengeId, score: numScore }).catch(() => {});
+      api.post('/challenge/submit', { challengeId, score: numScore })
+        .then(r => setChallengeResult({ rank: r.data.rank, xpBonus: r.data.xpBonus }))
+        .catch(() => {});
     }
     // Lig: sadece başarılıysa gönder (3 retry)
     if (isLig && !isLigFailed) {
@@ -198,36 +201,77 @@ export default function ResultScreen() {
 
   // ── Antrenman Sonuç Ekranı ──────────────────────────────────────────
   if (isAntrenman) {
+    const catColor = modeCfg?.color ?? '#6c3aed';
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f3ff' }}>
-        <Animated.View style={[s.inner, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <Text style={{ fontSize: 72 }}>📚</Text>
-          <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 26, color: '#111827', marginBottom: 4 }}>Antrenman Bitti!</Text>
-          <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 14, color: '#9ca3af', marginBottom: 24, textAlign: 'center' }}>
-            15 soruyu tamamladın. Tekrar oynayarak gelişebilirsin!
-          </Text>
-          <View style={{ backgroundColor: '#6c3aed', borderRadius: 20, padding: 24, width: '100%', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontFamily: 'Nunito-Regular' }}>Toplam Puan</Text>
-            <Text style={{ color: '#fff', fontSize: 52, fontFamily: 'Nunito-ExtraBold' }}>{numScore.toLocaleString('tr-TR')}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 12, width: '100%', marginBottom: 24 }}>
-            <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
-              <Text style={{ fontSize: 22, fontFamily: 'Nunito-ExtraBold', color: '#22c55e' }}>{Math.round(numScore / Math.max(parseInt(duration ?? '1'), 1))} puan/sn</Text>
-              <Text style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'Nunito-Regular', marginTop: 2 }}>Hız</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          <View style={{ paddingHorizontal: 24, paddingBottom: 32, alignItems: 'center' }}>
+
+            {/* Geri */}
+            <TouchableOpacity
+              style={{ alignSelf: 'flex-start', marginTop: 12, marginBottom: 8 }}
+              onPress={() => router.replace('/antrenman' as any)}
+            >
+              <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' }}>← Kategoriler</Text>
+            </TouchableOpacity>
+
+            {/* Kategori ikonu */}
+            <View style={{ width: 88, height: 88, borderRadius: 26, backgroundColor: catColor + '20', alignItems: 'center', justifyContent: 'center', marginTop: 16, marginBottom: 10 }}>
+              <Text style={{ fontSize: 48 }}>{modeCfg?.icon ?? '📚'}</Text>
             </View>
-            <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
-              <Text style={{ fontSize: 22, fontFamily: 'Nunito-ExtraBold', color: '#f59e0b' }}>{parseInt(duration ?? '0')}sn</Text>
-              <Text style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'Nunito-Regular', marginTop: 2 }}>Süre</Text>
+            <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: '#111827', marginBottom: 4 }}>
+              {modeCfg?.name ?? 'Antrenman'} Bitti!
+            </Text>
+            <Text style={{ fontFamily: 'Nunito-Regular', fontSize: 13, color: '#9ca3af', marginBottom: 20, textAlign: 'center' }}>
+              15 soruyu tamamladın. Tekrar oynayarak gelişebilirsin!
+            </Text>
+
+            {/* Puan kartı */}
+            <View style={{ backgroundColor: catColor, borderRadius: 22, padding: 24, width: '100%', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontFamily: 'Nunito-Regular' }}>Toplam Puan</Text>
+              <Animated.Text style={{ color: '#fff', fontSize: 56, fontFamily: 'Nunito-ExtraBold', lineHeight: 64 }}>
+                {displayScore.toLocaleString('tr-TR')}
+              </Animated.Text>
+              {isNewRecord && (
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 5, marginTop: 8 }}>
+                  <Text style={{ color: '#fff', fontFamily: 'Nunito-ExtraBold', fontSize: 13 }}>🏆 Yeni Rekor!</Text>
+                </View>
+              )}
             </View>
+
+            {/* İstatistik kutucukları */}
+            <View style={{ flexDirection: 'row', gap: 10, width: '100%', marginBottom: 20 }}>
+              <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
+                <Text style={{ fontSize: 20, fontFamily: 'Nunito-ExtraBold', color: '#f59e0b' }}>x{numCombo}</Text>
+                <Text style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'Nunito-Regular', marginTop: 3 }}>Max Kombo</Text>
+              </View>
+              <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
+                <Text style={{ fontSize: 20, fontFamily: 'Nunito-ExtraBold', color: '#22c55e' }}>{numDuration}sn</Text>
+                <Text style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'Nunito-Regular', marginTop: 3 }}>Süre</Text>
+              </View>
+              {prevBest && (
+                <View style={{ flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
+                  <Text style={{ fontSize: 15, fontFamily: 'Nunito-ExtraBold', color: '#6c3aed' }}>{prevBest.score.toLocaleString('tr-TR')}</Text>
+                  <Text style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'Nunito-Regular', marginTop: 3 }}>Rekor</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Butonlar */}
+            <TouchableOpacity
+              style={{ backgroundColor: '#6c3aed', borderRadius: 16, paddingVertical: 18, width: '100%', alignItems: 'center', marginBottom: 10 }}
+              onPress={() => router.replace({ pathname: `/game/${mode}` as any, params: { antrenmanMode: '1' } })}
+            >
+              <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: '#fff' }}>🔄 Tekrar Oyna</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' }}
+              onPress={() => router.replace('/antrenman' as any)}
+            >
+              <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#374151' }}>Kategori Değiştir</Text>
+            </TouchableOpacity>
+
           </View>
-          <TouchableOpacity style={{ backgroundColor: '#6c3aed', borderRadius: 16, paddingVertical: 18, width: '100%', alignItems: 'center', marginBottom: 10 }}
-            onPress={() => router.replace({ pathname: `/game/${mode}` as any, params: { antrenmanMode: '1' } })}>
-            <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 17, color: '#fff' }}>🔄 Tekrar Oyna</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={{ backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' }}
-            onPress={() => router.replace('/antrenman' as any)}>
-            <Text style={{ fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#374151' }}>Kategori Değiştir</Text>
-          </TouchableOpacity>
         </Animated.View>
       </SafeAreaView>
     );
@@ -373,6 +417,30 @@ export default function ResultScreen() {
           <Text style={s.coinPlus}>+{coinsEarned}</Text>
           <Text style={{ fontSize: 18 }}>🪙</Text>
         </View>
+
+        {/* Challenge sonuç kartı */}
+        {!!challengeId && challengeResult && (
+          <View style={[s.ligCard, { borderColor: '#06b6d440', marginBottom: 12 }]}>
+            <View style={s.ligRow}>
+              <Text style={s.ligLabel}>Günlük Sıran</Text>
+              <Text style={[s.ligVal, { color: '#06b6d4' }]}>#{challengeResult.rank}. sıra</Text>
+            </View>
+            <View style={s.ligDivider} />
+            <View style={s.ligRow}>
+              <Text style={s.ligLabel}>XP Kazandın</Text>
+              <Text style={[s.ligVal, { color: '#22c55e' }]}>+{challengeResult.xpBonus} XP</Text>
+            </View>
+            {challengeResult.xpBonus >= 100 && (
+              <>
+                <View style={s.ligDivider} />
+                <View style={s.ligRow}>
+                  <Text style={s.ligLabel}>Hedef</Text>
+                  <Text style={[s.ligVal, { color: '#f59e0b' }]}>✅ Geçildi!</Text>
+                </View>
+              </>
+            )}
+          </View>
+        )}
 
         {/* Lig sonuç kartı */}
         {isLig && ligResult && (

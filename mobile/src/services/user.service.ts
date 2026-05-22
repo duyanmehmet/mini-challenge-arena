@@ -27,4 +27,16 @@ export const userService = {
     const response = await api.delete("/user/account");
     return response.data;
   },
+
+  getStats: async () => {
+    const response = await api.get("/user/stats");
+    return response.data as {
+      totalGames: number;
+      totalDuels: number;
+      winRate: number;
+      streakCount: number;
+      maxStreak: number;
+      weeklyScore: number;
+    };
+  },
 };
