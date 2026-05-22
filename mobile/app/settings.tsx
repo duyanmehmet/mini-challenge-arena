@@ -231,11 +231,11 @@ export default function SettingsScreen() {
         <View style={s.section}>
           <Text style={s.sectionTitle}>Hakkında</Text>
           <Text style={[s.meta, { color: C.textSecondary }]}>Mini Challenge Arena v1.0.0</Text>
-          <TouchableOpacity onPress={() => router.push('/privacy-policy' as any)}>
-            <Text style={[s.link, { color: C.accentTeal }]}>Gizlilik Politikası</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://duyanmehmet.github.io/mca-legal/privacy-policy')}>
+            <Text style={[s.link, { color: C.accentTeal }]}>Gizlilik Politikası ↗</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/terms-of-service' as any)}>
-            <Text style={[s.link, { color: C.accentTeal }]}>Kullanım Koşulları</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://duyanmehmet.github.io/mca-legal/terms-of-service')}>
+            <Text style={[s.link, { color: C.accentTeal }]}>Kullanım Koşulları ↗</Text>
           </TouchableOpacity>
         </View>
 

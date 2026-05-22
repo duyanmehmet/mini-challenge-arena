@@ -101,7 +101,7 @@ export default function StreakScreen() {
   const playedToday  = playedSet.has(today);
   const streak       = data?.streakCount ?? user?.streakCount ?? 0;
   const maxStreak    = data?.maxStreak ?? 0;
-  const freezeDate   = data?.freezeDate ?? null;
+  const freezeDate   = (data as any)?.freezeDate ?? null;
   const frozeToday   = freezeDate === today;
 
   const cells = buildCalendar(calYear, calMonth);

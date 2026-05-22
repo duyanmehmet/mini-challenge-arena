@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+﻿import { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useGameStore } from '../../../store/gameStore';
 import { useSettingsStore } from '../../../store/settingsStore';
@@ -76,12 +76,12 @@ export function WordMode({ onEnd }: Props) {
     if (isCorrect) {
       addScore(pts);
       assetService.playSound('hit');
-      assetService.vibrate(40);
+      assetService.vibrate('medium');
       setStreak((s) => s + 1);
       setFeedback({ text: `✅ Doğru! +${pts} puan`, correct: true });
     } else {
       assetService.playSound('miss');
-      assetService.vibrate([0, 80]);
+      assetService.vibrate('heavy');
       setStreak(0);
       setFeedback({ text: `❌ Yanlış! Cevap: "${current.word}"`, correct: false });
     }

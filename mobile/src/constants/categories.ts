@@ -1,6 +1,6 @@
 export type CategoryId =
   | 'history' | 'geography' | 'science' | 'general' | 'art' | 'cinema' | 'sports'
-  | 'kids' | 'license' | 'medical' | 'economy'
+  | 'kids' | 'license' | 'medical' | 'economy' | 'turkey' | 'fun'
   | 'arabic' | 'french' | 'german' | 'spanish' | 'english';
 
 export type GroupId = 'culture' | 'special' | 'language';
@@ -39,6 +39,8 @@ export const CATEGORIES: CategoryConfig[] = [
   { id: 'sports',    name: 'Spor',            shortName: 'Spor',     icon: '⚽', color: '#16a085', group: 'culture',  description: 'Futbol, olimpiyatlar, Türk sporcular ve dünya rekorları.',           questionCount: 502 },
 
   // Özel Kategoriler
+  { id: 'turkey',    name: 'Türkiye',        shortName: 'Türkiye', icon: '🇹🇷', color: '#dc2626', group: 'special',  description: 'Türk tarihi, kültürü, coğrafyası ve güncel Türkiye hakkında.',       questionCount: 232 },
+  { id: 'fun',       name: 'Eğlence',        shortName: 'Eğlence', icon: '🎉', color: '#f97316', group: 'special',  description: 'İlginç gerçekler, pop kültür, komik bilgiler ve sürpriz sorular!',   questionCount: 200 },
   { id: 'kids',      name: 'Çocuklar İçin',  shortName: 'Çocuk',   icon: '🧒', color: '#ff6b9d', group: 'special',  description: 'Eğlenceli ve kolay sorular — 8-14 yaş için!',                        questionCount: 200 },
   { id: 'license',   name: 'Ehliyet Sınavı', shortName: 'Ehliyet', icon: '🚗', color: '#555555', group: 'special',  description: 'Trafik kuralları ve ehliyet sınav soruları.',                         questionCount: 200 },
   { id: 'medical',   name: 'Tıbbi Terimler', shortName: 'Tıp',     icon: '🩺', color: '#e74c3c', group: 'special',  description: 'Hastalık adları, organ isimleri ve tıp terimleri.',                   questionCount: 500 },

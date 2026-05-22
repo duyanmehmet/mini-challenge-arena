@@ -12,13 +12,13 @@
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.minichallengearena.com/v1"
+        "EXPO_PUBLIC_API_URL": "https://mini-challenge-arena-production.up.railway.app/v1"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.minichallengearena.com/v1"
+        "EXPO_PUBLIC_API_URL": "https://mini-challenge-arena-production.up.railway.app/v1"
       }
     }
   },

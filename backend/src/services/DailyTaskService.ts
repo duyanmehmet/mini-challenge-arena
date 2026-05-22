@@ -70,22 +70,35 @@ export const DailyTaskService = {
     const easy   = seededShuffle(TASK_POOL.filter(t => t.diff === 'easy'),   dateSeed).slice(0, 2);
     const medium = seededShuffle(TASK_POOL.filter(t => t.diff === 'medium'), dateSeed + 1).slice(0, 2);
     const hard   = seededShuffle(TASK_POOL.filter(t => t.diff === 'hard'),   dateSeed + 2).slice(0, 1);
-    const selected = seededShuffle([...easy, ...medium, ...hard], dateSeed + 3);
 
-    await db("daily_tasks").insert(
-      selected.map((t) => ({
-        id: uuidv4(),
-        user_id: userId,
-        task_type: t.type,
-        task_description: t.desc,
-        target_value: t.target,
-        current_value: 0,
-        coin_reward: t.coins,
-        xp_reward: t.xp,
-        date: today,
-        is_completed: false,
-      }))
-    );
+    // Aynı task_type birden fazla kez seçilirse unique kısıtı ihlal eder — deduplicate et
+    const seen = new Set<string>();
+    const selected = seededShuffle([...easy, ...medium, ...hard], dateSeed + 3)
+      .filter(t => {
+        if (seen.has(t.type)) return false;
+        seen.add(t.type);
+        return true;
+      });
+
+    if (selected.length === 0) return;
+
+    await db("daily_tasks")
+      .insert(
+        selected.map((t) => ({
+          id: uuidv4(),
+          user_id: userId,
+          task_type: t.type,
+          task_description: t.desc,
+          target_value: t.target,
+          current_value: 0,
+          coin_reward: t.coins,
+          xp_reward: t.xp,
+          date: today,
+          is_completed: false,
+        }))
+      )
+      .onConflict(["user_id", "task_type", "date"])
+      .ignore();
   },
 
   async updateTaskProgress(userId: string, type: string, increment: number) {

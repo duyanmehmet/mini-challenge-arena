@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mca",
-
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -50,6 +49,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1823d58c-2bc7-4048-9b0c-ce92cb28977d"
+      }
     }
   }
 }

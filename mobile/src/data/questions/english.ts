@@ -1,4 +1,4 @@
-import type { QuizQuestion } from '../../types/quiz';
+﻿import type { QuizQuestion } from '../../types/quiz';
 
 // En çok kullanılan İngilizce kelimeler — Türkçe anlamlarıyla
 const english: QuizQuestion[] = [
@@ -191,7 +191,7 @@ const english: QuizQuestion[] = [
   { q: '"Project" kelimesinin Türkçe anlamı nedir?', a: ['Rapor','Sunum','Proje','Görev'], c: 2, e: 'Project = Proje. "Work on a project." = "Bir proje üzerinde çalış."', d: 1 },
 
   // B2 - İleri Seviye
-  { q: '"Ambiguous" kelimesinin Türkçe anlamı nedir?', a: ['Net','Açık','Belirsiz/Muğlak','Kesin'], c: 2, e: 'Ambiguous = Belirsiz, muğlak. "The answer is ambiguous." = "Cevap muğlak."', d: 4 },
+  { q: '"Ambiguous" kelimesinin Türkçe anlamı nedir?', a: ['Net','Açık','Belirsiz/Muğlak','Kesin'], c: 2, e: 'Ambiguous = Belirsiz, muğlak. "The answer is ambiguous." = "Cevap muğlak."', d: 3 },
   { q: '"Persuade" kelimesinin Türkçe anlamı nedir?', a: ['Zorunlu kılmak','İkna etmek','Engellemek','Kandırmak'], c: 1, e: 'Persuade = İkna etmek. "I persuaded him to come." = "Onu gelmeye ikna ettim."', d: 3 },
   { q: '"Flexible" kelimesinin Türkçe anlamı nedir?', a: ['Sert','Katı','Esnek','Kırılgan'], c: 2, e: 'Flexible = Esnek. "Flexible schedule" = "Esnek program."', d: 3 },
   { q: '"Reliable" kelimesinin Türkçe anlamı nedir?', a: ['Güvenilmez','Güvenilir','Değişken','Tutarsız'], c: 1, e: 'Reliable = Güvenilir. "A reliable friend" = "Güvenilir bir arkadaş."', d: 3 },
@@ -227,7 +227,7 @@ const english: QuizQuestion[] = [
   { q: '"She ___ to school every day." cümlesinde boşluğa ne gelir?', a: ['go','goes','going','gone'], c: 1, e: 'She/He/It ile geniş zaman: fiil + s/es. "She goes" doğrudur.', d: 2 },
   { q: '"I ___ watching TV when you called." cümlesinde boşluğa ne gelir?', a: ['was','were','am','is'], c: 0, e: 'I ile geçmiş süregelen zaman: "I was". "I was watching TV."', d: 3 },
   { q: '"They ___ friends for 10 years." cümlesinde boşluğa ne gelir?', a: ['are','were','have been','will be'], c: 2, e: '"For 10 years" ile present perfect kullanılır: "have been."', d: 3 },
-  { q: '"If I ___ rich, I would travel the world." cümlesinde boşluğa ne gelir?', a: ['am','was','were','will be'], c: 2, e: 'İkinci tip koşul cümlelerinde "if" den sonra "were" kullanılır.', d: 4 },
+  { q: '"If I ___ rich, I would travel the world." cümlesinde boşluğa ne gelir?', a: ['am','was','were','will be'], c: 2, e: 'İkinci tip koşul cümlelerinde "if" den sonra "were" kullanılır.', d: 3 },
   { q: '"She ___ her keys." — Anahtarlarını kaybetti. Boşluğa ne gelir?', a: ['lose','lost','loses','losing'], c: 1, e: 'Geçmiş zaman (past simple): lose → lost. "She lost her keys."', d: 2 },
   { q: '"Can you speak ___ slowly, please?" — Boşluğa ne gelir?', a: ['more','most','very','much'], c: 0, e: 'Karşılaştırma (comparative): slowly → more slowly. "Can you speak more slowly?"', d: 3 },
 
@@ -318,7 +318,7 @@ const english: QuizQuestion[] = [
   { q: '"Throughout" kelimesinin Türkçe anlamı nedir?', a: ['Başlangıçta','Boyunca/Süresince','Sonunda','Bazen'], c: 1, e: 'Throughout = Boyunca. "Throughout the year" = "Yıl boyunca."', d: 3 },
   { q: '"Meanwhile" kelimesinin Türkçe anlamı nedir?', a: ['Sonradan','Bu arada/Bu süreçte','Önce','Sırasıyla'], c: 1, e: 'Meanwhile = Bu arada, bu sırada. "Meanwhile, the others waited."', d: 3 },
   { q: '"Eventually" kelimesinin Türkçe anlamı nedir?', a: ['Hemen','Nadiren','Sonunda/Eninde sonunda','Bazen'], c: 2, e: 'Eventually = Sonunda, eninde sonunda. "Eventually he agreed."', d: 3 },
-  { q: '"Furthermore" kelimesinin Türkçe anlamı nedir?', a: ['Aksine','Ayrıca/Dahası','Sonuç olarak','Bu yüzden'], c: 1, e: 'Furthermore = Ayrıca, dahası, üstelik. Bir fikre ek bilgi eklemek için.', d: 4 },
+  { q: '"Furthermore" kelimesinin Türkçe anlamı nedir?', a: ['Aksine','Ayrıca/Dahası','Sonuç olarak','Bu yüzden'], c: 1, e: 'Furthermore = Ayrıca, dahası, üstelik. Bir fikre ek bilgi eklemek için.', d: 3 },
 
   // Modal Fiiller
   { q: '"Must" ne anlama gelir?', a: ['Yapabilmek','Yapmak zorunda olmak','Yapabilirsin','Yapmalısın (tavsiye)'], c: 1, e: 'Must = Zorunluluk. "You must wear a seatbelt." = "Emniyet kemeri takmalısın."', d: 2 },
@@ -335,14 +335,14 @@ const english: QuizQuestion[] = [
   // Sık Hata Yapılan Kelimeler
   { q: '"Borrow" ile "Lend" arasındaki fark nedir?', a: ['İkisi aynı anlama gelir','Borrow = almak, Lend = vermek','Borrow = vermek, Lend = almak','İkisi de "satmak" demek'], c: 1, e: 'Borrow = ödünç almak (sen alırsın). Lend = ödünç vermek (sen verirsin).', d: 3 },
   { q: '"Say" ile "Tell" arasındaki fark nedir?', a: ['Aynı anlama gelir','Say direkt konuşur, Tell birine söyler','Tell daha resmidir','Say daha uzundur'], c: 1, e: '"Say something" (bir şey söyle) vs "Tell someone" (birine söyle). "Tell me!" = "Söyle bana!"', d: 3 },
-  { q: '"Look", "See" ve "Watch" arasındaki temel fark nedir?', a: ['Hepsi aynı','Look=kasıtlı bakmak, See=görmek, Watch=izlemek','Look=görmek, See=bakmak','Watch sadece TV için'], c: 1, e: 'Look = Kasıtlı bakmak. See = Görmek (otomatik). Watch = Hareketli şeyleri izlemek.', d: 4 },
+  { q: '"Look", "See" ve "Watch" arasındaki temel fark nedir?', a: ['Hepsi aynı','Look=kasıtlı bakmak, See=görmek, Watch=izlemek','Look=görmek, See=bakmak','Watch sadece TV için'], c: 1, e: 'Look = Kasıtlı bakmak. See = Görmek (otomatik). Watch = Hareketli şeyleri izlemek.', d: 3 },
   { q: '"Make" ve "Do" arasındaki fark nedir?', a: ['İkisi aynı','Make = üretmek/yaratmak, Do = yapmak (genel)','Do = üretmek','Make daha formeldir'], c: 1, e: 'Make = bir şey üretmek (make coffee, make a mistake). Do = genel eylem (do homework, do sport).', d: 3 },
 
   // Akademik Kelimeler
   { q: '"Analysis" kelimesinin Türkçe anlamı nedir?', a: ['Sonuç','Analiz/İnceleme','Teori','Uygulama'], c: 1, e: 'Analysis = Analiz, inceleme. "Data analysis" = "Veri analizi."', d: 3 },
   { q: '"Evidence" kelimesinin Türkçe anlamı nedir?', a: ['Teori','Soru','Kanıt/Delil','Yargı'], c: 2, e: 'Evidence = Kanıt, delil. "Show evidence." = "Kanıt göster."', d: 3 },
   { q: '"Emphasize" kelimesinin Türkçe anlamı nedir?', a: ['Küçümsemek','Vurgulamak','Azaltmak','Görmezden gelmek'], c: 1, e: 'Emphasize = Vurgulamak. "I want to emphasize this point." = "Bu noktayı vurgulamak istiyorum."', d: 3 },
-  { q: '"Assumption" kelimesinin Türkçe anlamı nedir?', a: ['Kanıt','Varsayım/Faraziye','Sonuç','Gerçek'], c: 1, e: 'Assumption = Varsayım. "Don\'t make assumptions." = "Varsayımda bulunma."', d: 4 },
+  { q: '"Assumption" kelimesinin Türkçe anlamı nedir?', a: ['Kanıt','Varsayım/Faraziye','Sonuç','Gerçek'], c: 1, e: 'Assumption = Varsayım. "Don\'t make assumptions." = "Varsayımda bulunma."', d: 3 },
 
   // Duygusal Zeka
   { q: '"Empathy" kelimesinin Türkçe anlamı nedir?', a: ['Sempatik olmak','Empati/Duygu paylaşımı','Acıma','Yargılama'], c: 1, e: 'Empathy = Empati, karşıdakinin duygularını anlama yetisi.', d: 3 },
@@ -379,7 +379,7 @@ const english: QuizQuestion[] = [
   { q: '"Accept" kelimesinin Türkçe anlamı nedir?', a: ['Reddetmek','Kabul etmek','Teklif etmek','İtiraz etmek'], c: 1, e: 'Accept = Kabul etmek. Refuse/Reject = Reddetmek (zıt anlamlısı).', d: 2 },
   { q: '"Protect" kelimesinin Türkçe anlamı nedir?', a: ['Tehdit etmek','Korumak','Zarar vermek','Terketmek'], c: 1, e: 'Protect = Korumak. "Protect the environment." = "Çevreyi koru."', d: 2 },
   { q: '"Celebrate" kelimesinin Türkçe anlamı nedir?', a: ['Yas tutmak','Kutlamak','Hatırlamak','Planlamak'], c: 1, e: 'Celebrate = Kutlamak. "Celebrate a birthday." = "Doğum günü kutlamak."', d: 2 },
-  { q: '"Achieve" ile "Succeed" arasındaki fark nedir?', a: ['İkisi aynı anlama gelir','Achieve = belirli bir hedef, Succeed = genel başarı','Succeed daha resmidir','Achieve sadece işte kullanılır'], c: 1, e: 'Achieve = belirli bir hedefe ulaşmak. Succeed = genel olarak başarılı olmak.', d: 4 },
+  { q: '"Achieve" ile "Succeed" arasındaki fark nedir?', a: ['İkisi aynı anlama gelir','Achieve = belirli bir hedef, Succeed = genel başarı','Succeed daha resmidir','Achieve sadece işte kullanılır'], c: 1, e: 'Achieve = belirli bir hedefe ulaşmak. Succeed = genel olarak başarılı olmak.', d: 3 },
 
   // Eğlence ve Medya
   { q: '"Movie" kelimesinin Türkçe anlamı nedir?', a: ['Müzik','Film','Dizi','Belgesel'], c: 1, e: 'Movie = Film. "Watch a movie." = "Film izle."', d: 1 },

@@ -122,7 +122,7 @@ export default function ResetPasswordScreen() {
   );
 }
 
-const styles = (C: ReturnType<typeof Colors[keyof typeof Colors]>) => StyleSheet.create({
+const styles = (C: typeof Colors['dark']) => StyleSheet.create({
   root: { flex: 1 },
   inner: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
   title: { fontSize: 26, fontFamily: 'Nunito-ExtraBold', marginBottom: 8 },

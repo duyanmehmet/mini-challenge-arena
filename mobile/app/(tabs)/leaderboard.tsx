@@ -166,7 +166,7 @@ export default function SiralamaScreen() {
       {/* ── Başlık ── */}
       <View style={s.header}>
         <Text style={[s.leagueTitle, { color: leagueCfg.color }]}>
-          {leagueCfg.icon}  {leagueCfg.name} Ligi
+          {leagueCfg.emoji}  {leagueCfg.name} Ligi
         </Text>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           {countdown ? (

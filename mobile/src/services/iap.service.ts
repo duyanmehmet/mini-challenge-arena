@@ -1,12 +1,12 @@
-import {
+﻿import {
   initConnection,
   endConnection,
-  getProducts,
+  fetchProducts,
   requestPurchase,
   purchaseErrorListener,
   purchaseUpdatedListener,
   finishTransaction,
-  type ProductPurchase,
+  // type ProductPurchase,
   type PurchaseError,
 } from 'react-native-iap';
 import { Platform } from 'react-native';
@@ -31,7 +31,7 @@ export const iapService = {
     try {
       await initConnection();
 
-      purchaseUpdateSub = purchaseUpdatedListener(async (purchase: ProductPurchase) => {
+      purchaseUpdateSub = purchaseUpdatedListener(async (purchase: any) => {
         const receipt = purchase.transactionReceipt ?? purchase.purchaseToken ?? '';
         if (receipt) {
           try {
@@ -60,9 +60,9 @@ export const iapService = {
     }
   },
 
-  async getProducts() {
+  async fetchProducts() {
     try {
-      return await getProducts({ skus: Object.values(PRODUCT_IDS) });
+      return await fetchProducts({ skus: Object.values(PRODUCT_IDS) });
     } catch {
       return [];
     }
@@ -76,7 +76,7 @@ export const iapService = {
     onPurchaseSuccess = onSuccess;
     onPurchaseError = onError;
     const sku = PRODUCT_IDS[packId];
-    await requestPurchase({ sku });
+    await requestPurchase({ sku } as any);
   },
 
   destroy() {

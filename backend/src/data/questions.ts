@@ -20,6 +20,20 @@ const history: ServerQuestion[] = [
   { q: 'Türkiye\'de harf devrimi hangi yılda gerçekleşti?', a: ['1925','1928','1932','1934'], c: 1, e: 'Latin alfabesine 1 Kasım 1928\'de geçildi.' },
   { q: 'Berlin Duvarı hangi yılda yıkıldı?', a: ['1987','1988','1989','1990'], c: 2, e: 'Berlin Duvarı 9 Kasım 1989\'da yıkıldı.' },
   { q: 'İkinci Dünya Savaşı hangi yılda sona erdi?', a: ['1943','1944','1945','1946'], c: 2, e: 'Japonya\'nın teslim olmasıyla Eylül 1945\'te sona erdi.' },
+  { q: 'Kleopatra hangi medeniyete aitti?', a: ['Roma','Yunan','Mısır','Mezopotamya'], c: 2, e: 'Kleopatra son Mısır firavunuydu, aslında Yunan asıllıydı.' },
+  { q: 'Çin Seddi ne kadar uzundur?', a: ['2.000 km','8.850 km','21.000 km','50.000 km'], c: 2, e: 'Çin Seddi tüm kollarıyla ~21.000 km uzunluğundadır.' },
+  { q: 'Titanik hangi yılda battı?', a: ['1910','1912','1914','1916'], c: 1, e: 'RMS Titanik 15 Nisan 1912\'de battı. 1.517 kişi hayatını kaybetti.' },
+  { q: 'İnsanlık tarihinin ilk yazılı kanunları kimdir?', a: ['Hammurabi','Solon','Justinianus','Musa'], c: 0, e: 'Hammurabi Kanunları MÖ 1754\'te yazılmış, tarihin en eski yazılı yasa kitabıdır.' },
+  { q: 'Ay\'a ilk ayak basan insan kimdir?', a: ['Buzz Aldrin','Neil Armstrong','Yuri Gagarin','John Glenn'], c: 1, e: 'Neil Armstrong 21 Temmuz 1969\'da Ay\'a ilk adımı attı.' },
+  { q: 'Osmanlı\'nın en uzun süre hüküm süren padişahı kimdir?', a: ['Fatih Sultan Mehmet','Kanuni Sultan Süleyman','II. Abdülhamit','Yavuz Sultan Selim'], c: 1, e: 'Kanuni Sultan Süleyman 46 yıl (1520-1566) hüküm sürdü.' },
+  { q: 'Birinci Dünya Savaşı\'nı başlatan suikast nerede gerçekleşti?', a: ['Viyana','Berlin','Saraybosna','Paris'], c: 2, e: 'Arşidük Franz Ferdinand, 28 Haziran 1914\'te Saraybosna\'da öldürüldü.' },
+  { q: 'Romalılar arenada savaşanlara ne diyordu?', a: ['Centurion','Gladyatör','Legioner','Praetor'], c: 1, e: 'Gladyatörler Roma arenalarında seyirciler için savaşırdı.' },
+  { q: 'Sanayi Devrimi hangi ülkede başladı?', a: ['Fransa','Almanya','ABD','İngiltere'], c: 3, e: 'Sanayi Devrimi 18. yüzyılda İngiltere\'de başladı.' },
+  { q: 'Dünya\'da ilk kullanılan kağıt para hangi ülkededir?', a: ['Hindistan','Japonya','Çin','Mısır'], c: 2, e: 'Kağıt para 7. yüzyılda Tang Hanedanı döneminde Çin\'de icat edildi.' },
+  { q: 'Napolyon\'un son sürgün yeri neresidir?', a: ['Elba Adası','Korsika','St. Helena Adası','Malta'], c: 2, e: 'Napolyon 1815\'ten ölümüne dek (1821) St. Helena Adası\'nda yaşadı.' },
+  { q: 'Hangi medeniyet ilk 0 rakamını kullandı?', a: ['Mısırlılar','Romalılar','Mayalar','Aztekler'], c: 2, e: 'Maya medeniyeti MÖ\'den itibaren 0 kavramını matematiklerinde kullandı.' },
+  { q: 'Rönesans hangi şehirde başladı?', a: ['Roma','Venedik','Floransa','Milano'], c: 2, e: 'Rönesans 14. yüzyılda Floransa\'da başladı.' },
+  { q: 'Türkiye\'de ilk demiryolu ne zaman açıldı?', a: ['1856','1862','1868','1875'], c: 0, e: 'İlk Türk demiryolu 1856\'da İzmir-Aydın hattıyla hizmete girdi.' },
 ];
 
 const geography: ServerQuestion[] = [
@@ -33,6 +47,20 @@ const geography: ServerQuestion[] = [
   { q: 'Kapadokya hangi ilde bulunur?', a: ['Konya','Ankara','Nevşehir','Kayseri'], c: 2, e: 'Kapadokya Nevşehir merkezlidir.' },
   { q: 'Dünyanın en derin gölü hangisidir?', a: ['Titicaca','Superior','Baykal','Hazar'], c: 2, e: 'Baykal Gölü 1642 m derinliğiyle en derinidir.' },
   { q: 'Türkiye kaç komşu ülkeyle sınır paylaşır?', a: ['6','7','8','9'], c: 2, e: 'Türkiye 8 ülkeyle sınır paylaşır.' },
+  { q: 'Dünyanın en küçük ülkesi hangisidir?', a: ['Monako','San Marino','Vatikan','Liechtenstein'], c: 2, e: 'Vatikan 0,44 km² ile dünyanın en küçük ülkesidir.' },
+  { q: 'Amazon nehri hangi okyanusu döker?', a: ['Hint Okyanusu','Arktik','Atlas Okyanusu','Pasifik'], c: 2, e: 'Amazon nehri Atlas Okyanusu\'na dökülür.' },
+  { q: 'Hangi kıtada çöl yoktur?', a: ['Asya','Afrika','Avrupa','Avustralya'], c: 2, e: 'Avrupa\'nın iklimi çöl oluşumuna uygun değildir.' },
+  { q: 'İzlanda\'nın başkenti neresidir?', a: ['Bergen','Oslo','Reykjavik','Göteborg'], c: 2, e: 'Reykjavik dünyanın en kuzey başkentlerinden biridir.' },
+  { q: 'Nil nehri hangi ülkede başlar?', a: ['Mısır','Sudan','Uganda/Ruanda','Etiyopya'], c: 2, e: 'Nil\'in kaynağı Ruanda-Uganda\'daki Viktorya Gölü\'dür.' },
+  { q: 'Dünya\'nın en büyük çölü hangisidir?', a: ['Sahara','Gobi','Arabistan','Antarktika'], c: 3, e: 'Antarktika 14,2 milyon km² ile dünyanın en büyük soğuk çölüdür!' },
+  { q: 'Türkiye\'nin en yüksek dağı hangisidir?', a: ['Erciyes','Süphan','Ağrı Dağı','Bolkar'], c: 2, e: 'Ağrı Dağı 5.137 m ile Türkiye\'nin en yüksek noktasıdır.' },
+  { q: 'Pasifik Okyanusu kaç ülkenin kıyısına değer?', a: ['20','35','50','70+'], c: 3, e: 'Pasifik 70\'ten fazla ülkenin kıyısına değen en büyük okyanustur.' },
+  { q: 'Japonya kaç adadan oluşur?', a: ['4','100','6.800+','1.200'], c: 2, e: 'Japonya yaklaşık 6.852 adadan oluşur, ancak sadece 430\'u nüfusludur.' },
+  { q: 'Dünyanın en uzun karayolu tüneli hangisidir?', a: ['Gotthard Tüneli','Channel Tüneli','Laerdal Tüneli','Rokko Tüneli'], c: 2, e: 'Norveç\'teki Laerdal Tüneli 24,5 km uzunluğuyla dünya rekoru.' },
+  { q: 'Hangi ülke 4 farklı saat dilimine sahiptir?', a: ['Rusya','ABD','Kanada','Brezilya'], c: 0, e: 'Yanlış! Rusya 11, ABD 6, Kanada 6, Brezilya 4 saat dilimine sahip.' },
+  { q: 'Amazon Ormanı Dünya\'nın toplam oksijeninin ne kadarını üretir?', a: ['%10','%20','%50','%80'], c: 1, e: 'Amazon Ormanı Dünya\'nın yaklaşık %20\'sini sağlar.' },
+  { q: 'Türkiye\'nin en batı noktası neresidir?', a: ['Edirne','Çanakkale','Gökçeada','Keşan'], c: 2, e: 'Gökçeada (İmroz), Türkiye\'nin en batı noktasıdır.' },
+  { q: 'Ekvator hangi Afrika ülkesinin başkentinden geçer?', a: ['Kenya','Gabon','Ekvador','Kongo'], c: 0, e: 'Ekvator tam olarak Nairobi\'nin (Kenya) yakınından geçer.' },
 ];
 
 const science: ServerQuestion[] = [
@@ -46,6 +74,20 @@ const science: ServerQuestion[] = [
   { q: 'Hangi gezegen Kızıl Gezegen olarak bilinir?', a: ['Venüs','Jüpiter','Satürn','Mars'], c: 3, e: 'Mars yüzeyindeki demir oksit nedeniyle kırmızıdır.' },
   { q: 'Normal vücut sıcaklığı kaç derecedir?', a: ['35°C','36-37°C','38°C','39°C'], c: 1, e: 'Normal vücut ısısı 36-37°C arasındadır.' },
   { q: 'Yerçekimi ivmesi yaklaşık kaçtır?', a: ['8,5 m/s²','9,8 m/s²','10,5 m/s²','11,2 m/s²'], c: 1, e: 'Dünya yüzeyinde g ≈ 9,8 m/s²\'dir.' },
+  { q: 'Bir insan beyninin kaç nöronu vardır?', a: ['1 milyar','86 milyar','500 milyar','1 trilyon'], c: 1, e: 'İnsan beyninde yaklaşık 86 milyar nöron vardır.' },
+  { q: 'Işık yılı bir zaman birimi midir?', a: ['Evet','Hayır — mesafe birimidir','İkisi de değil','Bağlama göre değişir'], c: 1, e: 'Işık yılı, ışığın bir yılda aldığı mesafedir — zaman değil mesafe birimi!' },
+  { q: 'Elmas hangi elementten oluşur?', a: ['Silikon','Karbon','Azot','Oksijen'], c: 1, e: 'Elmas saf karbondan oluşur — grafit de karbon! Fark sadece atom düzenidir.' },
+  { q: 'İnsan vücudundaki en uzun kemik hangisidir?', a: ['Kaburga','Omurga','Femur (uyluk kemiği)','Tibia'], c: 2, e: 'Femur (uyluk kemiği) vücudun en uzun ve en güçlü kemiğidir.' },
+  { q: 'Güneş ne tür bir yıldızdır?', a: ['Kırmızı dev','Beyaz cüce','Sarı cüce','Nötron yıldızı'], c: 2, e: 'Güneş orta büyüklükte bir sarı cüce yıldızdır.' },
+  { q: 'Ses boşlukta yayılabilir mi?', a: ['Evet','Hayır','Sadece bazı durumlarda','Belirsiz'], c: 1, e: 'Ses mekanik bir dalgadır, madde olmadan yayılamaz. Uzayda ses yoktur!' },
+  { q: 'Hangi organ vücutta en fazla enerji tüketir?', a: ['Kalp','Beyin','Karaciğer','Kaslar'], c: 1, e: 'Beyin vücut ağırlığının %2\'si olmasına rağmen toplam enerjinin %20\'sini tüketir.' },
+  { q: 'Ahtapot kanı hangi renktedir?', a: ['Kırmızı','Yeşil','Mavi','Sarı'], c: 2, e: 'Ahtapot kanı hemosiyinin (bakır içerir) nedeniyle mavimsi renktedir.' },
+  { q: 'Karbon monoksit neden tehlikelidir?', a: ['Zehirlidir','Renksiz ve kokusuz olup O₂\'yi engeller','Patlar','Radyoaktiftir'], c: 1, e: 'CO renksiz ve kokusuzdur; hemoglobine oksijenden 200 kat daha güçlü bağlanır.' },
+  { q: 'Hangi element en hafif metaldir?', a: ['Helyum','Lityum','Berilyum','Sodyum'], c: 1, e: 'Lityum en hafif metaldir; suya atıldığında yüzer.' },
+  { q: 'Dünya\'nın çekirdeği ağırlıklı hangi elementten oluşur?', a: ['Taş','Demir-Nikel','Silikon','Magnezyum'], c: 1, e: 'Dünya\'nın iç çekirdeği büyük ölçüde katı demir-nikel karışımından oluşur.' },
+  { q: 'Bir insan ömründe ortalama kaç litre nefes alır?', a: ['1.000 litre','100.000 litre','100 milyon litre','700 milyon litre'], c: 3, e: 'Ortalama bir insan ömründe yaklaşık 700 milyon litre hava soluması yapar.' },
+  { q: 'Süpernova nedir?', a: ['Yeni doğan yıldız','Kara delik','Patlayan yıldız','Gezegen'], c: 2, e: 'Süpernova, büyük bir yıldızın ömrünün sonunda geçirdiği dev patlama.' },
+  { q: 'DNA\'nın çift sarmal yapısını kim keşfetti?', a: ['Einstein','Watson ve Crick','Darwin','Mendel'], c: 1, e: 'Watson ve Crick 1953\'te DNA\'nın çift sarmal yapısını açıkladı.' },
 ];
 
 const general: ServerQuestion[] = [
@@ -59,6 +101,20 @@ const general: ServerQuestion[] = [
   { q: 'Türkiye\'nin ulusal çiçeği hangisidir?', a: ['Gül','Lale','Papatya','Sümbül'], c: 1, e: 'Lale Türkiye\'nin ulusal çiçeğidir.' },
   { q: 'Dünyadaki en yüksek bina hangisidir?', a: ['Empire State','Burj Khalifa','Shanghai Tower','Makkah Tower'], c: 1, e: 'Burj Khalifa 828 m ile en yüksek yapıdır.' },
   { q: 'Amazon\'u kim kurdu?', a: ['Bill Gates','Elon Musk','Jeff Bezos','Larry Page'], c: 2, e: 'Jeff Bezos 1994\'te Amazon\'u kurdu.' },
+  { q: 'Google\'ın ilk adı neydi?', a: ['SearchNow','BackRub','WebSearch','PageRank'], c: 1, e: 'Larry Page ve Sergey Brin projeyi 1996\'da "BackRub" adıyla başlattı.' },
+  { q: 'Dünya\'da en çok konuşulan dil hangisidir?', a: ['İngilizce','Mandarin Çincesi','İspanyolca','Arapça'], c: 1, e: 'Ana dil olarak Mandarin Çincesi 1 milyar+ konuşanla birinci.' },
+  { q: 'Bir "googol" kaçtır?', a: ['1.000.000','1 milyon milyon','10 üzeri 100','Sonsuz'], c: 2, e: '1 googol = 10 üzeri 100. Google adını buradan aldı.' },
+  { q: 'İnsanlar gülmeden önce mi yoksa konuşmayı öğrenmeden önce mi güler?', a: ['Önce gülümser','Önce konuşur','İkisi aynı anda','Önce ağlar'], c: 0, e: 'Bebekler doğumdan itibaren gülümser, konuşmayı çok sonra öğrenir.' },
+  { q: 'Hangi şirket "Think Different" sloganını kullandı?', a: ['Microsoft','Samsung','Apple','Google'], c: 2, e: 'Apple\'ın ikonik "Think Different" kampanyası 1997-2002 yılları arasındaydı.' },
+  { q: '"Selfie" Oxford sözlüğüne hangi yılda girdi?', a: ['2010','2011','2012','2013'], c: 3, e: '"Selfie" 2013\'te Oxford sözlüğüne "yılın kelimesi" olarak girdi.' },
+  { q: 'En çok dili olan ülke hangisidir?', a: ['Hindistan','Çin','Papua Yeni Gine','Nijerya'], c: 2, e: 'Papua Yeni Gine\'de 800\'den fazla farklı dil konuşulur.' },
+  { q: 'Dünyanın ilk reklamı nerede bulundu?', a: ['Roma\'da papirüs','Mısır\'da papirüs','Çin\'de tahta levha','Yunanistan\'da taş'], c: 1, e: 'Dünyanın bilinen ilk reklamı 3.000 yıllık Mısır papirüsünde kaçak köle aramasıdır.' },
+  { q: 'Hangi ülkede sağ elle yemek yemek kabalık sayılır?', a: ['Japonya','Hindistan','Suudi Arabistan','Mısır'], c: 0, e: 'Japonya\'da yemekte sol el veya sağ el fark etmez ama yere eğilmek önemlidir. Aslında Hindistan\'da sağ el kullanımı terbiye!' },
+  { q: 'Çikolata ilk olarak hangi biçimde tüketildi?', a: ['Katı tablet','Sıcak içecek','Dondurma','Kek'], c: 1, e: 'Aztekler çikolatayı "xocoatl" adıyla acı, baharatlı sıcak içecek olarak içerdi.' },
+  { q: 'Hangi oyun 1989\'da Game Boy ile birlikte çıktı?', a: ['Super Mario','Zelda','Tetris','Donkey Kong'], c: 2, e: 'Tetris Nintendo Game Boy\'un çıkış oyunuydu ve milyonlarca satış yaptı.' },
+  { q: 'Papaganlar gerçekten konuşur mu?', a: ['Evet, anlayarak','Hayır, taklit eder','Bazıları anlar','Bilinmiyor'], c: 1, e: 'Papağanlar sesleri taklit eder, anlamını kavramaz. Ancak bazı çalışmalar limited anlama işaret ediyor.' },
+  { q: 'Hangi şehir en fazla Michelin yıldızlı restorana sahiptir?', a: ['Paris','Tokyo','New York','Londra'], c: 1, e: 'Tokyo 230+ Michelin yıldızlı restoranıyla dünyanın gastronomi başkentidir.' },
+  { q: 'Dünya\'nın en çok üretilen içeceği nedir?', a: ['Kola','Çay','Su','Kahve'], c: 2, e: 'Su tartışmasız en çok üretilen ve tüketilen içecektir.' },
 ];
 
 const turkey: ServerQuestion[] = [
@@ -72,6 +128,20 @@ const turkey: ServerQuestion[] = [
   { q: '"İskender kebabı" hangi şehre aittir?', a: ['İstanbul','Ankara','Bursa','İzmir'], c: 2, e: '1867\'de Bursa\'da İskender Efendi tarafından icat edildi.' },
   { q: 'Türkiye hangi iki kıtada toprak sahibidir?', a: ['Asya-Afrika','Avrupa-Asya','Avrupa-Afrika','Asya-Amerika'], c: 1, e: 'Türkiye hem Avrupa\'da (Trakya) hem Asya\'da (Anadolu) toprak sahibidir.' },
   { q: 'Türkiye UNESCO Dünya Mirası listesinde kaç alan sahiptir? (yaklaşık)', a: ['6','10','19','25'], c: 2, e: 'Türkiye\'nin 19 UNESCO Dünya Mirası alanı vardır.' },
+  { q: 'Türkiye\'de en çok hangi renk araba tercih edilir?', a: ['Siyah','Beyaz','Gri','Kırmızı'], c: 1, e: 'Türkiye\'de beyaz araç satışları yıllardır 1. sırada.' },
+  { q: 'Türkçede "Sıklet" kelimesinin gerçek anlamı nedir?', a: ['Sıkıntı','Ağırlık','Yük','Stres'], c: 1, e: '"Sıklet" Türkçede ağırlık, külfet anlamına gelir.' },
+  { q: 'Türkiye\'nin en uzun nehri hangisidir?', a: ['Fırat','Dicle','Kızılırmak','Sakarya'], c: 2, e: 'Kızılırmak ~1.355 km ile Türkiye\'nin en uzun nehridir.' },
+  { q: 'Türk bayrağındaki ay ve yıldız hangi renge sahiptir?', a: ['Sarı','Gümüş','Beyaz','Altın'], c: 2, e: 'Türk bayrağında kırmızı zemin üzerine beyaz ay yıldız bulunur.' },
+  { q: 'İzmir\'in eski adı nedir?', a: ['Efes','Smyrna','Pergamon','Sardis'], c: 1, e: 'İzmir\'in eski adı Smyrna\'dır. MÖ 3000\'li yıllara kadar uzanır.' },
+  { q: 'Türkiye\'de en çok hangi meyve yetiştirilir?', a: ['Portakal','Elma','Üzüm','Fındık'], c: 2, e: 'Türkiye üzüm üretiminde dünya genelinde ilk sıralar arasındadır.' },
+  { q: 'Türk kahvesi UNESCO listesine hangi yılda girdi?', a: ['2010','2013','2015','2017'], c: 1, e: 'Türk kahvesi kültürü 2013\'te UNESCO somut olmayan kültürel miras listesine girdi.' },
+  { q: 'Türkiye\'nin en büyük alışveriş merkezi hangisidir?', a: ['CevahirAVM','Mall of Istanbul','Metropol AVM','Forum İstanbul'], c: 0, e: 'Cevahir AVM 420.000 m² ile Türkiye\'nin en büyük alışveriş merkezidir.' },
+  { q: '"Mavi Boncuk" Türkiye\'de ne amaçla kullanılır?', a: ['Süs eşyası','Nazardan korunmak','Şans getirsin','Hepsi'], c: 3, e: 'Nazar boncuğu hem nazardan korunmak için hem süs hem şans için kullanılır.' },
+  { q: 'Türkiye\'de kaç tane büyük şehir (büyükşehir) var?', a: ['16','22','30','81'], c: 2, e: 'Türkiye\'de 30 büyükşehir belediyesi bulunmaktadır.' },
+  { q: 'Türkiye\'nin en uzun sahil şeridine sahip ili hangisidir?', a: ['Antalya','İzmir','Muğla','İçel/Mersin'], c: 2, e: 'Muğla en uzun kıyı şeridine sahip ildir — körfezleri dahil 1.167 km.' },
+  { q: 'Türkiye hangi yıl NATO\'ya girdi?', a: ['1945','1949','1952','1960'], c: 2, e: 'Türkiye ve Yunanistan 1952\'de NATO\'ya katıldı.' },
+  { q: 'Boğaz köprüsü inşaatı hangi yılda tamamlandı?', a: ['1969','1973','1978','1982'], c: 1, e: 'Boğaziçi Köprüsü 1973\'te açıldı, Cumhuriyet\'in 50. yılına armağan edildi.' },
+  { q: 'Türkiye\'nin en yüksek rakımlı şehri hangisidir?', a: ['Erzurum','Kars','Van','Ağrı'], c: 0, e: 'Erzurum ~1.890 m rakımıyla Türkiye\'nin en yüksek şehirleri arasındadır.' },
 ];
 
 const fun: ServerQuestion[] = [
@@ -186,6 +256,60 @@ const fun: ServerQuestion[] = [
   { q: 'Türk çayı dünyada hangi sırada en fazla tüketilir?', a: ['1.','2.','3.','5.'], c: 0, e: 'Türkiye kişi başına çay tüketiminde dünya 1. si!' },
 ];
 
+const sports: ServerQuestion[] = [
+  { q: 'Dünya Kupası\'nı en çok kazanan ülke hangisidir?', a: ['Almanya','Arjantin','Brezilya','İtalya'], c: 2, e: 'Brezilya 5 kez (1958,1962,1970,1994,2002) Dünya Kupası şampiyonu.' },
+  { q: 'Olimpiyatlarda en fazla altın madalya kazanan sporcu kimdir?', a: ['Usain Bolt','Larisa Latynina','Michael Phelps','Mark Spitz'], c: 2, e: 'Michael Phelps 23 olimpik altın madalyayla rekor sahibi.' },
+  { q: 'Tenis\'te "Grand Slam" kaç turnuvayı kapsar?', a: ['2','3','4','5'], c: 2, e: 'Wimbledon, US Open, Avustralya ve Fransa Açık — 4 turnuva.' },
+  { q: 'Maraton koşusu kaç km\'dir?', a: ['40','41,2','42,195','43'], c: 2, e: 'Maraton tam olarak 42,195 km\'dir. 1908 Londra Olimpiyatları\'ndan bu yana standart.' },
+  { q: 'NBA\'de en fazla şampiyonluk hangi takıma aittir?', a: ['Los Angeles Lakers','Chicago Bulls','Boston Celtics','Golden State Warriors'], c: 2, e: 'Boston Celtics 17 şampiyonlukla NBA rekoru.' },
+  { q: 'Dünyanın en değerli futbol kulübü hangisidir?', a: ['Barcelona','Real Madrid','Manchester United','Manchester City'], c: 1, e: 'Real Madrid 6 milyar dolar+ değeriyle sürekli üst sıralarda.' },
+  { q: 'Fenerbahçe kaç kez şampiyon olmuştur? (yaklaşık)', a: ['19','25','28','30'], c: 1, e: 'Fenerbahçe yaklaşık 19-20 Türkiye Ligi şampiyonluğuna sahip.' },
+  { q: 'Galatasaray UEFA Kupası\'nı hangi yılda kazandı?', a: ['1998','1999','2000','2001'], c: 2, e: 'Galatasaray 2000\'de UEFA Kupası ve Süper Kupa\'yı kazandı.' },
+  { q: 'Formula 1\'de en fazla şampiyonluk hangi pilota aittir?', a: ['Michael Schumacher','Ayrton Senna','Lewis Hamilton','Sebastian Vettel'], c: 2, e: 'Lewis Hamilton 7 şampiyonlukla Michael Schumacher ile rekoru paylaşıyor.' },
+  { q: 'Hangi spor "güzel oyun" olarak anılır?', a: ['Tenis','Basketbol','Futbol','Kriket'], c: 2, e: 'Futbol "the beautiful game" — güzel oyun olarak anılır.' },
+  { q: 'Dünya\'nın en büyük stadyumu hangisidir?', a: ['Wembley','Camp Nou','Rungrado Stadyumu','Melbourne Cricket Ground'], c: 2, e: 'Kuzey Kore\'deki Rungrado Stadyumu 114.000 kapasiteyle dünya birincisi.' },
+  { q: 'Bir basketbol maçı kaç bölümden oluşur?', a: ['2 devre','3 periyot','4 çeyrek','5 set'], c: 2, e: 'NBA maçları 4 çeyrekten oluşur, her çeyrek 12 dakika.' },
+  { q: 'Hangi Türk sporcu dünya boks şampiyonu olmuştur?', a: ['Sinan Şamil Sam','Süreyya Ayhan','Naim Süleymanoğlu','Hüseyin Özbilge'], c: 0, e: 'Sinan Şamil Sam WBA süper ağır siklet dünya şampiyonluğu kazandı.' },
+  { q: 'Naim Süleymanoğlu kaç olimpiyat altın madalyası aldı?', a: ['1','2','3','4'], c: 2, e: 'Naim Süleymanoğlu 1988, 1992 ve 1996 olimpiyatlarında altın aldı.' },
+  { q: 'Tenis\'te "ace" ne demektir?', a: ['Çift hata','Doğrudan kazanılan servis','Set kazanımı','Net engeli'], c: 1, e: '"Ace" karşı oyuncunun raket sürtmeden kazanılan servis.' },
+];
+
+const cinema: ServerQuestion[] = [
+  { q: 'Titanic filminde "Jack" karakterini kim oynuyor?', a: ['Brad Pitt','Johnny Depp','Leonardo DiCaprio','Tom Hanks'], c: 2, e: 'Leonardo DiCaprio Jack Dawson rolünü 1997\'de oynadı.' },
+  { q: '"The Dark Knight"te Joker\'i kim oynuyor?', a: ['Joaquin Phoenix','Jared Leto','Heath Ledger','Jack Nicholson'], c: 2, e: 'Heath Ledger bu roldeki performansıyla ölümünden sonra Oscar aldı.' },
+  { q: 'Türkiye\'nin Oscar\'a aday olan ilk filmi hangisidir?', a: ['Yol','Kuyucaklı Yusuf','Geceleri Beklerim','Duvar'], c: 0, e: '"Yol" (Yılmaz Güney, 1982) Türkiye\'nin Oscar\'a aday olan ilk filmi.' },
+  { q: 'Avatar filmi kaç Oscar kazandı?', a: ['0','3','6','9'], c: 1, e: 'Avatar (2009) görsel efektler, sinematografi ve sanat yönetimi için 3 Oscar aldı.' },
+  { q: 'En uzun soluklu James Bond aktörü kimdir?', a: ['Sean Connery','Roger Moore','Pierce Brosnan','Daniel Craig'], c: 1, e: 'Roger Moore 7 filmle en fazla Bond rolünü üstlenen aktör.' },
+  { q: '"Schindler\'s List" filminin yönetmeni kimdir?', a: ['Martin Scorsese','Stanley Kubrick','Steven Spielberg','Francis Ford Coppola'], c: 2, e: 'Steven Spielberg bu filmle 1994\'te En İyi Yönetmen Oscar\'ı aldı.' },
+  { q: 'Disney\'in en çok hasılat yapan animasyonu hangisidir?', a: ['Aslan Kral','Dondurulmuş','Coco','Moana'], c: 1, e: 'Dondurulmuş (Frozen) 2013\'te yaklaşık 1,3 milyar dolar hasılat yaptı.' },
+  { q: 'Sinema tarihinin en pahalı filmi hangisidir?', a: ['Avengers','Avatar','Pirates of Caribbean 3','Star Wars'], c: 0, e: 'Avengers: Age of Ultron ve Pirates 3 bu yarışta öne çıkıyor, bazı tahminlere göre Avatar 2.' },
+  { q: 'Türkiye\'de yılda kaç film çekilir? (yaklaşık)', a: ['50','100','200+','500+'], c: 2, e: 'Türkiye yılda 200\'den fazla film üreterek dünyada üst sıralarda.' },
+  { q: '"Kaybedenler Kulübü" filminin başrolünde kim oynuyor?', a: ['Şahan Gökbakar','Cem Yılmaz','Murat Boz','Kıvanç Tatlıtuğ'], c: 1, e: 'Cem Yılmaz bu filmde başrolü üstlendi.' },
+  { q: 'En fazla Oscar kazanan film hangisidir?', a: ['Titanic','Ben-Hur','Lord of the Rings: ROTK','Schindler\'s List'], c: 2, e: '"Return of the King", Titanic ve Ben-Hur ile birlikte 11 Oscar\'la rekor paylaşıyor.' },
+  { q: 'Netflix\'in ilk orijinal dizisi hangisidir?', a: ['Orange is the New Black','House of Cards','Stranger Things','Narcos'], c: 1, e: '"House of Cards" 2013\'te Netflix\'in ilk orijinal yapımı oldu.' },
+  { q: '"Inception" filminin yönetmeni kimdir?', a: ['Ridley Scott','James Cameron','Christopher Nolan','Denis Villeneuve'], c: 2, e: 'Christopher Nolan 2010 yapımı Inception\'ı yönetti.' },
+  { q: 'Hangi Türk dizi dünya genelinde en fazla izlendi?', a: ['Kuzey Yıldızı','Diriliş Ertuğrul','Magnificent Century','Çukur'], c: 1, e: 'Diriliş Ertuğrul 150+ ülkede izlenerek Türk dizilerinin rekorunu kırdı.' },
+  { q: 'Oscar töreninin resmi adı nedir?', a: ['Golden Globe','Academy Awards','BAFTA','Cannes'], c: 1, e: 'Oscar\'ın resmi adı "Academy Awards" — Akademi Ödülleri.' },
+];
+
+const economy: ServerQuestion[] = [
+  { q: 'Dünyanın en büyük ekonomisi hangisidir?', a: ['Çin','Japonya','ABD','Almanya'], c: 2, e: 'ABD nominal GSYİH\'de 25+ trilyon dolarla dünya birincisi.' },
+  { q: 'Bitcoin\'i kim yarattı?', a: ['Elon Musk','Mark Zuckerberg','Satoshi Nakamoto','Vitalik Buterin'], c: 2, e: 'Bitcoin\'in mimarı "Satoshi Nakamoto" takma adlı bilinmeyen kişi/gruptur.' },
+  { q: 'Türkiye\'nin GSYİH büyüklüğü sıralaması yaklaşık kaçıncıdır?', a: ['10','15','17','25'], c: 2, e: 'Türkiye yaklaşık 900 milyar dolar GSYİH ile dünya 17. ekonomisi.' },
+  { q: 'Enflasyon ne anlama gelir?', a: ['Para değer kazanır','Fiyatlar genel olarak artar','İşsizlik artar','Faiz düşer'], c: 1, e: 'Enflasyon fiyatlar genel seviyesinin artmasıdır.' },
+  { q: '"Wall Street" hangi şehirdedir?', a: ['Chicago','Los Angeles','Boston','New York'], c: 3, e: 'Wall Street New York\'taki Manhattan\'da bulunur — finans dünyasının merkezi.' },
+  { q: 'Türk Lirası sembolü nedir?', a: ['₺','₼','₸','₽'], c: 0, e: 'Türk Lirası\'nın sembolü ₺\'dir. 2012\'de resmi olarak belirlendi.' },
+  { q: 'Dünyanın en pahalı şehirlerinden biri olan Singapur hangi kıtadadır?', a: ['Asya','Okyanusya','Afrika','Güney Amerika'], c: 0, e: 'Singapur Güneydoğu Asya\'da ada ülkesi ve finansal merkezdir.' },
+  { q: 'Amazon şirketi yıllık ne kadar ciro yapar? (yaklaşık)', a: ['100 milyar $','300 milyar $','500+ milyar $','1 trilyon $'], c: 2, e: 'Amazon 2022\'de 514 milyar dolar gelir elde etti.' },
+  { q: 'Türkiye\'de merkez bankasının adı nedir?', a: ['BDDK','SPK','TCMB','Ziraat Bankası'], c: 2, e: 'Türkiye Cumhuriyet Merkez Bankası (TCMB) para politikasını yürütür.' },
+  { q: 'Dünyanın en zengin insanı (tarihsel) kimdir?', a: ['Elon Musk','Jeff Bezos','Rockefeller','Mansa Musa'], c: 3, e: 'Mali İmparatoru Mansa Musa (1280-1337) enflasyona göre tarihin en zengin insanı.' },
+  { q: 'Kripto para birimleri nasıl üretilir?', a: ['Devlet basar','Madencilik (mining)','Bankalar üretir','Satın alma'], c: 1, e: 'Bitcoin gibi kripto paralar "mining" denilen hesaplama yoluyla üretilir.' },
+  { q: 'Türkiye\'nin en büyük ihracat kalemi nedir?', a: ['Tekstil','Otomotiv','Tarım ürünleri','Demir-çelik'], c: 1, e: 'Otomotiv sektörü yıllardır Türkiye\'nin en büyük ihracat kalemi.' },
+  { q: 'Dünya Bankası hangi şehirde merkezlidir?', a: ['New York','Brüksel','Washington D.C.','Cenevre'], c: 2, e: 'Dünya Bankası\'nın genel merkezi Washington D.C.\'dedir.' },
+  { q: 'Faiz oranı yükselince ne olur?', a: ['Kredi ucuzlar','Borçlanma azalır','Enflasyon artar','Para değer kaybeder'], c: 1, e: 'Yüksek faiz borçlanmayı pahalılaştırır, tüketim ve yatırım azalır.' },
+  { q: 'Hangi ülke dünyada en fazla altın rezervine sahiptir?', a: ['Çin','Rusya','Almanya','ABD'], c: 3, e: 'ABD 8.133 ton altınla dünya altın rezervi sıralamasında birinci.' },
+];
+
 export const QUESTION_POOLS: Record<string, ServerQuestion[]> = {
   history,
   geography,
@@ -193,13 +317,13 @@ export const QUESTION_POOLS: Record<string, ServerQuestion[]> = {
   general,
   turkey,
   fun,
-  art:       general,
-  cinema:    general,
-  sports:    general,
-  kids:      general,
-  license:   general,
-  medical:   science,
-  economy:   general,
+  sports,
+  cinema,
+  economy,
+  art:     general,
+  kids:    general,
+  license: general,
+  medical: science,
 };
 
 /** Her çağrıda farklı sorular — Fisher-Yates karıştırma */

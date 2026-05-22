@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useGameStore } from '../../../store/gameStore';
 import { useSettingsStore } from '../../../store/settingsStore';
@@ -64,12 +64,12 @@ export function EnglishMode({ onEnd }: Props) {
       const bonus = streak >= 4 ? 2 : streak >= 2 ? 1.5 : 1;
       addScore(Math.round(pts * bonus));
       assetService.playSound('hit');
-      assetService.vibrate(40);
+      assetService.vibrate('medium');
       setStreak((s) => s + 1);
       setFeedback({ text: `✅ Doğru! +${Math.round(pts * bonus)} puan`, correct: true });
     } else {
       assetService.playSound('miss');
-      assetService.vibrate([0, 80]);
+      assetService.vibrate('heavy');
       setStreak(0);
       setFeedback({ text: `❌ Yanlış! Doğru: "${current.word.turkish}"`, correct: false });
     }

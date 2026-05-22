@@ -88,14 +88,14 @@ export function MathMode({ onEnd }: Props) {
       const pts = 10 + level * 5 + Math.min(combo * 3, 30);
       addScore(pts);
       assetService.playSound('hit');
-      assetService.vibrate(30);
+      assetService.vibrate('medium');
       const newLevel = Math.min(10, Math.floor(totalQ / 5) + 1);
       setLevel(newLevel);
     } else {
       setStreak(0);
       resetCombo();
       assetService.playSound('miss');
-      assetService.vibrate([0, 80, 40, 80]);
+      assetService.vibrate('heavy');
     }
 
     setTimeout(() => newQuestion(level), isCorrect ? 600 : 1000);

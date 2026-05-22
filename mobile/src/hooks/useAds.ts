@@ -10,8 +10,7 @@ export function useAds() {
   }, []);
 
   const watchForCoins = useCallback(async (amount: number = 50) => {
-    await admobService.showRewarded();
-    addCoins(amount);
+    await admobService.showRewarded(() => addCoins(amount));
   }, [addCoins]);
 
   return { showInterstitial, watchForCoins };
