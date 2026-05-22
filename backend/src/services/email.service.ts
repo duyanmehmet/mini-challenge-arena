@@ -1,29 +1,29 @@
-import nodemailer from 'nodemailer';
-
-function createTransporter() {
-  return nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.BREVO_USER,
-      pass: process.env.BREVO_KEY,
-    },
-  });
-}
-
 async function sendMail(to: string, subject: string, html: string): Promise<void> {
-  if (!process.env.BREVO_USER || !process.env.BREVO_KEY) {
-    console.warn('[Email] BREVO_USER veya BREVO_KEY eksik, e-posta gönderilmedi.');
+  const apiKey = process.env.BREVO_API_KEY;
+  const from   = process.env.BREVO_FROM ?? process.env.EMAIL_USER ?? 'noreply@example.com';
+  if (!apiKey) {
+    console.warn('[Email] BREVO_API_KEY eksik.');
     return;
   }
-  const transporter = createTransporter();
-  await transporter.sendMail({
-    from: `"Mini Challenge Arena" <${process.env.BREVO_USER}>`,
-    to,
-    subject,
-    html,
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': apiKey,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender:      { name: 'Mini Challenge Arena', email: from },
+      to:          [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
   });
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('[Email] Brevo API hatası:', err);
+    throw new Error(`Brevo API error: ${res.status}`);
+  }
 }
 
 export const emailService = {
@@ -36,10 +36,6 @@ export const emailService = {
         <a href="${resetUrl}" style="display:inline-block;background:#6c3aed;color:#fff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:16px;margin:16px 0">
           🔑 Şifremi Sıfırla
         </a>
-        <p style="color:#9ca3af;font-size:12px;margin-top:16px">
-          Buton çalışmazsa:<br>
-          <a href="${resetUrl}" style="color:#6c3aed">${resetUrl}</a>
-        </p>
         <p style="color:#9ca3af;font-size:12px">Bu bağlantı <strong>1 saat</strong> geçerlidir.</p>
       </div>
     `);
