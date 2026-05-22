@@ -1,13 +1,25 @@
+import nodemailer from 'nodemailer';
+
+function createTransporter() {
+  return nodemailer.createTransport({
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.BREVO_USER,
+      pass: process.env.BREVO_KEY,
+    },
+  });
+}
+
 async function sendMail(to: string, subject: string, html: string): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.warn('[Email] RESEND_API_KEY eksik, e-posta gönderilmedi.');
+  if (!process.env.BREVO_USER || !process.env.BREVO_KEY) {
+    console.warn('[Email] BREVO_USER veya BREVO_KEY eksik, e-posta gönderilmedi.');
     return;
   }
-  const { Resend } = await import('resend');
-  const resend = new Resend(apiKey);
-  await resend.emails.send({
-    from: 'Mini Challenge Arena <onboarding@resend.dev>',
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from: '"Mini Challenge Arena" <noreply@minichallengearena.com>',
     to,
     subject,
     html,
