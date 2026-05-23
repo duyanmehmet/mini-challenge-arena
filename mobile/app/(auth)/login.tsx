@@ -7,7 +7,7 @@ import {
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
+
 import { authService } from '../../src/services/auth.service';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -38,8 +38,6 @@ export default function AuthScreen() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'zekameydani', path: 'auth' });
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId:     GOOGLE_WEB_CLIENT_ID,
@@ -239,16 +237,6 @@ export default function AuthScreen() {
                     <Text style={s.socialText}>Google ile Devam Et</Text>
                   </>
               }
-            </TouchableOpacity>
-
-            {/* Apple */}
-            <TouchableOpacity
-              style={s.socialBtn}
-              onPress={() => Alert.alert('Yakında', 'Apple ile giriş çok yakında eklenecek!')}
-              activeOpacity={0.8}
-            >
-              <Text style={[s.socialIcon, { fontSize: 20 }]}>🍎</Text>
-              <Text style={s.socialText}>Apple ile Devam Et</Text>
             </TouchableOpacity>
 
             {/* Geçiş */}

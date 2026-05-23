@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, Switch, ScrollView, StyleSheet, Alert, TextInput, Modal, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, Switch, ScrollView, StyleSheet, Alert, TextInput, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
@@ -231,11 +231,11 @@ export default function SettingsScreen() {
         <View style={s.section}>
           <Text style={s.sectionTitle}>Hakkında</Text>
           <Text style={[s.meta, { color: C.textSecondary }]}>Mini Challenge Arena v1.0.0</Text>
-          <TouchableOpacity onPress={() => Linking.openURL('https://duyanmehmet.github.io/mca-legal/privacy-policy')}>
-            <Text style={[s.link, { color: C.accentTeal }]}>Gizlilik Politikası ↗</Text>
+          <TouchableOpacity onPress={() => router.push('/privacy-policy' as any)}>
+            <Text style={[s.link, { color: C.accentTeal }]}>Gizlilik Politikası</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => Linking.openURL('https://duyanmehmet.github.io/mca-legal/terms-of-service')}>
-            <Text style={[s.link, { color: C.accentTeal }]}>Kullanım Koşulları ↗</Text>
+          <TouchableOpacity onPress={() => router.push('/terms-of-service' as any)}>
+            <Text style={[s.link, { color: C.accentTeal }]}>Kullanım Koşulları</Text>
           </TouchableOpacity>
         </View>
 

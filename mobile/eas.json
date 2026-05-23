@@ -1,18 +1,28 @@
 {
   "cli": {
-    "version": ">= 5.9.1"
+    "version": ">= 5.9.1",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "withoutCredentials": false,
+        "abiFilters": ["arm64-v8a"]
+      },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://mini-challenge-arena-production.up.railway.app/v1"
+        "EXPO_PUBLIC_API_URL": "https://mini-challenge-arena-production.up.railway.app/v1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "74921537013-lr1636vf8ljjho8t63alr6dcolm4pg1o.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "74921537013-uml6bmur7undlh8pqp9tecr9tu4iq817.apps.googleusercontent.com"
       }
     },
     "production": {
@@ -21,7 +31,9 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://mini-challenge-arena-production.up.railway.app/v1"
+        "EXPO_PUBLIC_API_URL": "https://mini-challenge-arena-production.up.railway.app/v1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "74921537013-lr1636vf8ljjho8t63alr6dcolm4pg1o.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "74921537013-uml6bmur7undlh8pqp9tecr9tu4iq817.apps.googleusercontent.com"
       }
     }
   },

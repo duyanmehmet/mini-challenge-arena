@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useSettingsStore } from '../store/settingsStore';
 
 const SOUNDS: Record<string, any> = {
-  hit:       require('../../assets/sounds/366102__original_sound__confirmation-upward.wav'),
+  hit:       require('../../assets/sounds/607926__robinhood76__10661-bonus-correct-answer.wav'),
   miss:      require('../../assets/sounds/366104__original_sound__confirmation-downward.wav'),
   lose:      require('../../assets/sounds/692847__beetlemuse__false-c.wav'),
   combo:     require('../../assets/sounds/346265__sirkoto51__rpg-sfx-1-item-jingle.mp3'),

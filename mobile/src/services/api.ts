@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useUserStore } from '../store/userStore';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.103:3000/v1';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://mini-challenge-arena-production.up.railway.app/v1';
 
 const api = axios.create({
   baseURL: API_URL,
