@@ -53,6 +53,7 @@
       "expo-router",
       "expo-font",
       "./plugins/withAdMob",
+      "./plugins/withAbiFilters",
       [
         "expo-notifications",
         {

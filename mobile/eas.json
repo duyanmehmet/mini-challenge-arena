@@ -21,7 +21,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://mini-challenge-arena-production.up.railway.app/v1",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "74921537013-lr1636vf8ljjho8t63alr6dcolm4pg1o.apps.googleusercontent.com",
-        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "74921537013-uml6bmur7undlh8pqp9tecr9tu4iq817.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "74921537013-uml6bmur7undlh8pqp9tecr9tu4iq817.apps.googleusercontent.com",
+        "PREVIEW_BUILD": "1"
       }
     },
     "production": {
