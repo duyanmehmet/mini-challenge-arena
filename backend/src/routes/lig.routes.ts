@@ -75,21 +75,24 @@ router.get("/current", authMiddleware, async (req: AuthRequest, res) => {
 
     const cat = getWeekCategory();
 
+    const league = user.current_league ?? "filiz";
+
     const rank = await db("users")
-      .where("current_league", user.current_league)
-      .where("weekly_score", ">", user.weekly_score)
+      .where("current_league", league)
+      .where("weekly_score", ">", user.weekly_score ?? 0)
       .count("* as cnt")
       .first()
       .then((r: any) => parseInt(r?.cnt ?? "0") + 1);
 
     const leagueCount = await db("users")
-      .where("current_league", user.current_league)
+      .where("current_league", league)
       .count("* as cnt")
       .first()
       .then((r: any) => parseInt(r?.cnt ?? "0"));
 
-    const hearts     = computeLives(user.lig_lives ?? MAX_HEARTS, user.lig_lives_at);
-    const nextHeart  = minutesToNextHeart(user.lig_lives ?? MAX_HEARTS, user.lig_lives_at);
+    const ligLives = typeof user.lig_lives === "number" ? user.lig_lives : MAX_HEARTS;
+    const hearts     = computeLives(ligLives, user.lig_lives_at);
+    const nextHeart  = minutesToNextHeart(ligLives, user.lig_lives_at);
 
     return res.json({
       category: cat,
@@ -97,14 +100,14 @@ router.get("/current", authMiddleware, async (req: AuthRequest, res) => {
       userScore: user.weekly_score ?? 0,
       userRank: rank,
       leagueCount,
-      league: user.current_league ?? "bronze",
+      league,
       hearts,
       maxHearts: MAX_HEARTS,
       nextHeartMinutes: nextHeart,
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Sunucu hatası." });
+  } catch (err: any) {
+    console.error("[lig/current]", err?.message ?? err);
+    res.status(500).json({ message: `Sunucu hatası: ${err?.message ?? "bilinmeyen hata"}` });
   }
 });
 

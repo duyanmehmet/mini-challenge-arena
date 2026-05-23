@@ -93,6 +93,7 @@ export default function LigScreen() {
   const { user } = useUserStore();
   const [info,    setInfo]    = useState<LigInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState<string | null>(null);
 
   const [showCatModal, setShowCatModal] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -111,11 +112,17 @@ export default function LigScreen() {
 
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await api.get('/lig/current');
       setInfo(res.data);
-    } catch {
-      Alert.alert('Hata', 'Lig bilgisi yüklenemedi.');
+    } catch (err: any) {
+      const msg: string =
+        err?.userMessage ??
+        err?.response?.data?.message ??
+        err?.message ??
+        'Sunucuya bağlanılamadı.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -196,6 +203,14 @@ export default function LigScreen() {
       {loading ? (
         <View style={s.loadWrap}>
           <ActivityIndicator color={PURP2} size="large" />
+        </View>
+      ) : error ? (
+        <View style={s.loadWrap}>
+          <Text style={s.errorIcon}>⚠️</Text>
+          <Text style={s.errorText}>{error}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={loadData}>
+            <Text style={s.retryBtnTxt}>Tekrar Dene</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
@@ -347,7 +362,11 @@ const s = StyleSheet.create({
   refillBtn:    { backgroundColor: '#fef3c7', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: '#fde68a' },
   refillBtnTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 11, color: '#d97706' },
 
-  loadWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+  loadWrap:   { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', gap: 12, padding: 32 },
+  errorIcon:  { fontSize: 40 },
+  errorText:  { fontFamily: 'Nunito-Bold', fontSize: 15, color: RED, textAlign: 'center' },
+  retryBtn:   { backgroundColor: PURP, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 },
+  retryBtnTxt:{ fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#fff' },
   scroll:   { paddingBottom: 32, backgroundColor: '#fff' },
 
   weekCard:   { margin: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 16, padding: 16, overflow: 'hidden' },
