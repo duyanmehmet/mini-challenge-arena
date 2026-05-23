@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { authService } from '../../src/services/auth.service';
 
@@ -85,8 +86,9 @@ export default function VerifyEmailScreen() {
   };
 
   return (
+    <SafeAreaView style={s.root}>
     <KeyboardAvoidingView
-      style={s.root}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}
@@ -159,6 +161,7 @@ export default function VerifyEmailScreen() {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
