@@ -3,14 +3,14 @@ import * as Haptics from 'expo-haptics';
 import { useSettingsStore } from '../store/settingsStore';
 
 const SOUNDS: Record<string, any> = {
-  hit:       require('../../assets/sounds/hit.wav'),
-  miss:      require('../../assets/sounds/miss.wav'),
-  lose:      require('../../assets/sounds/miss.wav'),
-  combo:     require('../../assets/sounds/combo.wav'),
-  win:       require('../../assets/sounds/win.wav'),
+  hit:       require('../../assets/sounds/366102__original_sound__confirmation-upward.wav'),
+  miss:      require('../../assets/sounds/366104__original_sound__confirmation-downward.wav'),
+  lose:      require('../../assets/sounds/692847__beetlemuse__false-c.wav'),
+  combo:     require('../../assets/sounds/346265__sirkoto51__rpg-sfx-1-item-jingle.mp3'),
+  win:       require('../../assets/sounds/456966__funwithsound__success-fanfare-trumpets.mp3'),
   countdown: require('../../assets/sounds/countdown.wav'),
-  goal:      require('../../assets/sounds/goal.wav'),
-  levelup:   require('../../assets/sounds/levelup.wav'),
+  goal:      require('../../assets/sounds/607926__robinhood76__10661-bonus-correct-answer.wav'),
+  levelup:   require('../../assets/sounds/810755__mokasza__level-up-03.mp3'),
 };
 
 const soundCache: Record<string, Audio.Sound> = {};
