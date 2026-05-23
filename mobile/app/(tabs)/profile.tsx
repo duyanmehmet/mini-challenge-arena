@@ -109,7 +109,7 @@ export default function ProfileScreen() {
 
   const menuItems: { ionicon: string; color: string; bg: string; label: string; arrow: boolean; onPress: () => void }[] = [
     { ionicon: 'trophy-outline',         color: '#f59e0b', bg: '#fef9c3', label: 'Sıralamalar',   arrow: true,  onPress: () => router.push('/(tabs)/leaderboard' as any) },
-    { ionicon: 'ribbon-outline',         color: '#8b5cf6', bg: '#ede9fe', label: 'Rozetler',      arrow: true,  onPress: () => router.push('/stats' as any) },
+    { ionicon: 'ribbon-outline',         color: '#8b5cf6', bg: '#ede9fe', label: 'Rozetler',      arrow: true,  onPress: () => router.push('/badges' as any) },
     { ionicon: 'game-controller-outline',color: '#06b6d4', bg: '#e0f2fe', label: 'Oyun Geçmişi',  arrow: true,  onPress: () => router.push('/stats' as any) },
     { ionicon: 'people-outline',         color: '#10b981', bg: '#d1fae5', label: 'Arkadaşlar',    arrow: false, onPress: () => router.push('/(tabs)/friends' as any) },
     { ionicon: 'settings-outline',       color: '#6b7280', bg: '#f3f4f6', label: 'Ayarlar',       arrow: false, onPress: () => router.push('/settings' as any) },
