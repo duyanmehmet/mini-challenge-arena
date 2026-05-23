@@ -16,8 +16,7 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease",
-        "withoutCredentials": false,
-        "abiFilters": ["arm64-v8a"]
+        "withoutCredentials": false
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://mini-challenge-arena-production.up.railway.app/v1",
