@@ -94,6 +94,7 @@ export default function VerifyEmailScreen() {
         <Text style={s.backTxt}>← Geri</Text>
       </TouchableOpacity>
 
+
       <View style={s.inner}>
         <Text style={s.emoji}>📧</Text>
         <Text style={s.title}>E-posta Doğrulama</Text>
@@ -165,8 +166,8 @@ const s = StyleSheet.create({
   root:  { flex: 1, backgroundColor: BG },
   inner: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
 
-  backBtn: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, alignSelf: 'flex-start' },
-  backTxt: { fontFamily: 'Nunito-Regular', fontSize: 15, color: MUTED },
+  backBtn: { marginHorizontal: 16, marginTop: 12, alignSelf: 'flex-start', backgroundColor: PURP, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
+  backTxt: { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff' },
 
   emoji: { fontSize: 64, marginBottom: 16 },
   title: { fontFamily: 'Nunito-ExtraBold', fontSize: 26, color: TEXT, marginBottom: 12 },
