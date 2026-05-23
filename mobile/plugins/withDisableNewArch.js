@@ -1,6 +1,6 @@
 const { withGradleProperties } = require('@expo/config-plugins');
 
-module.exports = function withDisableNewArch(config) {
+module.exports = function withGradlePerf(config) {
   if (process.env.PREVIEW_BUILD !== '1') return config;
   return withGradleProperties(config, (cfg) => {
     try {
@@ -13,11 +13,10 @@ module.exports = function withDisableNewArch(config) {
           props.push({ type: 'property', key, value });
         }
       };
-      addOrUpdate('newArchEnabled', 'false');
       addOrUpdate('org.gradle.parallel', 'false');
       addOrUpdate('org.gradle.workers.max', '2');
     } catch (e) {
-      console.warn('[withDisableNewArch] failed:', e);
+      console.warn('[withGradlePerf] failed:', e);
     }
     return cfg;
   });
