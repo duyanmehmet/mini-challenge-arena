@@ -217,9 +217,9 @@ router.get("/streak-history", authMiddleware, async (req: AuthRequest, res) => {
     // Son 90 günde oynanmış benzersiz tarihler
     const rows = await db("game_results")
       .where("user_id", req.userId)
-      .whereRaw("played_at >= date('now', '-90 days')")
-      .select(db.raw("DATE(played_at) as played_date"))
-      .groupByRaw("DATE(played_at)")
+      .whereRaw("played_at >= NOW() - INTERVAL '90 days'")
+      .select(db.raw("TO_CHAR(played_at::date, 'YYYY-MM-DD') as played_date"))
+      .groupByRaw("played_at::date")
       .orderBy("played_date", "desc");
 
     const playedDates: string[] = rows.map((r: any) => r.played_date);
