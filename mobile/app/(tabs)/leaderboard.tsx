@@ -163,14 +163,11 @@ export default function SiralamaScreen() {
 
   return (
     <SafeAreaView style={s.root}>
-      {/* ── Başlık ── */}
+      {/* ── Geri + sağ butonlar ── */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Text style={s.backTxt}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={[s.leagueTitle, { color: leagueCfg.color }]}>
-          {leagueCfg.emoji} {leagueCfg.name} Ligi
-        </Text>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
           {countdown ? (
             <View style={s.countdown}>
@@ -188,6 +185,11 @@ export default function SiralamaScreen() {
           )}
         </View>
       </View>
+
+      {/* ── Lig başlığı — ikonların hemen üstünde ── */}
+      <Text style={[s.leagueTitle, { color: leagueCfg.color }]}>
+        {leagueCfg.emoji} {leagueCfg.name} Ligi
+      </Text>
 
       {/* ── Kupa satırı — sadece erişilebilen ligler ── */}
       <ScrollView
@@ -308,10 +310,10 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#ffffff' },
 
   // Header
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 20, paddingBottom: 8, gap: 8 },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 14, paddingBottom: 6, gap: 8 },
   backBtn:      { backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
   backTxt:      { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff' },
-  leagueTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 18, flex: 1, textAlign: 'center' },
+  leagueTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 20, textAlign: 'center', paddingBottom: 6 },
   countdown:    { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f3f4f6', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#e5e7eb' },
   countdownIcon:{ fontSize: 14 },
   countdownTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#374151' },
