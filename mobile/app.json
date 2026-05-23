@@ -54,6 +54,7 @@
       "expo-font",
       "./plugins/withAdMob",
       "./plugins/withAbiFilters",
+      "./plugins/withDisableNewArch",
       [
         "expo-notifications",
         {
