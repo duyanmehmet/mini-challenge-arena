@@ -120,6 +120,16 @@ export default function ResultScreen() {
   const [challengeResult, setChallengeResult] = useState<{ rank: number; xpBonus: number } | null>(null);
 
   useEffect(() => {
+    // Zafer / yenilgi sesi — ekran açılır açılmaz çal
+    if (isLigFailed) {
+      assetService.playSound('lose');
+      assetService.vibrate('error');
+    } else if (!isNewRecord) {
+      assetService.playSound('win');
+      assetService.vibrate('success');
+    }
+    // isNewRecord durumu aşağıda 'levelup' çalıyor
+
     const lid = counterAnim.addListener(({ value }) => setDisplayScore(Math.round(value)));
 
     Animated.parallel([
@@ -177,7 +187,7 @@ export default function ResultScreen() {
           });
           if (res?.streakCount !== undefined) updateUser({ streakCount: res.streakCount });
           if (res?.newLevel)                  updateUser({ level: res.newLevel });
-          if (res?.badgesUnlocked?.length)    assetService.playSound('win');
+          if (res?.badgesUnlocked?.length)    assetService.vibrate('combo');
           return;
         } catch {
           if (i < retries - 1) await new Promise(r => setTimeout(r, 2000 * (i + 1)));

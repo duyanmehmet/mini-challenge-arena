@@ -5,6 +5,7 @@ import { useSettingsStore } from '../store/settingsStore';
 const SOUNDS: Record<string, any> = {
   hit:       require('../../assets/sounds/hit.wav'),
   miss:      require('../../assets/sounds/miss.wav'),
+  lose:      require('../../assets/sounds/miss.wav'),
   combo:     require('../../assets/sounds/combo.wav'),
   win:       require('../../assets/sounds/win.wav'),
   countdown: require('../../assets/sounds/countdown.wav'),
