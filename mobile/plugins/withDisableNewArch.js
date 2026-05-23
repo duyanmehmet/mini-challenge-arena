@@ -13,6 +13,7 @@ module.exports = function withGradlePerf(config) {
           props.push({ type: 'property', key, value });
         }
       };
+      addOrUpdate('newArchEnabled', 'true');
       addOrUpdate('org.gradle.parallel', 'false');
       addOrUpdate('org.gradle.workers.max', '2');
     } catch (e) {
