@@ -48,7 +48,6 @@ export default function AntrenmanScreen() {
                       <Text style={{ fontSize: 28 }}>{cat.icon}</Text>
                     </View>
                     <Text style={s.catName}>{cat.shortName}</Text>
-                    <Text style={[s.catCount, { color: cat.color }]}>{cat.questionCount}+ soru</Text>
                   </TouchableOpacity>
                 ))}
               </View>

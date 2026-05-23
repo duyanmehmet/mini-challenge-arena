@@ -119,7 +119,6 @@ export default function StatsScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={s.modeNameTxt}>{m?.name ?? bestMode.mode}</Text>
-                    <Text style={s.modeCatTxt}>{m?.questionCount}+ soru</Text>
                   </View>
                   <Text style={[s.modeScore, { color: GOLD }]}>{bestMode.score.toLocaleString('tr-TR')}</Text>
                 </View>

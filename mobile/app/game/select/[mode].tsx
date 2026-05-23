@@ -50,10 +50,7 @@ export default function CategorySelectScreen() {
             <Text style={[s.infoVal, { color: cat.color }]}>⏱ 60s</Text>
             <Text style={[s.infoLabel, { color: C.textSecondary }]}>Süre</Text>
           </View>
-          <View style={[s.infoCard, { backgroundColor: C.bgSecondary }]}>
-            <Text style={[s.infoVal, { color: cat.color }]}>{cat.questionCount}+</Text>
-            <Text style={[s.infoLabel, { color: C.textSecondary }]}>Soru</Text>
-          </View>
+
           <View style={[s.infoCard, { backgroundColor: C.bgSecondary }]}>
             <Text style={[s.infoVal, { color: cat.color }]}>{pb ? `${pb.score}` : '—'}</Text>
             <Text style={[s.infoLabel, { color: C.textSecondary }]}>En İyi</Text>

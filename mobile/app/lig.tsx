@@ -323,7 +323,6 @@ export default function LigScreen() {
                             <Text style={{ fontSize: 26 }}>{cat.icon}</Text>
                           </View>
                           <Text style={s.modalCatName}>{cat.shortName}</Text>
-                          <Text style={[s.modalCatCount, { color: cat.color }]}>{cat.questionCount}+</Text>
                         </TouchableOpacity>
                       ))
                     }
