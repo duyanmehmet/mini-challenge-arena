@@ -308,7 +308,7 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#ffffff' },
 
   // Header
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, gap: 8 },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 20, paddingBottom: 8, gap: 8 },
   backBtn:      { backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
   backTxt:      { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff' },
   leagueTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 18, flex: 1, textAlign: 'center' },
