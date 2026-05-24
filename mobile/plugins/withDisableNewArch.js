@@ -13,9 +13,16 @@ module.exports = function withGradlePerf(config) {
           props.push({ type: 'property', key, value });
         }
       };
+      // New arch required by reanimated v4
       addOrUpdate('newArchEnabled', 'true');
+      // Aggressive memory limits to prevent OOM on EAS free tier
+      addOrUpdate('org.gradle.jvmargs', '-Xmx2048m -XX:MaxMetaspaceSize=512m -XX:+UseSerialGC -XX:+HeapDumpOnOutOfMemoryError');
       addOrUpdate('org.gradle.parallel', 'false');
-      addOrUpdate('org.gradle.workers.max', '2');
+      addOrUpdate('org.gradle.workers.max', '1');
+      addOrUpdate('org.gradle.daemon', 'false');
+      addOrUpdate('kotlin.incremental', 'false');
+      addOrUpdate('kotlin.incremental.java', 'false');
+      addOrUpdate('android.enableR8.fullMode', 'false');
     } catch (e) {
       console.warn('[withGradlePerf] failed:', e);
     }
