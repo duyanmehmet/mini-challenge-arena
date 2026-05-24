@@ -9,6 +9,8 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#0d0d1a"
     },
     "description": "Türkiye'nin en eğlenceli bilgi yarışması — Lig, Düello, Challenge ve Antrenman modlarıyla oyna!",
