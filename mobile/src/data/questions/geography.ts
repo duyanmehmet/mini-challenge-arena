@@ -626,6 +626,14 @@ const questions: QuizQuestion[] = [
   { q: 'Türkiye\'nin en yüksek dağı olan Ağrı Dağı hangi bölgede yer almaktadır?', a: ['Doğu Anadolu Bölgesi', 'İç Anadolu Bölgesi', 'Güneydoğu Anadolu Bölgesi', 'Karadeniz Bölgesi'], c: 0, e: '5137 metre yüksekliğiyle Türkiye\'nin en yüksek noktası olan Ağrı Dağı, Doğu Anadolu Bölgesi\'nde, Ağrı iline bağlı Doğubayazıt ilçesinde bulunmaktadır.', d: 2 },
   { q: 'Hangi ülkenin başkenti Astana\'dır?', a: ['Özbekistan', 'Kırgızistan', 'Kazakistan', 'Türkmenistan'], c: 2, e: 'Astana, Kazakistan\'ın başkentidir; şehir 2019-2022 yılları arasında Nur-Sultan adını taşımış, ardından tekrar Astana olarak değiştirilmiştir.', d: 2 },
 
+
+  // ── Vay Be! Soruları ──────────────────────────────────────────────
+  { q: 'Dünyanın en kısa uluslararası kara sınırı kaç metredir?', a: ['85 metre', '340 metre', '1.2 km', '3.4 km'], c: 0, d: 3, vb: true, e: 'İspanya\'nın Peñón de Vélez de la Gomera adacığını Fas\'a bağlayan 85 metrelik sınır, dünyanın en kısa uluslararası kara sınırıdır.' },
+  { q: 'Afrika\'nın en büyük ülkesi hangisidir?', a: ['Nijerya', 'Kongo', 'Sudan', 'Cezayir'], c: 3, d: 2, vb: true, e: 'Sudan\'ın 2011\'de ikiye bölünmesinden sonra Cezayir, 2,38 milyon km² ile Afrika\'nın en büyük ülkesi unvanını aldı. Birçok kişi hâlâ Sudan veya Kongo yanıtı veriyor.' },
+  { q: 'Türkiye\'nin yüzölçümü hangi iki Avrupa ülkesinin toplamını aşar?', a: ['Almanya + Fransa', 'İspanya + Portekiz', 'İngiltere + Fransa', 'İtalya + İspanya'], c: 1, d: 3, vb: true, e: 'Türkiye 783.356 km²; İspanya (504.782) + Portekiz (92.212) = 596.994 km². Türkiye ikisinin toplamından büyüktür.' },
+  { q: 'Rusya hem Avrupa\'da hem Asya\'da yer alır. Peki Avrupa\'daki bölümü ülkenin kaçta kaçını oluşturur?', a: ['%10\'dan az', 'Yaklaşık %25', 'Yaklaşık %40', '%60\'tan fazla'], c: 1, d: 3, vb: true, e: 'Rusya\'nın yaklaşık %23\'ü Avrupa\'da, %77\'si Asya\'dadır. Ancak nüfusunun büyük çoğunluğu Avrupa yakasında yaşar.' },
+  { q: 'Avustralya kıtası kaç ülkeden oluşur?', a: ['1', '3', '14', '22'], c: 0, d: 2, vb: true, e: 'Avustralya hem bir ülke hem bir kıtadır. Okyanusya bölgesiyle karıştırılır; ancak kıta olarak Avustralya tek bir ülkeden oluşur.' },
+  { q: 'Dünyanın en uzun ülke sınırı hangi iki ülke arasındadır?', a: ['Rusya - Çin', 'ABD - Kanada', 'Çin - Hindistan', 'Brezilya - Arjantin'], c: 1, d: 2, vb: true, e: 'ABD - Kanada sınırı 8.891 km ile dünyanın en uzun uluslararası kara sınırıdır. Bu iki ülke arasındaki sınır aynı zamanda dünyanın en az korunan sınırlarından biridir.' },
 ];
 
 export default questions;

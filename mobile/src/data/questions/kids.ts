@@ -535,6 +535,14 @@ const questions: QuizQuestion[] = [
   { q: 'Hangi yapı uzaydan gözle görülür diye ünlüdür (efsane)?', a: ['Eiffel Kulesi', 'Çin Seddi', 'Büyük Piramitler', 'Kremlin'], c: 1, e: 'Çin Seddi\'nin uzaydan gözle görülebileceği efsanesi yaygındır; ancak bu doğru değildir. Duvarın genişliği çok dardır ve uzaydan çıplak gözle görülmez.' },
   { q: 'Hangi renk dalga boyu en uzundur?', a: ['Mor', 'Mavi', 'Yeşil', 'Kırmızı'], c: 3, e: 'Görünür ışıkta kırmızı renk en uzun dalga boyuna (620-750 nm), mor ise en kısa dalga boyuna sahiptir.' },
   { q: 'Hangi ülkede "Atatürk" doğmuştur?', a: ['Türkiye (o zaman Osmanlı)', 'Yunanistan (Selanik, o zaman Osmanlı toprağı)', 'Bulgaristan', 'Irak'], c: 1, e: 'Mustafa Kemal Atatürk, 1881\'de Selanik\'te doğmuştur. O dönemde Selanik, Osmanlı İmparatorluğu\'nun bir şehriydi; bugün Yunanistan\'dadır.' },
+
+  // ── Vay Be! Soruları ──────────────────────────────────────────────
+  { q: 'Bir arı ömrü boyunca ne kadar bal üretir?', a: ['1 kg', '1 litre', '1 çay kaşığı', '1 kova'], c: 2, d: 2, vb: true, e: 'Bir işçi arı hayatı boyunca yalnızca 1/12 çay kaşığı (yaklaşık 0.8 gram) bal üretir. Bir kavanoz bal için binlerce arının ömür boyu emeği gerekir!' },
+  { q: 'Kelebekler neyle tat alır?', a: ['Antenleriyle', 'Ağızlarıyla', 'Ayaklarıyla', 'Kanatlarıyla'], c: 2, d: 2, vb: true, e: 'Kelebekler üzerlerine konan besinleri ayaklarındaki tat reseptörleriyle hisseder. Bir çiçeğe konduklarında hemen konulup konmayacaklarına ayaklarıyla karar verirler.' },
+  { q: 'Koala günde kaç saat uyur?', a: ['8 saat', '12 saat', '18 saat', '22 saat'], c: 3, d: 2, vb: true, e: 'Koalalar günde 18-22 saat uyur! Tok yemek yemeleri için çok az enerji gerekir. Sindirim süreçleri çok yavaş çalışır.' },
+  { q: 'Hangi hayvanın kanı mavi renktedir?', a: ['Köpekbalığı', 'Ahtapot', 'Balina', 'Kertenkele'], c: 1, d: 2, vb: true, e: 'Ahtapotun kanı hem mavimsidir hem de bakır içerir (hemoglobin değil hemosianin). Soğuk okyanusların derinliklerinde oksijeni daha iyi taşır.' },
+  { q: 'Bir zürafanın boynu kaç kemikten oluşur?', a: ['7', '14', '21', '30'], c: 0, d: 3, vb: true, e: 'İnanılmaz ama zürafa boynu sadece 7 kemikten oluşur — tıpkı bizim gibi! Ama her kemik çok daha büyük ve uzundur.' },
+  { q: 'Hangi hayvan, ağırlığının 50 katını taşıyabilir?', a: ['Fil', 'Karınca', 'At', 'Aslan'], c: 1, d: 2, vb: true, e: 'Karıncalar kendi ağırlığının 10-50 katını taşıyabilir. Eğer insanlar bu güce sahip olsaydı bir otomobili tek elimizle kaldırabilirdik!' },
 ];
 
 

@@ -273,6 +273,15 @@ const questions: QuizQuestion[] = [
   { q: 'Arapça: "طالب" (Talib)', a: ['Öğretmen', 'Öğrenci', 'Müdür', 'Çalışan'], c: 1 },
   { q: 'Arapça: "معلم" (Muallem)', a: ['Öğrenci', 'Öğretmen', 'Müdür', 'Ebeveyn'], c: 1 },
   { q: 'Arapça: "صواب" (Savab)', a: ['Yanlış', 'Doğru', 'Orta', 'Tartışmalı'], c: 1 },
+
+
+  // ── Vay Be! Soruları ──
+  { q: 'İngilizce "algebra" kelimesi hangi dilden geliyor?', a: ['Latince', 'Yunanca', 'Arapça', 'Farsça'], c: 2, d: 1, vb: true, e: '"Algebra" kelimesi Arapça "el-cebr"den gelir. 9. yüzyıl İslam matematikçisi El-Harezmi\'nin kitap başlığından türetilmiştir. Ayrıca algorithm, alcohol, coffee, sugar kelimeleri de Arapça kökenlidir.' },
+  { q: 'Arapça kaç ülkede resmi dildir?', a: ['10', '15', '22', '30'], c: 2, d: 1, vb: true, e: 'Arapça; Kuzey Afrika\'dan Orta Doğu\'ya 22 ülkede resmi dildir ve BM\'nin 6 resmi dilinden biridir. Yaklaşık 310 milyon kişi ana dili olarak konuşur, 422 milyon ise ikinci dil olarak kullanır.' },
+  { q: 'Arapça neden sağdan sola yazılır?', a: ['Rastgele seçildi', 'Antik Sami yazı geleneğinden; papirüste sağ el sola doğru yazmak daha pratikti', 'Dini gereklilik', 'Taş oyma tekniğinden'], c: 1, d: 2, vb: true, e: 'Sağdan sola yazma Fenike alfabesinden miras alınan Sami yazı geleneğine dayanır. Araştırmacılar, çivi yazısı döneminde tabletin sağdan tutulup sola doğru çizilmesinin bu yönü kalıcı kıldığını öne sürer.' },
+  { q: 'Kur\'an Arapçası ile günümüz konuşma Arapçası arasındaki fark nasıl açıklanır?', a: ['Tamamen aynı', 'Kur\'an Arapçası (Klasik) ile Mısır, Fas, Irak lehçeleri birbirinden anlaşılmazlık düzeyinde farklılaşabilir', 'Yalnızca telaffuz farkı', 'Modern Arapça daha eski'], c: 1, d: 2, vb: true, e: 'Klasik Kur\'an Arapçası ile Fas ya da Irak lehçesi arasında anlaşılırlık çok düşük olabilir. Bu yüzden Modern Standart Arapça (MSA) medya ve eğitimde ortak zemin sağlar; her Arap ülkesinde konuşulan lehçe ise günlük iletişimi karşılar.' },
+  { q: '"Sıfır" kavramını matematiğe kazandıran kültür hangisidir?', a: ['Yunan', 'Roma', 'İslam-Arap matematikçileri Hint geleneğiyle', 'Çin'], c: 2, d: 3, vb: true, e: 'Sıfır kavramı Hint matematikçilerince geliştirilmiş; El-Harezmi ve diğer İslam matematikçileri Avrupa\'ya aktarmıştır. Roma rakamlarında sıfır yoktu; bu yokluk yüzyıllarca matematiksel ilerlemeyi engelledi.' },
+  { q: 'Arapçada kaç temel harf (alet-harf) bulunur?', a: ['18', '22', '28', '32'], c: 2, d: 2, vb: true, e: 'Arap alfabesi 28 harften oluşur. Harfler; kelimenin başında, ortasında ve sonunda olmak üzere farklı biçim alır. Bu durum Arap kaligrafi sanatını dünyanın en köklü hat geleneklerinden biri yapar.' },
 ];
 
 export default questions;

@@ -626,6 +626,14 @@ const questions: QuizQuestion[] = [
   { q: 'İnsan vücudunda en fazla bulunan element hangisidir?', a: ['Karbon', 'Hidrojen', 'Oksijen', 'Azot'], c: 2, e: 'İnsan vücudunun yaklaşık %65\'i oksijenden oluşur; bu oran büyük ölçüde vücuttaki su ve organik moleküllerden kaynaklanır.', d: 2 },
   { q: 'Işığın bir ortamdan diğerine geçerken kırılmasını açıklayan Snell Yasası hangi iki büyüklük arasındaki ilişkiyi tanımlar?', a: ['Frekans ve dalga boyu', 'Gelme açısı ve kırılma açısı', 'Hız ve genlik', 'Yoğunluk ve basınç'], c: 1, e: 'Snell Yasası, ışığın iki farklı ortam arasındaki arayüzde kırılırken gelme açısı ile kırılma açısı arasındaki ilişkiyi n₁sin(θ₁) = n₂sin(θ₂) formülüyle tanımlar.', d: 2 },
 
+
+  // ── Vay Be! Soruları ──────────────────────────────────────────────
+  { q: 'İnsan DNA\'sı muzun DNA\'sıyla yüzde kaç oranda benzerdir?', a: ['%10', '%35', '%60', '%85'], c: 2, d: 3, vb: true, e: 'İnsanlar ve muzlar DNA\'larının yaklaşık %60\'ını paylaşır. Bu, evrimsel ortak atadan gelen temel biyolojik süreçlerin ne kadar evrensel olduğunu gösterir.' },
+  { q: 'Bir şimşeğin yüzey sıcaklığı güneşin yüzeyine kıyasla nasıldır?', a: ['Çok daha soğuk', 'Benzer', 'Güneşten 4 kat daha sıcak', 'Sadece biraz daha sıcak'], c: 2, d: 3, vb: true, e: 'Güneşin yüzeyi ~5.500°C, bir şimşek ise ~30.000°C\'ye ulaşır — yaklaşık 5 kat daha sıcak. Çok kısa sürer ama inanılmaz yoğunluktadır.' },
+  { q: 'Uzaya giden astronotlar Dünya\'ya döndüklerinde genellikle ne kadar uzar?', a: ['Hiç değişmez', '~2 cm', '~5 cm', '~10 cm'], c: 1, d: 2, vb: true, e: 'Yerçekiminin yokluğunda omurga diskleri genişler. Astronotlar uzun görevlerde yaklaşık 2 cm uzayabilir; Dünya\'ya döndüklerinde eski boylarına dönerler.' },
+  { q: 'Bal kaç yıl boyunca bozulmadan kalabilir?', a: ['5 yıl', '100 yıl', '1000 yıl', 'Pratikte sonsuza kadar'], c: 3, d: 2, vb: true, e: 'Mısır piramitlerinde bulunan 3.000 yıllık bal hâlâ yenilebilir durumdaydı. Balın asidik yapısı ve düşük nem içeriği bakteri üremesini engeller.' },
+  { q: 'Ortalama bir bulutun ağırlığı kaçtır?', a: ['500 kg', '50 ton', '500 ton', '500.000 ton'], c: 3, d: 3, vb: true, e: 'Kümülüs (fırtına) bulutları 500.000 tona kadar su içerebilir. Ağırdırlar ama hava akımları sayesinde havada kalırlar.' },
+  { q: 'İnsan vücudundaki bakteri sayısı, insan hücre sayısından daha fazla mı?', a: ['Hayır, çok daha az', 'Hayır, yaklaşık eşit', 'Evet, birkaç kat fazla', 'Evet, 1 trilyon kat fazla'], c: 1, d: 3, vb: true, e: 'Güncel araştırmalar; bakteri sayısının insan hücre sayısıyla yaklaşık 1:1 oranında olduğunu gösteriyor (her ikisi de ~37 trilyon). Eski "10 kat fazla" tahmini revize edildi.' },
 ];
 
 export default questions;

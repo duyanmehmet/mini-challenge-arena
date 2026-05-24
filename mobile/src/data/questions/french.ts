@@ -253,6 +253,15 @@ const questions: QuizQuestion[] = [
   { q: 'Fransızca: "Jamais"', a: ['Her zaman', 'Bazen', 'Nadiren', 'Hiçbir zaman'], c: 3 },
   { q: 'Fransızca: "Souvent"', a: ['Nadiren', 'Hiç', 'Sık sık', 'Bazen'], c: 2 },
   { q: 'Fransızca: "Parfois"', a: ['Her zaman', 'Hiç', 'Bazen', 'Sık sık'], c: 2 },
+
+
+  // ── Vay Be! Soruları ──
+  { q: 'Fransızca dünyada kaç kişi tarafından konuşulmaktadır?', a: ['50 milyon', '100 milyon', '275 milyon+', '400 milyon'], c: 2, d: 1, vb: true, e: 'Fransızca; beş kıtada 275 milyondan fazla konuşanıyla dünyanın en yaygın dillerinden biridir. 2050\'ye kadar Afrika nüfus artışıyla bu rakamın 700 milyona ulaşması bekleniyor.' },
+  { q: 'İngilizce kelimelerin yaklaşık yüzde kaçı Fransızca kökenlidir?', a: ['%5', '%15', '%30', '%50'], c: 2, d: 2, vb: true, e: '1066 Norman Fethinden sonra yaklaşık 300 yıl boyunca İngiliz sarayı ve hukuku Fransızca konuştu. Bu etkiyle İngilizce kelimelerin yaklaşık %30\'u Fransızca kökenlidir: court, government, justice, restaurant gibi.' },
+  { q: 'Fransızca hangi dönemde "diplomasi dili" oldu?', a: ['Orta Çağ\'da', '17-20. yüzyıllarda; Fransız sarayının etkisiyle', 'Birinci Dünya Savaşı\'nda', 'Soğuk Savaş\'ta'], c: 1, d: 2, vb: true, e: '17. yüzyılda Louis XIV\'ün Versailles sarayı Avrupa\'nın kültürel merkezi haline gelince Fransızca diplomatik yazışmanın standart dili oldu. İngilizce bu rolü ancak 20. yüzyılda devraldı.' },
+  { q: 'Hangi İngilizce kelimeler Fransızca kökenlidir?', a: ['Yes, no, the', 'Restaurant, ballet, café, RSVP', 'Computer, internet, email', 'House, water, sun'], c: 1, d: 1, vb: true, e: 'Restaurant (Fransızca "restore etmek"), ballet (dans), café (kahve), RSVP (Répondez s\'il vous plaît = lütfen yanıt verin) hepsi Türkçe ve İngilizceye Fransızcadan geçmiştir.' },
+  { q: 'Fransızcada "le, la, les" neden kullanılır?', a: ['Sadece güzellik', 'Fransızcada her ismin eril ya da dişil cinsiyeti vardır; belirli artikeller bunu gösterir', 'Eski Latince zorunluluğu', 'İsteğe bağlı'], c: 1, d: 2, vb: true, e: 'Fransızca (ve Latince kökenli dillerin çoğu) gramatik cinsiyet sistemine sahiptir. "Le soleil" (güneş, eril) - "la lune" (ay, dişil). İngilizce bu sistemi kaybetmiş nadir Germen dilidir.' },
+  { q: 'Fransız kültürünün dünyaya kattığı "haute cuisine" kavramı ne zaman ortaya çıktı?', a: ['18. yüzyıl, Fransız Devrimi sonrası saray aşçılarının halka açılmasıyla', '10. yüzyıl', '20. yüzyıl', 'Napolyon dönemi'], c: 0, d: 3, vb: true, e: 'Fransız Devrimi\'nde saray mutfakları dağılınca saray aşçıları Paris\'te restoranlar açtı. Bu gelişme "haute cuisine"i halka yaydı ve 18. yüzyıl sonunda Paris dünya mutfak başkenti haline geldi.' },
 ];
 
 export default questions;

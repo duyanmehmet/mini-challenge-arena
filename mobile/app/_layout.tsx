@@ -22,6 +22,7 @@ import { CATEGORIES } from '../src/constants/categories';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { notificationService } from '../src/services/notification.service';
 import { ErrorBoundary } from '../src/components/ui/ErrorBoundary';
+import { seenQuestionsService } from '../src/services/seenQuestionsService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,6 +46,8 @@ export default function RootLayout() {
   useEffect(() => {
     // Auth yükle — internet yoksa cached data kullan, bloklama
     loadAuth().finally(() => setAuthLoaded(true));
+    // Dünün "görülen sorular" kayıtlarını temizle
+    seenQuestionsService.clearOldEntries();
   }, []);
 
   useEffect(() => {

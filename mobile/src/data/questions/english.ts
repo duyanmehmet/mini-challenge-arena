@@ -393,6 +393,15 @@ const english: QuizQuestion[] = [
   { q: '"Tiny" kelimesinin Türkçe anlamı nedir?', a: ['Büyük','Orta','Çok küçük','Küçük'], c: 2, e: 'Tiny = Çok küçük. Small\'dan daha küçük.', d: 2 },
   { q: '"Several" kelimesinin Türkçe anlamı nedir?', a: ['Bir','İki','Birkaç/Çeşitli','Çok fazla'], c: 2, e: 'Several = Birkaç. "Several times" = "Birkaç kez."', d: 2 },
   { q: '"Plenty" kelimesinin Türkçe anlamı nedir?', a: ['Az','Yetersiz','Bol miktarda','Biraz'], c: 2, e: 'Plenty = Bol miktarda. "Plenty of time" = "Bol zaman."', d: 2 },
+
+
+  // ── Vay Be! Soruları ──
+  { q: 'İngilizcenin en sık kullanılan harfi hangisidir?', a: ['A', 'T', 'E', 'S'], c: 2, d: 1, vb: true, e: '"E" harfi İngilizce metinlerin yaklaşık %13\'ünde en sık görülen harftir. Bu yüzden "lipogram" adlı edebi türde "E" harfi olmadan kitap yazmak çok zor bir sanatsal meydan okuma sayılır.' },
+  { q: 'Shakespeare İngilizceye kaç yeni kelime kattı?', a: ['100', '500', '1.700+', '10.000'], c: 2, d: 2, vb: true, e: 'Shakespeare yaklaşık 1.700 kelime icat etmiş ya da ilk kez yazıya dökmüştür: bedroom, lonely, generous, laughable, rant, swagger bunların bir kısmıdır. Bugün sıradan İngilizce cümlelerde bu kelimeler fark edilmeden kullanılır.' },
+  { q: '"Set" kelimesinin İngilizce sözlükteki anlam sayısı nedir?', a: ['10', '50', '100', '430+'], c: 3, d: 3, vb: true, e: '"Set" İngilizce\'nin en fazla anlama sahip kelimesidir: Oxford sözlüğü 430\'dan fazla farklı anlamını listeler. Fiil, isim, sıfat olarak kullanılır; set — kurulmak, set — güneşin batması, set — tenis seti gibi.' },
+  { q: 'İngilizce tahminen kaç kelime içerir?', a: ['10.000', '50.000', '170.000+', '1 milyon+'], c: 2, d: 2, vb: true, e: 'Oxford İngilizce Sözlüğü 170.000\'den fazla mevcut kelime listeler. Ancak argolar, teknik terimler ve eski kelimeler eklendiğinde bazı tahminler 1 milyona ulaşır. Bu İngilizce\'yi bilinen en zengin kelime hazinesine sahip dil yapar.' },
+  { q: '"Alphabet" kelimesi nereden geliyor?', a: ['Latince "alfa"dan', 'Yunan harfleri Alpha + Beta\'dan', 'İngilizce invented', 'Arapçadan'], c: 1, d: 2, vb: true, e: '"Alphabet" Yunanca\'nın ilk iki harfi Alpha (Α) ve Beta (Β)\'dan türetilmiştir. Bu Yunan harfleri de Fenike alfabesinden adapte edilmiştir; yani modern alfabe sistemi 3.000 yıl önceki Fenike tüccarlarına dayanır.' },
+  { q: 'İngilizcede hangi kelime hem soru hem cevap olarak kullanılabilir?', a: ['Yes', 'No', 'OK', '"I am" — en kısa tam İngilizce cümle de sayılır'], c: 3, d: 2, vb: true, e: '"I am" İngilizce\'nin en kısa tam cümlesidir (özne + yüklem). Öte yandan "OK" dünya dillerinde en yaygın tanınan İngilizce kelimedir; 1839\'da Amerikan gazetesinde şakadan doğan bu kısaltma küresel standart haline geldi.' },
 ];
 
 export default english;

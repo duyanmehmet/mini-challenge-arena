@@ -4,7 +4,8 @@ import { useGameStore } from '../../../store/gameStore';
 import { useUserStore } from '../../../store/userStore';
 import type { CategoryId } from '../../../constants/categories';
 import type { QuizQuestion } from '../../../types/quiz';
-import { getAdaptiveQuestions } from '../../../data/questions/index';
+import { getProgressiveQuestions } from '../../../data/questions/index';
+import { seenQuestionsService } from '../../../services/seenQuestionsService';
 import { assetService } from '../../../services/asset.service';
 
 const { width } = Dimensions.get('window');
@@ -60,14 +61,17 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const JOKER_LABELS = { fifty: '50:50', change: 'Değiştir', pass: 'Pas' };
   const JOKER_EMOJIS = { fifty: '✂️', change: '🔀', pass: '✕' };
 
-  const [pool] = useState<QuizQuestion[]>(() => {
-    if (externalPool) return externalPool;
-    const playCount = categoryPlayCounts[categoryId] ?? 0;
-    const all = getAdaptiveQuestions(categoryId, playCount);
-    if (questionCount) return all.slice(0, questionCount); // Antrenman: istenen sayı
-    if (initialLives !== undefined) return all.slice(0, 10); // Lig: 10 soru
-    return all; // Normal: süre bazlı
-  });
+  const [pool, setPool]         = useState<QuizQuestion[]>([]);
+  const [poolReady, setPoolReady] = useState(false);
+
+  useEffect(() => {
+    if (externalPool) { setPool(externalPool); setPoolReady(true); return; }
+    const count = questionCount ?? (initialLives !== undefined ? 10 : 60);
+    getProgressiveQuestions(categoryId, count).then(qs => {
+      setPool(qs);
+      setPoolReady(true);
+    });
+  }, []);
 
   const [qIndex, setQIndex]           = useState(0);
   const [feedback, setFeedback]       = useState<{ correct: boolean; explanation?: string } | null>(null);
@@ -92,24 +96,36 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const current    = pool[qIndex];
   const total      = isLiveMode ? pool.length : 10;
 
+  const finishGame = () => {
+    if (endCalled.current) return;
+    endCalled.current = true;
+    seenQuestionsService.markBatchAsSeen(categoryId, pool);
+    onEnd();
+  };
+
   // Session timer (genel süre)
   useEffect(() => {
-    if (isLiveMode) return;
+    if (isLiveMode || !poolReady) return;
     sesTimerRef.current = setInterval(() => {
       setSessionLeft(t => {
         if (t <= 1) {
           clearInterval(sesTimerRef.current!);
-          if (!endCalled.current) { endCalled.current = true; onEnd(); }
+          if (!endCalled.current) {
+            endCalled.current = true;
+            seenQuestionsService.markBatchAsSeen(categoryId, pool);
+            onEnd();
+          }
           return 0;
         }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(sesTimerRef.current!);
-  }, []);
+  }, [poolReady]);
 
   // Soru sayacı
   useEffect(() => {
+    if (!poolReady || !pool[qIndex]) return;
     qStartRef.current = Date.now();
     setQTimeLeft(QUESTION_TIME);
     timerAnim.setValue(1);
@@ -123,7 +139,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     }, 1000);
 
     return () => { if (qTimerRef.current) clearInterval(qTimerRef.current); timerAnim.stopAnimation(); };
-  }, [qIndex]);
+  }, [qIndex, poolReady]);
 
   const stopQTimer = () => { if (qTimerRef.current) clearInterval(qTimerRef.current); };
 
@@ -140,7 +156,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     setTimeout(() => {
       setFeedback(null);
       if (isLiveMode && newLives <= 0) {
-        if (!endCalled.current) { endCalled.current = true; onEnd(); }
+        finishGame();
       } else { nextQuestion(); }
     }, 2500); // Süre dolunca 2.5sn bekle
   };
@@ -162,7 +178,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     ]).start();
     const next = qIndex + 1;
     if (isLiveMode && next >= pool.length) {
-      if (!endCalled.current) { endCalled.current = true; onEnd(); }
+      finishGame();
       return;
     }
     setQIndex(next % pool.length);
@@ -198,7 +214,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     setTimeout(() => {
       setFeedback(null);
       if (isLiveMode && !isCorrect && lives - 1 <= 0) {
-        if (!endCalled.current) { endCalled.current = true; onEnd(); }
+        finishGame();
       } else { nextQuestion(); }
     }, isCorrect ? 1800 : 2500); // Doğru: 1.8sn, Yanlış: 2.5sn
   };
@@ -264,6 +280,14 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const useTime  = () => openBuyOrUse('change', jokersUsed.time, triggerChange);
   const useSkip  = () => openBuyOrUse('pass',   jokersUsed.skip, triggerPass);
 
+  if (!poolReady) {
+    return (
+      <View style={[s.root, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 15, color: MUTED }}>Sorular hazırlanıyor…</Text>
+      </View>
+    );
+  }
+
   if (!current) return null;
 
   const timerWidth = timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
@@ -311,6 +335,11 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
 
       {/* ── Soru ── */}
       <Animated.View style={[s.questionBox, { opacity: cardAnim, transform: [{ translateX: cardSlide }] }]}>
+        {current.vb && (
+          <View style={s.vayBeBadge}>
+            <Text style={s.vayBeTxt}>⚡ Vay Be!</Text>
+          </View>
+        )}
         <Text style={s.questionTxt}>{current.q}</Text>
       </Animated.View>
 
@@ -465,12 +494,18 @@ const s = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1, borderColor: '#e5e7eb',
     minHeight: 90, justifyContent: 'center',
+    alignItems: 'center',
   },
   questionTxt: {
     fontFamily: 'Nunito-ExtraBold',
     fontSize: 17, color: '#111827',
     textAlign: 'center', lineHeight: 26,
   },
+  vayBeBadge: {
+    backgroundColor: '#fff7ed', borderRadius: 20, borderWidth: 1, borderColor: '#fed7aa',
+    paddingHorizontal: 12, paddingVertical: 3, marginBottom: 10, alignSelf: 'center',
+  },
+  vayBeTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 12, color: '#ea580c' },
 
   // Açıklama
   explBox: {

@@ -508,6 +508,14 @@ const questions: QuizQuestion[] = [
   { q: 'Tarihte "Pers Savaşları" hangi iki taraf arasında yaşandı?', a: ['Roma ve Kartaca', 'Antik Yunan şehir devletleri ve Pers İmparatorluğu', 'Atina ve Sparta', 'Makedonya ve Mısır'], c: 1, e: 'Pers Savaşları (MÖ 499-449); Atina, Sparta ve diğer Yunan şehir devletleri ile Darius ve Serxes önderliğindeki Pers İmparatorluğu arasında geçti.', d: 2 },
   { q: 'İlk Olimpiyat Oyunları\'nın modern versiyonu hangi yılda ve nerede düzenlenmiştir?', a: ['1892 Paris', '1896 Atina', '1900 Paris', '1904 St. Louis'], c: 1, e: 'Modern Olimpiyat Oyunları\'nın ilk versiyonu, 1896 yılında Yunanistan\'ın başkenti Atina\'da düzenlenmiştir.', d: 2 },
 
+
+  // ── Vay Be! Soruları ──────────────────────────────────────────────
+  { q: 'Fatih Sultan Mehmet İstanbul\'u fethederken kaç yaşındaydı?', a: ['16', '21', '29', '35'], c: 1, d: 2, vb: true, e: 'Fatih, 21 yaşında İstanbul\'u fethetti. Tarihin en önemli askeri zaferlerinden biri bu kadar genç bir komutan tarafından kazanıldı.' },
+  { q: '"Konstantinopolis" adı Batı dünyasında yasal olarak "İstanbul" ile değiştirilen yıl hangisidir?', a: ['1453', '1800', '1930', '1960'], c: 2, d: 3, vb: true, e: 'Şehir 1453\'te Osmanlı\'ya geçmesine rağmen Batı\'da Konstantinopolis olarak biliniyordu. Türkiye 1930\'da yabancı ülkelerden İstanbul adını kullanmalarını talep etti.' },
+  { q: 'Kleopatra\'nın yaşadığı dönem, piramitlerin inşasından günümüze hangisine daha yakındır?', a: ['Piramitlere daha yakın', 'Günümüze daha yakın', 'Tam ortada', 'Eşit uzaklıkta'], c: 1, d: 3, vb: true, e: 'Büyük Piramit MÖ 2560\'ta inşa edildi, Kleopatra MÖ 69\'da doğdu. Aralarında 2491 yıl var; biz Kleopatra\'ya ondan çok daha yakınız!' },
+  { q: 'İkinci Dünya Savaşı\'nda Sovyetler Birliği\'nin kaybı tüm Batılı müttefiklerin toplamından kaç kat fazlaydı?', a: ['2 kat', '5 kat', '10 kat', 'Yaklaşık 27 milyon — tek başına zirve'], c: 3, d: 3, vb: true, e: 'SSCB yaklaşık 27 milyon insan kaybetti. ABD, İngiltere, Fransa ve tüm Batı müttefiklerinin toplam kaybının çok üzerindeydi.' },
+  { q: 'Napolyon\'un "kısa boylu" imajını yaratan efsane asıl nereden kaynaklanıyor?', a: ['Gerçekten çok kısaydı', 'Düşman İngiliz karikatüristlerin propagandası', 'Fransız sarayının şakası', 'Rus askeri kayıtları'], c: 1, d: 3, vb: true, e: 'Napolyon aslında 1.69 m boyundaydı — dönemin Fransız erkeği ortalaması. "Kısa Napolyon" efsanesi büyük ölçüde İngiliz karikatürist James Gillray\'in propagandasıdır.' },
+  { q: 'Osmanlı İmparatorluğu toplam kaç yıl hüküm sürdü?', a: ['423 yıl', '523 yıl', '623 yıl', '723 yıl'], c: 2, d: 2, vb: true, e: 'Osmanlı, 1299\'dan 1922\'ye kadar tam 623 yıl sürdü. Bu, Roma İmparatorluğu\'nun Batı ayağından (476 yıl) daha uzun bir ömürdür.' },
 ];
 
 export default questions;

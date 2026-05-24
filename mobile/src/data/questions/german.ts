@@ -253,6 +253,15 @@ const questions: QuizQuestion[] = [
   { q: 'Almanca: "Nie / Niemals"', a: ['Her zaman', 'Bazen', 'Nadiren', 'Hiçbir zaman'], c: 3 },
   { q: 'Almanca: "Oft"', a: ['Nadiren', 'Hiç', 'Sık sık', 'Bazen'], c: 2 },
   { q: 'Almanca: "Manchmal"', a: ['Her zaman', 'Hiç', 'Bazen', 'Sık sık'], c: 2 },
+
+
+  // ── Vay Be! Soruları ──
+  { q: 'Almanca Avrupa\'nın hangi dil sıralamasındadır?', a: ['2. en fazla konuşulan', '1. en fazla ana dil konuşanı', '3. sıra', '5. sıra'], c: 1, d: 1, vb: true, e: 'Almanca yaklaşık 90-100 milyon ana dil konuşanıyla Avrupa Birliği\'nde en fazla konuşulan ana dildir. İngilizcenin önündedir; ancak ikinci dil olarak İngilizce çok daha yaygındır.' },
+  { q: 'Almancada "isimler neden büyük harf" ile başlar?', a: ['Yazı hatalarını önlemek için', '17. yüzyılda dilbilgisi kuralı olarak standartlaştırıldı; cümle içinde isimleri ayırt eder', 'Dini gelenek', 'Rastgele'], c: 1, d: 2, vb: true, e: 'Almancadaki isim büyük harfle başlama kuralı 17. yüzyılda standartlaştı. Bu özellik okuyucunun metindeki isimleri (Substantiv) fiil ve sıfatlardan anında ayırt etmesini sağlar.' },
+  { q: 'Almanca\'da belgelenmiş en uzun kelimenin harf sayısı nedir?', a: ['25 harf', '40 harf', '63 harf', '79 harf'], c: 3, d: 3, vb: true, e: '"Donaudampfschiffahrtselektrizitätenhauptbetriebswerkbauunterbeamtengesellschaft" (79 harf) bir zamanlar Almanca en uzun kelime olarak kayıtlara geçti. Almanca bileşik kelimeleri sonsuza uzatabilir; bu dil kuralı esnekliği yaratır.' },
+  { q: 'Hangi buluşlar Alman mucitler tarafından yapıldı?', a: ['Elektrik ampulü, telefon', 'Otomobil (Benz), aspirin (Bayer), X-ışını (Röntgen)', 'Buharlı makine, matbaa', 'Uçak, telsiz'], c: 1, d: 2, vb: true, e: 'Karl Benz ilk içten yanmalı otomobili, Felix Hoffmann aspirin\'i, Wilhelm Röntgen X-ışınını icat etti. Almanya Nobel ödülü sayısında tarihsel olarak dünya liderlerinden biridir.' },
+  { q: 'Almanca ve İngilizce arasında nasıl bir akrabalık var?', a: ['Hiç akrabalık yok', 'Aynı Hint-Avrupa ailesinin Germen kolundan gelir; 1.500 yıl önce ortak atası vardı', 'İngilizce Almancadan kopyalandı', 'Sadece alfabe ortaklığı'], c: 1, d: 2, vb: true, e: 'Almanca ve İngilizce aynı Batı Germen dil ailesinden gelir. "Wasser-water, Haus-house, Mutter-mother, Buch-book" gibi çok sayıda ortak kökü vardır. Normanların 1066\'da İngiltere\'yi fethetmesiyle İngilizce Fransız etkisiyle farklılaştı.' },
+  { q: 'Almanya AB\'nin en büyük ekonomisiyken Türkiye ile ticaret hacmi ne düzeydedir?', a: ['Küçük', 'Almanya Türkiye\'nin en büyük ticaret ortaklarından biri; yılda 40+ milyar euro', 'Yalnızca turizm', '5 milyar euro'], c: 1, d: 1, vb: true, e: 'Almanya; hem ihracat hem ithalatta Türkiye\'nin en büyük ticaret ortaklarından biridir. Türkiye\'de 5 milyondan fazla Türk kökenli vatandaşın yaşadığı Almanya, kültürel ve ekonomik bağları güçlendiren bir köprü konumundadır.' },
 ];
 
 export default questions;

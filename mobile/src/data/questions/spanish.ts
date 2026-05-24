@@ -253,6 +253,15 @@ const questions: QuizQuestion[] = [
   { q: 'İspanyolca: "Nunca"', a: ['Her zaman', 'Bazen', 'Nadiren', 'Hiçbir zaman'], c: 3 },
   { q: 'İspanyolca: "A menudo / Frecuentemente"', a: ['Nadiren', 'Hiç', 'Sık sık', 'Bazen'], c: 2 },
   { q: 'İspanyolca: "A veces"', a: ['Her zaman', 'Hiç', 'Bazen', 'Sık sık'], c: 2 },
+
+
+  // ── Vay Be! Soruları ──
+  { q: 'İspanyolca kaç ülkede resmi dildir?', a: ['10', '15', '21', '30'], c: 2, d: 1, vb: true, e: 'İspanyolca; İspanya ve 20 Latin Amerika ülkesi olmak üzere 21 ülkede resmi dildir. Ana dil konuşan sayısı 480 milyon ile dünyada ikinci sıradadır; Mandarin Çincesinin ardından gelir.' },
+  { q: 'ABD\'de kaç kişi İspanyolca konuşur?', a: ['5 milyon', '15 milyon', '40 milyon+', '80 milyon'], c: 2, d: 1, vb: true, e: 'ABD\'de 40 milyondan fazla kişi İspanyolcayı ana dil olarak konuşur. Bu rakamla ABD, İspanya\'yı geride bırakarak dünyanın ikinci büyük İspanyolca konuşan ülkesi konumuna gelmiştir.' },
+  { q: '"Don Kişot" dünya edebiyatında nasıl bir yere sahiptir?', a: ['Yalnızca İspanyol klasiği', 'İngilizce sonrasında dünyada en çok çevirisi yapılan ikinci roman', 'Modern roman sayılmaz', 'Yalnızca çocuk kitabı'], c: 1, d: 2, vb: true, e: 'Cervantes\'in 1605 tarihli Don Kişot\'u; modern romanın başlangıcı ve İncil\'den sonra dünyada en fazla çevirisi yapılan ikinci edebi eser olarak kabul edilir. 140+ dile çevrilmiştir.' },
+  { q: 'İspanyolca ve Portekizce arasında ne kadar karşılıklı anlaşılabilirlik var?', a: ['Hiç yok', 'Yaklaşık %50', '%80-89; özellikle yazılı dilde', 'Tamamen aynı'], c: 2, d: 2, vb: true, e: 'İspanyolca ve Portekizce aynı İber Romence ailesinden gelir. Yazılı dilde anlaşılabilirlik %80-89 düzeyinde iken konuşmada (özellikle Brezilya Portekizcesi) fark daha belirginleşir.' },
+  { q: 'İspanyolcada "¿" ve "¡" işaretleri neden cümle başında kullanılır?', a: ['Kural hata', 'Okuyucunun soru/ünlem cümlesini baştan anlaması için; başında ve sonunda ikişer işaret', 'Sadece eski metinlerde', 'Yazı stili tercihi'], c: 1, d: 2, vb: true, e: 'İspanyolca, cümlenin türünü okuyucuya başından bildirmek için başa "¿" veya "¡" ekler. Bu özellik İspanyolcayı tüm Romen dillerinden ve dünya dillerinin büyük çoğunluğundan ayıran benzersiz bir özellik.' },
+  { q: 'İspanyolca\'nın kökeni hangi antik dile dayanır?', a: ['Yunanca', 'Arapça', 'Vulgata Latincesi; Roma\'nın İber yarımadasını fethetmesiyle yayıldı', 'Gotça'], c: 2, d: 3, vb: true, e: 'İspanyolca; Roma\'nın MÖ 218\'de İber yarımadasını fethetmesiyle yerleşen Halk Latincesi\'nden (Vulgata) evrildi. Arapça hakimiyeti döneminde (711-1492) 4.000 kadar Arapça kelime İspanyolcaya girdi: algebra, alcohol, azúcar (şeker) gibi.' },
 ];
 
 export default questions;

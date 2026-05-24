@@ -1,5 +1,6 @@
 import type { CategoryId } from '../../constants/categories';
 import type { QuizQuestion } from '../../types/quiz';
+import { seenQuestionsService } from '../../services/seenQuestionsService';
 
 import history   from './history';
 import geography from './geography';
@@ -77,25 +78,59 @@ export function getShuffledQuestions(categoryId: CategoryId): QuizQuestion[] {
 }
 
 /**
- * Her oyunda farklı sorular — playCount arttıkça başlangıç noktası kayar,
- * peş peşe aynı soru kesinlikle gelmez.
+ * Kolay → Orta → Zor sıralı, o gün görülen soruları atlayan akıllı soru havuzu.
+ * count: kaç soru isteniyor (lig=10, antrenman=N, normal=büyük sayı)
  */
-export function getAdaptiveQuestions(categoryId: CategoryId, playCount: number): QuizQuestion[] {
+export async function getProgressiveQuestions(
+  categoryId: CategoryId,
+  count: number,
+): Promise<QuizQuestion[]> {
   const all = getQuestions(categoryId);
   if (all.length === 0) return [];
 
-  const easy   = shuffle(all.filter(q => (q.d ?? 2) <= 1));
-  const medium = shuffle(all.filter(q => (q.d ?? 2) === 2 || (q.d ?? 2) === 3));
-  const hard   = shuffle(all.filter(q => (q.d ?? 2) >= 4));
+  const seenIds = await seenQuestionsService.getSeenIds(categoryId);
+  const seenSet = new Set(seenIds);
+  const key = (q: QuizQuestion) => q.q.slice(0, 60);
 
-  const BLOCK  = 15;
-  const offset = (playCount * BLOCK) % Math.max(medium.length, 1);
+  const unseen = all.filter(q => !seenSet.has(key(q)));
+  // Yeterli görülmemiş soru varsa onu kullan, yoksa tüm havuza dön
+  const pool = unseen.length >= Math.ceil(count * 0.5) ? unseen : all;
 
-  const easyPick = [...easy.slice(offset % Math.max(easy.length, 1)), ...easy].slice(0, easy.length);
-  const medPick  = [...medium.slice(offset), ...medium.slice(0, offset)];
-  const hardPick = [...hard.slice(offset % Math.max(hard.length, 1)), ...hard].slice(0, hard.length);
+  const easy   = shuffle(pool.filter(q => (q.d ?? 2) === 1));
+  const medium = shuffle(pool.filter(q => (q.d ?? 2) === 2));
+  const hard   = shuffle(pool.filter(q => (q.d ?? 2) === 3));
 
-  return dedupeConsecutive([...easyPick, ...medPick, ...hardPick]);
+  // Dağılım: %30 kolay, %40 orta, %30 zor
+  const easyCount = Math.max(1, Math.round(count * 0.3));
+  const hardCount = Math.max(1, Math.round(count * 0.3));
+  const medCount  = count - easyCount - hardCount;
+
+  const result: QuizQuestion[] = [
+    ...easy.slice(0, easyCount),
+    ...medium.slice(0, medCount),
+    ...hard.slice(0, hardCount),
+  ];
+
+  // Herhangi bir bucket yetersizse geri kalanı diğerlerinden tamamla
+  if (result.length < count) {
+    const used = new Set(result.map(q => q.q));
+    const extra = shuffle([...easy, ...medium, ...hard]).filter(q => !used.has(q.q));
+    result.push(...extra.slice(0, count - result.length));
+  }
+
+  return dedupeConsecutive(result.slice(0, count));
+}
+
+/** Eski kodla uyumluluk — senkron versiyon (görülen soru takibi yok) */
+export function getAdaptiveQuestions(categoryId: CategoryId, _playCount: number): QuizQuestion[] {
+  const all = getQuestions(categoryId);
+  if (all.length === 0) return [];
+
+  const easy   = shuffle(all.filter(q => (q.d ?? 2) === 1));
+  const medium = shuffle(all.filter(q => (q.d ?? 2) === 2));
+  const hard   = shuffle(all.filter(q => (q.d ?? 2) === 3));
+
+  return dedupeConsecutive([...easy, ...medium, ...hard]);
 }
 
 /** Belirli sayıda rastgele soru — düello turları için */

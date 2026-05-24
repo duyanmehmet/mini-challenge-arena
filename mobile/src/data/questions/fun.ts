@@ -82,6 +82,15 @@ const fun: QuizQuestion[] = [
   { q: 'Futbol topunun siyah-beyaz deseni neden var?', a: ['Moda','TV\'de görünürlük için','Gelenek','Kural'], c: 1, e: 'Siyah-beyaz desen siyah-beyaz TV yayınında topun daha iyi görünmesi için tasarlandı.', d: 2 },
   { q: 'Golf topundaki çukurcuklar ne işe yarar?', a: ['Görünüş için','Az sürtünme','Daha uzak gitmek için','Tutunma için'], c: 2, e: 'Çukurcuklar aerodinamiği artırarak topun %40 daha uzağa gitmesini sağlar.', d: 2 },
   { q: 'Hangi ülke en fazla olimpiyat madalyası kazandı (tarihsel)?', a: ['Rusya','Çin','Almanya','ABD'], c: 3, e: 'ABD 1.000+ olimpiyat madalyasıyla tarihsel sıralamada açık ara birinci.', d: 2 },
+
+
+  // ── Vay Be! Soruları ──
+  { q: 'Kutup ayısı tüyleri aslında hangi renktedir?', a: ['Beyaz', 'Sarı', 'Şeffaf; deri ise siyah', 'Gri'], c: 2, d: 2, vb: true, e: 'Kutup ayısı tüyleri renksiz ve şeffaftır; ışığı yansıttığı için beyaz görünür. Derisi ise ısıyı absorbe etmek için tamamen siyahtır. "Beyaz ayı" dediğimiz hayvanın hiç beyaz tüyü yoktur!' },
+  { q: 'Bir insan ömründe ortalama kaç yıl uyur?', a: ['10 yıl', '15 yıl', '25 yıl', '35 yıl'], c: 2, d: 1, vb: true, e: 'Ortalama 79 yıllık bir ömürde yaklaşık 26 yıl uyuyarak geçirilir. Üstelik 7 yıl çeşitli ekranların başında zaman harcanır. Uyanık ve ekransız geçirilen "aktif" süre tahmin edilenden çok daha kısadır.' },
+  { q: 'Popeye\'nin ıspanak yemesi hangi etkiyi yarattı?', a: ['Hiçbir şey', 'ABD\'de ıspanak tüketimi yaklaşık %33 arttı', 'Çocuklar ıspanaktan nefret etti', 'Yalnızca İngiltere\'de'], c: 1, d: 2, vb: true, e: '1929-1930\'larda Popeye çizgi romanının yayımlanmasının ardından ABD\'de ıspanak tüketiminin belirgin biçimde arttığı tarihi kayıtlara geçti. Karakter bir hata sonucu ıspanağın demiri 10 kat abartılmış olarak sunuldu — ama halk inandı.' },
+  { q: '"Kelebek etkisi" hangi bilim dalına ait bir kavramdır?', a: ['Biyoloji', 'Meteoroloji', 'Kaos teorisi / matematik', 'Fizik'], c: 2, d: 2, vb: true, e: '"Kelebek etkisi" matematiksel kaos teorisine aittir: küçük başlangıç koşullarının büyük farklı sonuçlara yol açabileceğini ifade eder. Edward Lorenz 1963\'te bir kelebeğin kanat çırpmasının Teksas\'ta kasırgaya yol açabileceğini metafor olarak kullandı.' },
+  { q: 'Dünyanın en fazla satılan ticari ürünü hangisidir?', a: ['iPhone', 'Coca-Cola', 'LEGO tuğlası', 'Monopoly'], c: 2, d: 2, vb: true, e: 'LEGO, yılda üretilen parça sayısı bazında dünyanın en çok "üretilen nesnesini" oluşturur: yaklaşık 36 milyar LEGO parçası yılda üretilir. Bu, her yaşayan insana 5 parça düştüğü anlamına gelir.' },
+  { q: '"OK" kelimesi nasıl ortaya çıktı?', a: ['Old Kindly\'ın kısaltması', 'Yunan "ola kala" (her şey yolunda) ifadesinden', '1839 Amerikan gazetesinde yazım şakasından: "Oll Korrect"', 'Osmanlıca köken'], c: 2, d: 3, vb: true, e: '"OK" 1839\'da Boston Morning Post gazetesinde "All Correct" ifadesinin kasıtlı yanlış yazımı "Oll Korrect"in baş harfleri olarak şaka amaçlı kullanıldı. Bugün İngilizcenin en evrensel kısaltmasına dönüştü; neredeyse tüm dünya dillerinde aynı şekilde kullanılıyor.' },
 ];
 
 export default fun;
