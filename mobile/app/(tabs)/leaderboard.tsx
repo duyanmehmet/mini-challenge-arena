@@ -9,7 +9,6 @@ import { useFocusEffect, router } from 'expo-router';
 import { useUserStore } from '../../src/store/userStore';
 import { Avatar } from '../../src/components/ui/Avatar';
 import api from '../../src/services/api';
-import { BANNER_ID } from '../../src/services/admob.service';
 
 const { width } = Dimensions.get('window');
 
@@ -284,26 +283,7 @@ export default function SiralamaScreen() {
 }
 
 function BannerAdView() {
-  const [BannerAd, setBannerAd] = useState<any>(null);
-  const [BannerAdSize, setBannerAdSize] = useState<any>(null);
-
-  useEffect(() => {
-    import('react-native-google-mobile-ads').then(m => {
-      setBannerAd(() => m.BannerAd);
-      setBannerAdSize(m.BannerAdSize);
-    }).catch(() => {});
-  }, []);
-
-  if (!BannerAd || !BannerAdSize) return null;
-  return (
-    <View style={{ alignItems: 'center', backgroundColor: '#f9fafb', borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingVertical: 4 }}>
-      <BannerAd
-        unitId={BANNER_ID ?? ''}
-        size={BannerAdSize.BANNER}
-        requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-      />
-    </View>
-  );
+  return null;
 }
 
 const s = StyleSheet.create({
