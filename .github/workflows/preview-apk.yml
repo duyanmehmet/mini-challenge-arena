@@ -49,10 +49,20 @@ jobs:
         working-directory: mobile
         run: eas build --platform android --profile preview --local --non-interactive
 
+      - name: Locate APK
+        working-directory: mobile
+        run: |
+          echo "=== Searching for APK files ==="
+          find . -name "*.apk" -not -path "*/node_modules/*" 2>/dev/null
+          echo "=== EAS build output dir ==="
+          ls -la *.apk 2>/dev/null || echo "No APK in mobile/ root"
+
       - name: Find and upload APK
         uses: actions/upload-artifact@v4
         with:
           name: zeka-meydani-preview-${{ github.run_number }}
-          path: mobile/android/app/build/outputs/apk/release/app-release.apk
+          path: |
+            mobile/*.apk
+            mobile/android/app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 14
