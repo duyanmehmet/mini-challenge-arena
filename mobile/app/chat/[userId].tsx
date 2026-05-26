@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  TextInput, ActivityIndicator, Platform, StatusBar, Keyboard,
+  TextInput, ActivityIndicator, Platform, StatusBar, Keyboard, KeyboardAvoidingView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -36,17 +36,14 @@ export default function ChatScreen() {
   const [input,       setInput]       = useState('');
   const [loading,     setLoading]     = useState(true);
   const [sending,     setSending]     = useState(false);
-  const [kbHeight,    setKbHeight]    = useState(0);
   const listRef = useRef<FlatList>(null);
 
-  // Klavye yüksekliğini dinle
+  // Klavye açıldığında listeyi en alta kaydır
   useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', e => {
-      setKbHeight(e.endCoordinates.height);
+    const show = Keyboard.addListener('keyboardDidShow', () => {
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
     });
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
-    return () => { show.remove(); hide.remove(); };
+    return () => show.remove();
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -84,7 +81,11 @@ export default function ChatScreen() {
   const myId      = user?.id;
 
   return (
-    <View style={[s.root, { paddingTop: topPad }]}>
+    <KeyboardAvoidingView
+      style={[s.root, { paddingTop: topPad }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
 
       {/* ── Header ── */}
       <View style={s.header}>
@@ -116,7 +117,8 @@ export default function ChatScreen() {
           ref={listRef}
           data={messages}
           keyExtractor={(item, i) => item?.id ?? String(i)}
-          contentContainerStyle={[s.listPad, { paddingBottom: INPUT_BAR_H + kbHeight + bottomPad + 8 }]}
+          style={{ flex: 1 }}
+          contentContainerStyle={[s.listPad, { paddingBottom: 8 }]}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
@@ -135,8 +137,8 @@ export default function ChatScreen() {
         />
       )}
 
-      {/* ── Input — klavye yüksekliğine göre yukarı kayar ── */}
-      <View style={[s.inputBar, { bottom: kbHeight + bottomPad }]}>
+      {/* ── Input bar — her zaman ekranın altında, klavye üstünde ── */}
+      <View style={[s.inputBar, { paddingBottom: bottomPad }]}>
         <TextInput
           style={s.input}
           value={input}
@@ -158,12 +160,12 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
 
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#ffffff' },
+  root: { flex: 1, backgroundColor: '#ffffff', flexDirection: 'column' },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
@@ -188,11 +190,9 @@ const s = StyleSheet.create({
   bubbleTxt:{ fontFamily: 'Nunito-Regular', fontSize: 15, lineHeight: 22 },
   time:    { fontFamily: 'Nunito-Regular', fontSize: 10, color: '#9ca3af', marginTop: 3, paddingHorizontal: 4 },
 
-  // Absolute input
   inputBar: {
-    position: 'absolute', left: 0, right: 0,
     flexDirection: 'row', alignItems: 'flex-end',
-    paddingHorizontal: 12, paddingVertical: 10,
+    paddingHorizontal: 12, paddingTop: 10,
     borderTopWidth: 1, borderTopColor: '#f3f4f6',
     backgroundColor: '#ffffff', gap: 10,
   },

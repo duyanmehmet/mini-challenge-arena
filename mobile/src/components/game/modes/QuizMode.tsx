@@ -46,7 +46,7 @@ export interface Props {
   lives?: number;
   questionCount?: number; // Kaç soru sonra bitsin (antrenman modu için)
   onLifeLost?: () => void;
-  onAnswer?: (correct: boolean, pts: number, qIndex: number) => void;
+  onAnswer?: (correct: boolean, pts: number, qIndex: number, answerIdx?: number) => void;
   onPause?: () => void;
   catIcon?: string;
 }
@@ -208,7 +208,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     }
 
     setFeedback({ correct: isCorrect, explanation: current.e });
-    onAnswer?.(isCorrect, pts, qIndex);
+    onAnswer?.(isCorrect, pts, qIndex, choiceIdx);
     setAnswered(n => n + 1);
 
     setTimeout(() => {

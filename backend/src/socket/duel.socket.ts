@@ -143,7 +143,7 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
         const spin = spinWheel();
         return {
           ...spin,
-          questions: getSeedQuestions(spin.category, Date.now() + Math.floor(Math.random() * 999983), 3),
+          questions: getSeedQuestions(spin.category, Date.now() + Math.floor(Math.random() * 999983), 5),
           answers: new Map(),
         };
       });
@@ -190,7 +190,7 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
   });
 
   // ── Tur cevabı ───────────────────────────────────────────────────
-  socket.on('duel_round_answer', ({ duelId, correct }: { duelId: string; correct: boolean }) => {
+  socket.on('duel_round_answer', ({ duelId, correct, answerIdx }: { duelId: string; correct: boolean; answerIdx?: number }) => {
     const room = rooms.get(duelId);
     if (!room) return;
 
@@ -204,10 +204,10 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
     player.currentRoundAnswers++;
     if (correct) player.currentRoundCorrect++;
 
-    // Rakibe bildir
+    // Rakibe bildir — hangi şıkkı seçtiğini de gönder
     const opp = room.players.find(p => p.userId !== userId);
     if (opp) {
-      io.to(opp.socketId).emit('duel_opponent_answer', { correct, answered: player.currentRoundAnswers });
+      io.to(opp.socketId).emit('duel_opponent_answer', { correct, answered: player.currentRoundAnswers, answerIdx: answerIdx ?? null });
     }
 
     // İkisi de bu turda tüm soruları bitirdiyse

@@ -7,6 +7,7 @@ import {
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
 
 import { authService } from '../../src/services/auth.service';
 
@@ -15,6 +16,11 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_WEB_CLIENT_ID     = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? '';
 const GOOGLE_IOS_CLIENT_ID     = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '';
+
+// Android'de SADECE Android client ID kullan — web client ID fallback yapma
+const androidClientId = GOOGLE_ANDROID_CLIENT_ID || undefined;
+const iosClientId     = GOOGLE_IOS_CLIENT_ID     || undefined;
+const googleEnabled   = !!(GOOGLE_WEB_CLIENT_ID && (Platform.OS === 'ios' ? iosClientId : androidClientId || GOOGLE_WEB_CLIENT_ID));
 
 const BG     = '#ffffff';
 const CARD   = '#ffffff';
@@ -39,11 +45,17 @@ export default function AuthScreen() {
   const [loading, setLoading]   = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: 'mca',
+    path: 'oauth',
+  });
+
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId:     GOOGLE_WEB_CLIENT_ID,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID || GOOGLE_WEB_CLIENT_ID,
-    iosClientId:     GOOGLE_IOS_CLIENT_ID     || GOOGLE_WEB_CLIENT_ID,
+    webClientId:     GOOGLE_WEB_CLIENT_ID || undefined,
+    androidClientId: androidClientId,
+    iosClientId:     iosClientId,
     scopes: ['openid', 'profile', 'email'],
+    redirectUri,
   });
 
   useEffect(() => {
@@ -221,7 +233,7 @@ export default function AuthScreen() {
             <TouchableOpacity
               style={[s.socialBtn, { opacity: googleLoading ? 0.6 : 1 }]}
               onPress={() => {
-                if (!GOOGLE_WEB_CLIENT_ID) {
+                if (!googleEnabled) {
                   Alert.alert('Yapılandırılmamış', 'Google girişi henüz aktif değil.\nE-posta ve şifrenizle giriş yapabilirsiniz.');
                   return;
                 }

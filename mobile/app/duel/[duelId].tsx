@@ -220,6 +220,7 @@ export default function DuelGameScreen() {
   const [oppRoundWins,   setOppRoundWins]  = useState(0);
   const [spinDone,       setSpinDone]      = useState(false);
   const [oppFlash,       setOppFlash]      = useState<boolean | null>(null);
+  const [oppAnswerLetter,setOppAnswerLetter] = useState<string | null>(null);
   const [showEmojis,     setShowEmojis]    = useState(false);
   const [sentEmoji,      setSentEmoji]     = useState<string | null>(null);
   const [recvEmoji,      setRecvEmoji]     = useState<string | null>(null);
@@ -256,8 +257,13 @@ export default function DuelGameScreen() {
       startGame(data.category as any);
     });
 
-    socket.on('duel_opponent_answer', ({ correct }: { correct: boolean; answered: number }) => {
+    socket.on('duel_opponent_answer', ({ correct, answerIdx }: { correct: boolean; answered: number; answerIdx?: number | null }) => {
       setOppFlash(correct);
+      if (answerIdx != null) {
+        const letter = ['A', 'B', 'C', 'D'][answerIdx] ?? null;
+        setOppAnswerLetter(letter);
+        setTimeout(() => setOppAnswerLetter(null), 3000);
+      }
       Animated.sequence([
         Animated.spring(oppScaleAnim, { toValue: 1.3, useNativeDriver: true, speed: 50 }),
         Animated.spring(oppScaleAnim, { toValue: 1,   useNativeDriver: true, speed: 20 }),
@@ -312,9 +318,9 @@ export default function DuelGameScreen() {
     };
   }, []);
 
-  const handleAnswer = (correct: boolean, pts: number) => {
+  const handleAnswer = (correct: boolean, pts: number, qIndex: number, answerIdx?: number) => {
     const socket = socketService.getSocket();
-    socket?.emit('duel_round_answer', { duelId, userId: user?.id, correct });
+    socket?.emit('duel_round_answer', { duelId, userId: user?.id, correct, answerIdx: answerIdx ?? null });
   };
 
   const handleRoundEnd = () => {
@@ -506,6 +512,13 @@ export default function DuelGameScreen() {
           </Animated.View>
           <Text style={g.playerName} numberOfLines={1}>{opponent?.username ?? '...'}</Text>
           <Text style={[g.turWins, { color: MUTED }]}>{oppRoundWins} tur</Text>
+          {oppAnswerLetter && (
+            <View style={[g.oppAnswerBadge, { backgroundColor: oppFlash === false ? RED + '22' : oppFlash ? GREEN + '22' : '#f3f4f6' }]}>
+              <Text style={[g.oppAnswerTxt, { color: oppFlash === false ? RED : oppFlash ? GREEN : MUTED }]}>
+                {oppFlash === false ? '✗' : oppFlash ? '✓' : ''} {oppAnswerLetter}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -590,6 +603,8 @@ const g = StyleSheet.create({
   x2miniTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 10, color: GOLD },
   notifBar:    { backgroundColor: '#ede9fe', paddingHorizontal: 16, paddingVertical: 8, alignItems: 'center' },
   notifTxt:    { fontFamily: 'Nunito-Bold', fontSize: 13, color: '#7c3aed' },
+  oppAnswerBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, marginTop: 2 },
+  oppAnswerTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 12 },
   emojiToggle: { position: 'absolute', bottom: 100, right: 16, backgroundColor: '#6c3aed', width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', shadowColor: '#6c3aed', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 6, elevation: 5 },
   emojiBar:    { position: 'absolute', bottom: 154, right: 16, backgroundColor: '#fff', borderRadius: 20, padding: 10, flexDirection: 'row', gap: 8, borderWidth: 1, borderColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 8 },
   emojiBtn:    { padding: 4 },
