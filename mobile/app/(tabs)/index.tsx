@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import NetInfo from '@react-native-community/netinfo';
 import { useUserStore } from '../../src/store/userStore';
 import { userService } from '../../src/services/user.service';
 import api from '../../src/services/api';
@@ -173,8 +174,9 @@ function SwordClash() {
 // ─── ANA EKRAN ────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { user, dailyTasks, setDailyTasks, setPersonalBests, updateUser, setBadges, token } = useUserStore();
-  const [ligInfo, setLigInfo] = useState<any>(null);
-  const [unread,  setUnread]  = useState(0);
+  const [ligInfo,   setLigInfo]   = useState<any>(null);
+  const [unread,    setUnread]    = useState(0);
+  const [isOffline, setIsOffline] = useState(false);
   const headerOp = useRef(new Animated.Value(0)).current;
   const headerY  = useRef(new Animated.Value(-20)).current;
 
@@ -183,6 +185,8 @@ export default function HomeScreen() {
       Animated.timing(headerOp, { toValue: 1, duration: 400, useNativeDriver: true }),
       Animated.timing(headerY,  { toValue: 0, duration: 400, easing: Easing.out(Easing.quad), useNativeDriver: true }),
     ]).start();
+    const unsub = NetInfo.addEventListener(state => setIsOffline(!state.isConnected));
+    return unsub;
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -233,7 +237,7 @@ export default function HomeScreen() {
         {/* ── BIG CARDS ── */}
         <View style={s.bigRow}>
           {/* LİG */}
-          <AnimCard delay={60} style={{ flex: 1.1 }} onPress={() => router.push('/lig' as any)}>
+          <AnimCard delay={60} style={{ flex: 1.1 }} onPress={() => isOffline ? null : router.push('/lig' as any)}>
             <LinearGradient colors={['#5b21b6','#3b0764','#1e0a42']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.bigCard}>
               <GlowRing />
               {/* Lig rozeti */}
@@ -249,11 +253,12 @@ export default function HomeScreen() {
               <Text style={s.bigSub}>{ligInfo?.category?.name ?? 'Haftalık yarış'}</Text>
               {ligInfo && <Text style={s.ligRankTxt}>#{ligInfo.userRank}. sıradasın</Text>}
               <Text style={s.heartsStr}>{hearts.join('')}</Text>
+              {isOffline && <View style={s.offlineOverlay}><Text style={s.offlineOverlayTxt}>📵 İnternet gerekli</Text></View>}
             </LinearGradient>
           </AnimCard>
 
           {/* DÜELLO */}
-          <AnimCard delay={160} style={{ flex: 1 }} onPress={() => router.push('/duel/lobby' as any)}>
+          <AnimCard delay={160} style={{ flex: 1 }} onPress={() => isOffline ? null : router.push('/duel/lobby' as any)}>
             <LinearGradient colors={['#6d28d9','#4c1d95','#2e1065']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.bigCard}>
               <SwordClash />
               <Text style={s.bigTitle}>Düello</Text>
@@ -262,20 +267,21 @@ export default function HomeScreen() {
                 <Text style={s.coinRowTxt}>50-2000 🪙</Text>
               </View>
               {user.streakCount > 0 && <Text style={s.duelStreakTxt}>🔥 {user.streakCount} seri</Text>}
+              {isOffline && <View style={s.offlineOverlay}><Text style={s.offlineOverlayTxt}>📵 İnternet gerekli</Text></View>}
             </LinearGradient>
           </AnimCard>
         </View>
 
         {/* ── SMALL CARDS ── */}
         <View style={s.smallRow}>
-          <AnimCard delay={240} style={{ flex: 1 }} onPress={() => router.push('/challenge' as any)}>
-            <View style={s.smallCard}>
+          <AnimCard delay={240} style={{ flex: 1 }} onPress={() => isOffline ? null : router.push('/challenge' as any)}>
+            <View style={[s.smallCard, isOffline && { opacity: 0.5 }]}>
               <View style={[s.smallIconWrap, { backgroundColor: '#fef3c7' }]}>
                 <Ionicons name="flag-outline" size={26} color="#f59e0b" />
               </View>
               <Text style={s.smallTitle}>Challenge</Text>
               <Text style={s.smallSub}>Günlük liderlik</Text>
-              <Text style={s.smallXP}>+100 XP</Text>
+              {isOffline ? <Text style={s.smallOffline}>📵 Çevrimdışı</Text> : <Text style={s.smallXP}>+100 XP</Text>}
             </View>
           </AnimCard>
           <AnimCard delay={310} style={{ flex: 1 }} onPress={() => router.push('/antrenman' as any)}>
@@ -285,7 +291,7 @@ export default function HomeScreen() {
               </View>
               <Text style={s.smallTitle}>Antrenman</Text>
               <Text style={s.smallSub}>Kategori seç</Text>
-              <Text style={[s.smallXP, { color: '#06b6d4' }]}>Serbest oyna</Text>
+              <Text style={[s.smallXP, { color: '#06b6d4' }]}>{isOffline ? '📵 Çevrimdışı ✓' : 'Serbest oyna'}</Text>
             </View>
           </AnimCard>
         </View>
@@ -388,6 +394,11 @@ const s = StyleSheet.create({
   smallTitle:{ color: '#111827', fontSize: 14, fontWeight: '900', marginBottom: 2 },
   smallSub:  { color: '#9ca3af', fontSize: 10, marginBottom: 8 },
   smallXP:   { color: '#f59e0b', fontSize: 11, fontWeight: '800' },
+  smallOffline: { color: '#9ca3af', fontSize: 11, fontWeight: '700' },
+
+  // Offline overlay (big cards)
+  offlineOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' } as any,
+  offlineOverlayTxt: { color: '#fff', fontSize: 13, fontWeight: '800', textAlign: 'center' },
 
   vipBtn:    { width: 38, height: 38, borderRadius: 19, backgroundColor: '#fef3c7', borderWidth: 1.5, borderColor: '#f59e0b', alignItems: 'center', justifyContent: 'center' },
   vipBtnTxt: { fontSize: 18 },

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import { useFonts,
   Nunito_400Regular,
   Nunito_500Medium,
@@ -42,6 +43,7 @@ export default function RootLayout() {
   const [dailyReward, setDailyReward] = useState<{ coins: number; streak: number } | null>(null);
   const segments = useSegments();
   const router = useRouter();
+  const notifResponseListener = useRef<Notifications.EventSubscription | null>(null);
 
   useEffect(() => {
     // Auth yükle — internet yoksa cached data kullan, bloklama
@@ -55,6 +57,27 @@ export default function RootLayout() {
       setIsOffline(!state.isConnected);
     });
     return unsub;
+  }, []);
+
+  // Bildirime tıklanınca ilgili ekrana git
+  useEffect(() => {
+    notifResponseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as any;
+      if (!data?.type) return;
+      switch (data.type) {
+        case 'daily_reminder':
+        case 'weekly_reset':
+          router.push('/(tabs)');
+          break;
+        case 'streak_warning':
+          router.push('/streak' as any);
+          break;
+        case 'duel_invite':
+          if (data.duelId) router.push(`/duel/${data.duelId}` as any);
+          break;
+      }
+    });
+    return () => notifResponseListener.current?.remove();
   }, []);
 
   useEffect(() => {

@@ -16,21 +16,43 @@ const VALID_MODES = [
   "reflex","memory","football","word","attention","escape","math","english",
 ];
 
+// Skor / süre limitleri (oyun mekaniğinden türetildi)
+// speedScore max = 30 × 1.5x combo × 30 soru ≈ 1350, 2x güvenlik payı = 2700
+const SCORE_LIMITS: Record<string, number> = {};
+VALID_MODES.forEach(m => { SCORE_LIMITS[m] = 2700; });
+
 router.post("/result", authMiddleware, async (req: AuthRequest, res) => {
   const { mode, score, duration_seconds, combo_max } = req.body;
-  if (!VALID_MODES.includes(mode) || typeof score !== "number")
+  if (!VALID_MODES.includes(mode) || typeof score !== "number" || score < 0)
     return res.status(400).json({ message: "Geçersiz veri." });
 
-  // Anti-cheat — quiz modlarında skor sınırını yükselt
-  const maxScore = ["history","geography","science","general","art","cinema","sports","turkey","kids","license","medical","economy"].includes(mode)
-    ? 50000 : 10000;
+  // Anti-cheat 1 — fiziksel skor sınırı
+  const maxScore = SCORE_LIMITS[mode] ?? 2700;
   if (score > maxScore) return res.status(400).json({ message: "Şüpheli skor." });
-  if (duration_seconds < 5 && score > 500) return res.status(400).json({ message: "Geçersiz süre." });
+
+  // Anti-cheat 2 — süre doğrulama (min 10s, skor > 100 ise)
+  const dur = Number(duration_seconds) || 0;
+  if (score > 100 && dur < 10) return res.status(400).json({ message: "Geçersiz süre." });
+  // Maksimum skor/saniye oranı: speedScore max=30 → 30/2s = 15 pt/s × güvenlik payı 3 = 45
+  if (dur > 0 && score / dur > 45) return res.status(400).json({ message: "Şüpheli skor hızı." });
+
+  // Anti-cheat 3 — combo_max mantıklı mı?
+  if (combo_max !== undefined && (combo_max < 0 || combo_max > 60))
+    return res.status(400).json({ message: "Geçersiz combo." });
 
   const userId = req.userId!;
 
   try {
-    // Duplicate koruma: son 10 saniyede aynı skor gelmiş mi?
+    // Anti-cheat 4 — son 1 saatte bu moddan kaç gönderim?
+    const recentHourCount = await db("game_results")
+      .where({ user_id: userId, mode })
+      .where("played_at", ">=", db.raw("datetime('now', '-1 hour')"))
+      .count("id as cnt")
+      .first();
+    if (Number((recentHourCount as any)?.cnt ?? 0) >= 60)
+      return res.status(429).json({ message: "Saatlik gönderim limitine ulaşıldı." });
+
+    // Anti-cheat 5 — son 10 saniyede aynı skor gelmiş mi?
     const recent = await db("game_results")
       .where({ user_id: userId, mode, score })
       .where("played_at", ">=", db.raw("datetime('now', '-10 seconds')"))

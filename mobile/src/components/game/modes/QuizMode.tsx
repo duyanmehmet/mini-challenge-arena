@@ -47,11 +47,12 @@ export interface Props {
   questionCount?: number; // Kaç soru sonra bitsin (antrenman modu için)
   onLifeLost?: () => void;
   onAnswer?: (correct: boolean, pts: number, qIndex: number, answerIdx?: number) => void;
+  onTimerTick?: (secondsLeft: number) => void;
   onPause?: () => void;
   catIcon?: string;
 }
 
-export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, questionCount, onLifeLost, onAnswer, onPause, catIcon }: Props) {
+export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, questionCount, onLifeLost, onAnswer, onTimerTick, onPause, catIcon }: Props) {
   const { addScore, score, combo } = useGameStore();
   const { categoryPlayCounts, jokers, useJoker, addJoker, addCoins, user } = useUserStore();
 
@@ -133,8 +134,10 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
 
     qTimerRef.current = setInterval(() => {
       setQTimeLeft(t => {
-        if (t <= 1) { clearInterval(qTimerRef.current!); handleTimeOut(); return 0; }
-        return t - 1;
+        const next = t <= 1 ? 0 : t - 1;
+        onTimerTick?.(next);
+        if (next === 0) { clearInterval(qTimerRef.current!); handleTimeOut(); }
+        return next;
       });
     }, 1000);
 

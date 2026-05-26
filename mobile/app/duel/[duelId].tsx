@@ -221,6 +221,7 @@ export default function DuelGameScreen() {
   const [spinDone,       setSpinDone]      = useState(false);
   const [oppFlash,       setOppFlash]      = useState<boolean | null>(null);
   const [oppAnswerLetter,setOppAnswerLetter] = useState<string | null>(null);
+  const [qTimeLeft,      setQTimeLeft]     = useState(15);
   const [showEmojis,     setShowEmojis]    = useState(false);
   const [sentEmoji,      setSentEmoji]     = useState<string | null>(null);
   const [recvEmoji,      setRecvEmoji]     = useState<string | null>(null);
@@ -253,6 +254,7 @@ export default function DuelGameScreen() {
     socket.on('duel_round_start', (data: RoundStartData) => {
       setCurrentRound(data);
       setSpinDone(false);
+      setQTimeLeft(15);
       setPhase('wheel');
       startGame(data.category as any);
     });
@@ -497,8 +499,15 @@ export default function DuelGameScreen() {
         </View>
 
         <View style={g.vsBox}>
-          <Text style={g.vsTxt}>⚔️</Text>
           <Text style={g.roundLabel}>TUR {currentRound?.round ?? '?'}/3</Text>
+          <View style={[g.timerCircle, {
+            borderColor: qTimeLeft <= 5 ? RED : qTimeLeft <= 10 ? GOLD : PURP2,
+            backgroundColor: qTimeLeft <= 5 ? RED + '18' : qTimeLeft <= 10 ? GOLD + '18' : PURP2 + '12',
+          }]}>
+            <Text style={[g.timerNum, { color: qTimeLeft <= 5 ? RED : qTimeLeft <= 10 ? GOLD : PURP2 }]}>
+              {qTimeLeft}
+            </Text>
+          </View>
           {sentEmoji && <Text style={g.myEmoji}>{sentEmoji}</Text>}
           {recvEmoji && <Text style={g.oppEmoji}>{recvEmoji}</Text>}
         </View>
@@ -546,6 +555,7 @@ export default function DuelGameScreen() {
           lives={3}
           onEnd={handleRoundEnd}
           onAnswer={handleAnswer}
+          onTimerTick={setQTimeLeft}
         />
       )}
 
@@ -590,9 +600,10 @@ const g = StyleSheet.create({
   playerCol:   { flex: 1, alignItems: 'flex-start', gap: 2 },
   playerName:  { fontFamily: 'Nunito-Bold', fontSize: 12, color: TEXT, maxWidth: 100 },
   turWins:     { fontFamily: 'Nunito-ExtraBold', fontSize: 16 },
-  vsBox:       { width: 60, alignItems: 'center', gap: 2 },
-  vsTxt:       { fontSize: 20 },
+  vsBox:       { width: 72, alignItems: 'center', gap: 3 },
   roundLabel:  { fontFamily: 'Nunito-Bold', fontSize: 10, color: MUTED },
+  timerCircle: { width: 46, height: 46, borderRadius: 23, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  timerNum:    { fontFamily: 'Nunito-ExtraBold', fontSize: 20 },
   myEmoji:     { position: 'absolute', top: -20, left: -10, fontSize: 28 },
   oppEmoji:    { position: 'absolute', top: -20, right: -10, fontSize: 28 },
   flashDot:    { position: 'absolute', top: 0, right: 0, width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: BG },

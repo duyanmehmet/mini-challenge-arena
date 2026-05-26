@@ -28,6 +28,9 @@ export default function AntrenmanScreen() {
       <View style={s.infoCard}>
         <Text style={s.infoTxt}>15 Soru · Can yok · Sadece pratik</Text>
         <Text style={s.infoSub}>Kategori seç, istediğin kadar tekrar oyna.</Text>
+        <View style={s.offlineBadge}>
+          <Text style={s.offlineBadgeTxt}>📵 İnternetsiz oynanabilir</Text>
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
@@ -72,6 +75,8 @@ const s = StyleSheet.create({
   infoCard: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#06b6d415', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#06b6d430', alignItems: 'center', gap: 4 },
   infoTxt:  { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#06b6d4' },
   infoSub:  { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED },
+  offlineBadge: { marginTop: 4, backgroundColor: '#22c55e18', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#22c55e55' },
+  offlineBadgeTxt: { fontFamily: 'Nunito-Bold', fontSize: 11, color: '#16a34a' },
 
   groupWrap:  { paddingHorizontal: 16, marginBottom: 20 },
   groupTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: TEXT, marginBottom: 12 },

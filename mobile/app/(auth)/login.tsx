@@ -17,10 +17,10 @@ const GOOGLE_WEB_CLIENT_ID     = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ??
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? '';
 const GOOGLE_IOS_CLIENT_ID     = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '';
 
-// Android'de SADECE Android client ID kullan — web client ID fallback yapma
-const androidClientId = GOOGLE_ANDROID_CLIENT_ID || undefined;
-const iosClientId     = GOOGLE_IOS_CLIENT_ID     || undefined;
-const googleEnabled   = !!(GOOGLE_WEB_CLIENT_ID && (Platform.OS === 'ios' ? iosClientId : androidClientId || GOOGLE_WEB_CLIENT_ID));
+// expo-auth-session v7 undefined'a izin vermiyor — placeholder crash'i önler, googleEnabled butonu gizler
+const androidClientId = GOOGLE_ANDROID_CLIENT_ID || GOOGLE_WEB_CLIENT_ID || 'placeholder';
+const iosClientId     = GOOGLE_IOS_CLIENT_ID || GOOGLE_WEB_CLIENT_ID || 'placeholder';
+const googleEnabled   = !!(GOOGLE_WEB_CLIENT_ID && (Platform.OS === 'ios' ? GOOGLE_IOS_CLIENT_ID : GOOGLE_ANDROID_CLIENT_ID));
 
 const BG     = '#ffffff';
 const CARD   = '#ffffff';
@@ -79,7 +79,8 @@ export default function AuthScreen() {
       await authService.login(email.trim().toLowerCase(), password);
       router.replace('/(tabs)');
     } catch (e: any) {
-      Alert.alert('Giriş Başarısız', e.response?.data?.message ?? 'E-posta veya şifre yanlış.');
+      const msg = e.userMessage ?? e.response?.data?.message ?? 'E-posta veya şifre yanlış.';
+      Alert.alert('Giriş Başarısız', msg);
     } finally { setLoading(false); }
   };
 
@@ -98,7 +99,8 @@ export default function AuthScreen() {
       await authService.register(username.trim(), email.trim().toLowerCase(), password, avatarId);
       router.replace('/(tabs)');
     } catch (e: any) {
-      Alert.alert('Kayıt Başarısız', e.response?.data?.message ?? 'Tekrar dene.');
+      const msg = e.userMessage ?? e.response?.data?.message ?? 'Kayıt başarısız, tekrar dene.';
+      Alert.alert('Kayıt Başarısız', msg);
     } finally { setLoading(false); }
   };
 

@@ -185,7 +185,15 @@ export default function ResultScreen() {
             mode: mode ?? '', score: numScore,
             duration_seconds: numDuration, combo_max: numCombo,
           });
-          if (res?.streakCount !== undefined) updateUser({ streakCount: res.streakCount });
+          if (res?.streakCount !== undefined) {
+            updateUser({ streakCount: res.streakCount });
+            // 2+ günlük seri varsa ertesi gün için uyarı planla
+            if (res.streakCount >= 2) {
+              import('../../src/services/notification.service').then(({ notificationService }) => {
+                notificationService.scheduleStreakWarning(res.streakCount).catch(() => {});
+              });
+            }
+          }
           if (res?.newLevel)                  updateUser({ level: res.newLevel });
           if (res?.badgesUnlocked?.length)    assetService.vibrate('combo');
           return;

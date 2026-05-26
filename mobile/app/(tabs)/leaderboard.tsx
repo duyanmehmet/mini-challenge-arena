@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, router } from 'expo-router';
 import { useUserStore } from '../../src/store/userStore';
 import { Avatar } from '../../src/components/ui/Avatar';
+import { BANNER_ID, BannerAd, BannerAdSize } from '../../src/services/admob.service';
 import api from '../../src/services/api';
 
 const { width } = Dimensions.get('window');
@@ -283,7 +284,16 @@ export default function SiralamaScreen() {
 }
 
 function BannerAdView() {
-  return null;
+  if (!BANNER_ID) return null;
+  return (
+    <View style={{ alignItems: 'center', marginVertical: 8 }}>
+      <BannerAd
+        unitId={BANNER_ID}
+        size={BannerAdSize.BANNER}
+        onAdFailedToLoad={() => {}}
+      />
+    </View>
+  );
 }
 
 const s = StyleSheet.create({

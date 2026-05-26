@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import NetInfo from '@react-native-community/netinfo';
 import { useUserStore } from '../../src/store/userStore';
 import { socketService } from '../../src/services/socket.service';
 import { Avatar } from '../../src/components/ui/Avatar';
@@ -50,9 +51,15 @@ export default function DuelLobbyScreen() {
   const [waiting,         setWaiting]         = useState(false);
   const [customModal,     setCustomModal]     = useState(false);
   const [customInput,     setCustomInput]     = useState('');
+  const [isOffline,       setIsOffline]       = useState(false);
 
   const duelRank = (user as any)?.duelRank ?? 0;
   const rank     = getRank(duelRank);
+
+  useEffect(() => {
+    const unsubNet = NetInfo.addEventListener(state => setIsOffline(!state.isConnected));
+    return unsubNet;
+  }, []);
 
   useEffect(() => {
     loadFriends();
@@ -97,6 +104,7 @@ export default function DuelLobbyScreen() {
   };
 
   const sendChallenge = () => {
+    if (isOffline) { Alert.alert('İnternet Yok', 'Düello oynamak için internet bağlantısı gereklidir.'); return; }
     if (!user?.emailVerified) {
       Alert.alert('E-posta Doğrulanmamış', 'Düello için e-postanı doğrulaman gerekiyor.');
       return;
@@ -113,6 +121,7 @@ export default function DuelLobbyScreen() {
   };
 
   const findRandom = () => {
+    if (isOffline) { Alert.alert('İnternet Yok', 'Düello oynamak için internet bağlantısı gereklidir.'); return; }
     if ((user?.coins ?? 0) < selectedStake) {
       Alert.alert('Yetersiz Coin', `Bu masa için ${selectedStake} 🪙 gerekiyor.`); return;
     }
@@ -134,6 +143,11 @@ export default function DuelLobbyScreen() {
 
   return (
     <SafeAreaView style={s.root}>
+      {isOffline && (
+        <View style={s.offlineBanner}>
+          <Text style={s.offlineBannerTxt}>📵 İnternet bağlantısı yok — düello oynamak için gerekli</Text>
+        </View>
+      )}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={s.back}>← Geri</Text>
@@ -317,6 +331,8 @@ export default function DuelLobbyScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: BG },
+  offlineBanner:    { backgroundColor: '#fef3c7', paddingVertical: 8, paddingHorizontal: 16, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#fde68a' },
+  offlineBannerTxt: { fontFamily: 'Nunito-Bold', fontSize: 12, color: '#92400e' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
   back:   { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
   title:  { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT },

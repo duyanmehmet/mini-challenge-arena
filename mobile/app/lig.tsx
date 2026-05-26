@@ -62,6 +62,14 @@ interface LigInfo {
   nextHeartMinutes: number | null;
 }
 
+interface LigPlayer {
+  id: string;
+  username: string;
+  avatar_id: number;
+  weekly_score: number;
+  level: number;
+}
+
 function useCountdown(targetIso: string) {
   const [text, setText] = useState('');
   useEffect(() => {
@@ -91,9 +99,10 @@ function useCountdown(targetIso: string) {
 
 export default function LigScreen() {
   const { user } = useUserStore();
-  const [info,    setInfo]    = useState<LigInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState<string | null>(null);
+  const [info,        setInfo]        = useState<LigInfo | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LigPlayer[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState<string | null>(null);
 
   const [showCatModal, setShowCatModal] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -114,8 +123,12 @@ export default function LigScreen() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/lig/current');
-      setInfo(res.data);
+      const [currentRes, lbRes] = await Promise.all([
+        api.get('/lig/current'),
+        api.get('/lig/leaderboard'),
+      ]);
+      setInfo(currentRes.data);
+      setLeaderboard(lbRes.data ?? []);
     } catch (err: any) {
       const msg: string =
         err?.userMessage ??
@@ -333,7 +346,55 @@ export default function LigScreen() {
             </View>
           </Modal>
 
-          <View style={{ height: 24 }} />
+          {/* Kullanıcı skoru ve sırası */}
+          {info && (
+            <View style={s.myScoreCard}>
+              <View style={s.myScoreLeft}>
+                <Text style={s.myScoreRank}>#{info.userRank}</Text>
+                <Text style={s.myScoreLabel}>Sıran</Text>
+              </View>
+              <View style={s.myScoreDivider} />
+              <View style={s.myScoreCenter}>
+                <Text style={s.myScoreVal}>{info.userScore.toLocaleString('tr-TR')}</Text>
+                <Text style={s.myScoreLabel}>Haftalık Puan</Text>
+              </View>
+              <View style={s.myScoreDivider} />
+              <View style={s.myScoreRight}>
+                <Text style={s.myScoreRank}>{info.leagueCount}</Text>
+                <Text style={s.myScoreLabel}>Oyuncu</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Sıralama Listesi */}
+          {leaderboard.length > 0 && (
+            <View style={s.lbSection}>
+              <Text style={s.lbTitle}>🏅 Lig Sıralaması</Text>
+              {leaderboard.map((player, index) => {
+                const isMe = player.id === user?.id;
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
+                return (
+                  <View key={player.id} style={[s.lbRow, isMe && s.lbRowMe]}>
+                    <Text style={s.lbPos}>{medal ?? `${index + 1}`}</Text>
+                    <View style={s.lbAvatarWrap}>
+                      <Text style={s.lbAvatarTxt}>👤</Text>
+                    </View>
+                    <View style={s.lbInfo}>
+                      <Text style={[s.lbName, isMe && { color: PURP }]} numberOfLines={1}>
+                        {player.username}{isMe ? ' (Sen)' : ''}
+                      </Text>
+                      <Text style={s.lbLevel}>Seviye {player.level}</Text>
+                    </View>
+                    <Text style={[s.lbScore, isMe && { color: PURP }]}>
+                      {player.weekly_score.toLocaleString('tr-TR')}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          <View style={{ height: 32 }} />
         </ScrollView>
       )}
     </SafeAreaView>
@@ -415,4 +476,26 @@ const s = StyleSheet.create({
   promotionCard: { marginHorizontal: 16, marginBottom: 16, backgroundColor: '#f9fafb', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center' },
   promotionTxt:  { fontFamily: 'Nunito-Regular', fontSize: 12, color: '#6b7280' },
 
+  // Kullanıcı skoru kartı
+  myScoreCard:    { marginHorizontal: 16, marginBottom: 16, backgroundColor: '#f5f3ff', borderRadius: 18, flexDirection: 'row', alignItems: 'center', padding: 16, borderWidth: 1, borderColor: '#ede9fe' },
+  myScoreLeft:    { flex: 1, alignItems: 'center' },
+  myScoreCenter:  { flex: 1.4, alignItems: 'center' },
+  myScoreRight:   { flex: 1, alignItems: 'center' },
+  myScoreDivider: { width: 1, height: 36, backgroundColor: '#ddd6fe' },
+  myScoreRank:    { fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: PURP },
+  myScoreVal:     { fontFamily: 'Nunito-ExtraBold', fontSize: 22, color: PURP },
+  myScoreLabel:   { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#9ca3af', marginTop: 2 },
+
+  // Liderlik tablosu
+  lbSection: { marginHorizontal: 16, marginBottom: 10 },
+  lbTitle:   { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#111827', marginBottom: 10 },
+  lbRow:     { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: '#f3f4f6' },
+  lbRowMe:   { borderColor: PURP + '66', backgroundColor: '#f5f3ff' },
+  lbPos:     { fontFamily: 'Nunito-ExtraBold', fontSize: 16, width: 32, textAlign: 'center', color: '#374151' },
+  lbAvatarWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#ede9fe', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  lbAvatarTxt:  { fontSize: 18 },
+  lbInfo:    { flex: 1 },
+  lbName:    { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#111827' },
+  lbLevel:   { fontFamily: 'Nunito-Regular', fontSize: 11, color: '#9ca3af' },
+  lbScore:   { fontFamily: 'Nunito-ExtraBold', fontSize: 15, color: '#374151' },
 });

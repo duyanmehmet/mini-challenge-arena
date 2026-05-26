@@ -63,6 +63,12 @@
           "color": "#6c3aed",
           "sounds": []
         }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-4780904817875688~4613037151"
+        }
       ]
     ],
     "experiments": {
@@ -72,7 +78,8 @@
       "router": {},
       "eas": {
         "projectId": "1823d58c-2bc7-4048-9b0c-ce92cb28977d"
-      }
+      },
+      "privacyPolicyUrl": "https://duyanmehmet.github.io/mini-challenge-arena/privacy-policy.html"
     }
   }
 }
