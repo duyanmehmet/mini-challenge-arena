@@ -262,7 +262,7 @@ export default function RootLayout() {
 
           {/* Oyun ekranları — aşağıdan yukarı (oyuna dalma hissi) */}
           <Stack.Screen name="game/[mode]"      options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', animationDuration: 350 }} />
-          <Stack.Screen name="game/result"      options={{ animation: 'fade', animationDuration: 400 }} />
+          <Stack.Screen name="game/result"      options={{ animation: 'slide_from_bottom', animationDuration: 350 }} />
           <Stack.Screen name="game/select/[mode]" options={{ animation: 'slide_from_right', animationDuration: 250 }} />
 
           {/* Klasik & Canlı — büyük etki, aşağıdan */}
