@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { CATEGORIES, CATEGORY_GROUPS, getCategoriesByGroup } from '../src/constants/categories';
+import { HowToPlayModal, useHowToPlay } from '../src/components/ui/HowToPlayModal';
 
 const { width } = Dimensions.get('window');
 const CARD_W = (width - 48) / 2;
@@ -13,15 +14,21 @@ const MUTED = '#9ca3af';
 const BORDER= '#2e2b5a';
 
 export default function AntrenmanScreen() {
+  const { visible, show, hide } = useHowToPlay('antrenman');
+
   return (
     <SafeAreaView style={s.root}>
+      <HowToPlayModal mode="antrenman" visible={visible} onClose={hide} />
+
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Text style={s.backTxt}>← Geri</Text>
         </TouchableOpacity>
         <Text style={s.headerTitle}>📚 Antrenman</Text>
-        <View style={{ width: 60 }} />
+        <TouchableOpacity style={s.helpBtn} onPress={show}>
+          <Text style={s.helpTxt}>?</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Açıklama */}
@@ -71,6 +78,8 @@ const s = StyleSheet.create({
   backBtn:     { },
   backTxt:     { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
   headerTitle: { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT },
+  helpBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: '#6c3aed22', borderWidth: 1.5, borderColor: '#6c3aed55', alignItems: 'center', justifyContent: 'center' },
+  helpTxt:     { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#6c3aed' },
 
   infoCard: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#06b6d415', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#06b6d430', alignItems: 'center', gap: 4 },
   infoTxt:  { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#06b6d4' },

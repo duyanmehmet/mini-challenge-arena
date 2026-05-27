@@ -11,6 +11,7 @@ import { useUserStore } from '../../src/store/userStore';
 import { socketService } from '../../src/services/socket.service';
 import { Avatar } from '../../src/components/ui/Avatar';
 import api from '../../src/services/api';
+import { HowToPlayModal, useHowToPlay } from '../../src/components/ui/HowToPlayModal';
 
 const BG    = '#ffffff';
 const CARD  = '#ffffff';
@@ -44,6 +45,7 @@ interface Friend { id: string; username: string; avatarId: number; level: number
 
 export default function DuelLobbyScreen() {
   const { user } = useUserStore();
+  const howTo = useHowToPlay('duel');
   const [friends,         setFriends]         = useState<Friend[]>([]);
   const [selectedFriend,  setSelectedFriend]  = useState<Friend | null>(null);
   const [selectedStake,   setSelectedStake]   = useState(50);
@@ -148,14 +150,21 @@ export default function DuelLobbyScreen() {
           <Text style={s.offlineBannerTxt}>📵 İnternet bağlantısı yok — düello oynamak için gerekli</Text>
         </View>
       )}
+      <HowToPlayModal mode="duel" visible={howTo.visible} onClose={howTo.hide} />
+
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={s.back}>← Geri</Text>
         </TouchableOpacity>
         <Text style={s.title}>⚔️ Düello</Text>
-        <View style={[s.rankBadge, { borderColor: rank.color + '88' }]}>
-          <Text style={{ fontSize: 14 }}>{rank.icon}</Text>
-          <Text style={[s.rankTxt, { color: rank.color }]}>{duelRank}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={[s.rankBadge, { borderColor: rank.color + '88' }]}>
+            <Text style={{ fontSize: 14 }}>{rank.icon}</Text>
+            <Text style={[s.rankTxt, { color: rank.color }]}>{duelRank}</Text>
+          </View>
+          <TouchableOpacity style={s.helpBtn} onPress={howTo.show}>
+            <Text style={s.helpTxt}>?</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -338,6 +347,8 @@ const s = StyleSheet.create({
   title:  { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: TEXT },
   rankBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
   rankTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 12 },
+  helpBtn:   { width: 30, height: 30, borderRadius: 15, backgroundColor: '#6c3aed22', borderWidth: 1.5, borderColor: '#6c3aed55', alignItems: 'center', justifyContent: 'center' },
+  helpTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#6c3aed' },
 
   rankCard: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#fff', borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#f3f4f6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   rankLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },

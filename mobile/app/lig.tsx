@@ -10,6 +10,7 @@ import { useUserStore } from '../src/store/userStore';
 import { Avatar } from '../src/components/ui/Avatar';
 import { CATEGORIES } from '../src/constants/categories';
 import api from '../src/services/api';
+import { HowToPlayModal, useHowToPlay } from '../src/components/ui/HowToPlayModal';
 
 const { width } = Dimensions.get('window');
 const CAT_CARD_W = (width - 48) / 3;
@@ -99,6 +100,7 @@ function useCountdown(targetIso: string) {
 
 export default function LigScreen() {
   const { user } = useUserStore();
+  const howTo = useHowToPlay('lig');
   const [info,        setInfo]        = useState<LigInfo | null>(null);
   const [leaderboard, setLeaderboard] = useState<LigPlayer[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -186,6 +188,8 @@ export default function LigScreen() {
 
   return (
     <SafeAreaView style={s.root}>
+      <HowToPlayModal mode="lig" visible={howTo.visible} onClose={howTo.hide} />
+
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
@@ -210,6 +214,9 @@ export default function LigScreen() {
               <Text key={i} style={{ fontSize: 14, opacity: i < (info?.hearts ?? 5) ? 1 : 0.2 }}>❤️</Text>
             ))}
           </View>
+          <TouchableOpacity style={s.helpBtn} onPress={howTo.show}>
+            <Text style={s.helpTxt}>?</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -410,6 +417,8 @@ const s = StyleSheet.create({
   backTxt:       { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff' },
   headerTitleRow:{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginHorizontal: 8 },
   headerTitle:   { fontFamily: 'Nunito-ExtraBold', fontSize: 20, color: '#111827' },
+  helpBtn:       { width: 30, height: 30, borderRadius: 15, backgroundColor: '#6c3aed22', borderWidth: 1.5, borderColor: '#6c3aed55', alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
+  helpTxt:       { fontFamily: 'Nunito-ExtraBold', fontSize: 14, color: '#6c3aed' },
   headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
   leagueBadge:   { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#fff' },
   leagueBadgeTxt:{ fontFamily: 'Nunito-ExtraBold', fontSize: 11 },

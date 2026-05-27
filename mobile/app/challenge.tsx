@@ -6,6 +6,7 @@ import { useUserStore } from '../src/store/userStore';
 import { CATEGORIES } from '../src/constants/categories';
 import { Avatar } from '../src/components/ui/Avatar';
 import api from '../src/services/api';
+import { HowToPlayModal, useHowToPlay } from '../src/components/ui/HowToPlayModal';
 
 const BG    = '#0d0d1a';
 const CARD  = '#13132a';
@@ -19,6 +20,7 @@ const BORDER= '#2e2b5a';
 
 export default function ChallengeScreen() {
   const { user } = useUserStore();
+  const howTo = useHowToPlay('challenge');
   const [challenge, setChallenge]   = useState<any>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [myScore, setMyScore]       = useState<number | null>(null);
@@ -43,6 +45,8 @@ export default function ChallengeScreen() {
 
   return (
     <SafeAreaView style={s.root}>
+      <HowToPlayModal mode="challenge" visible={howTo.visible} onClose={howTo.hide} />
+
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
@@ -52,7 +56,9 @@ export default function ChallengeScreen() {
           <Text style={s.headerTitle}>Bugünün Meydanı</Text>
           <Text style={s.headerDate}>{today}</Text>
         </View>
-        <View style={{ width: 60 }} />
+        <TouchableOpacity style={s.helpBtn} onPress={howTo.show}>
+          <Text style={s.helpTxt}>?</Text>
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -170,6 +176,8 @@ const s = StyleSheet.create({
   backTxt:      { fontFamily: 'Nunito-Bold', fontSize: 14, color: '#fff', backgroundColor: '#6c3aed', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden' },
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle:  { fontFamily: 'Nunito-ExtraBold', fontSize: 18, color: TEXT },
+  helpBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: '#6c3aed22', borderWidth: 1.5, borderColor: '#6c3aed55', alignItems: 'center', justifyContent: 'center' },
+  helpTxt:      { fontFamily: 'Nunito-ExtraBold', fontSize: 16, color: '#6c3aed' },
   headerDate:   { fontFamily: 'Nunito-Regular', fontSize: 12, color: MUTED, marginTop: 2 },
 
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
