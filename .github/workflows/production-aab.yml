@@ -41,6 +41,15 @@ jobs:
             "platforms;android-36" \
             "build-tools;36.0.0"
 
+      - name: Create swap space
+        run: |
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          echo "=== Memory after swap ==="
+          free -h
+
       - name: Install dependencies
         working-directory: mobile
         run: npm install
