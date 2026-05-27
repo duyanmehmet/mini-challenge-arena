@@ -60,8 +60,11 @@ const matchmakingQueue = new Map<string, { socketId: string; stake: number; user
 
 export function handleDuelEvents(io: Server, socket: Socket, userId: string): void {
 
+  const VALID_STAKES = [50, 100, 200, 500, 1000];
+
   // ── Davet gönder ─────────────────────────────────────────────────
   socket.on('duel_invite', async ({ targetId, stake = 50 }: { targetId: string; stake?: number }) => {
+    if (!VALID_STAKES.includes(stake)) return socket.emit('error', 'Geçersiz bahis miktarı.');
     const duelId = uuidv4();
     pendingInvites.set(targetId, { duelId, challengerId: userId, stake });
     io.to(targetId).emit('duel_invited', { challengerId: userId, stake, duelId });
@@ -97,6 +100,7 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
 
   // ── Eşleşme kuyruğu ──────────────────────────────────────────────
   socket.on('mm_join', async ({ stake = 50 }: { stake?: number }) => {
+    if (!VALID_STAKES.includes(stake)) return socket.emit('error', 'Geçersiz bahis miktarı.');
     // Aynı bahis miktarında biri var mı?
     let matched: { socketId: string; stake: number; userId: string } | undefined;
     for (const [uid, entry] of matchmakingQueue.entries()) {
@@ -162,23 +166,22 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
 
       const [p1, p2] = room.players;
 
-      // Coin kontrolü + kesme
-      const p1Row = await db('users').where('id', p1.userId).select('coins').first().catch(() => null);
-      const p2Row = await db('users').where('id', p2.userId).select('coins').first().catch(() => null);
+      // Coin kesme — transaction içinde kontrol+kesme (race condition önlenir)
+      let deductOk = false;
+      await db.transaction(async trx => {
+        const r1 = await trx('users').where('id', p1.userId).andWhere('coins', '>=', room.stake)
+          .update({ coins: db.raw('coins - ?', [room.stake]) });
+        const r2 = await trx('users').where('id', p2.userId).andWhere('coins', '>=', room.stake)
+          .update({ coins: db.raw('coins - ?', [room.stake]) });
+        if (r1 === 0 || r2 === 0) throw new Error('insufficient');
+        deductOk = true;
+      }).catch(() => {});
 
-      if ((p1Row?.coins ?? 0) < room.stake || (p2Row?.coins ?? 0) < room.stake) {
+      if (!deductOk) {
         io.to(duelId).emit('duel_cancelled', { reason: 'Yetersiz coin.' });
         rooms.delete(duelId);
         return;
       }
-
-      await db.transaction(async trx => {
-        await trx('users').where('id', p1.userId).update({ coins: db.raw(`coins - ${room.stake}`) });
-        await trx('users').where('id', p2.userId).update({ coins: db.raw(`coins - ${room.stake}`) });
-      }).catch(() => {
-        io.to(duelId).emit('duel_cancelled', { reason: 'Coin kesintisi başarısız.' });
-        rooms.delete(duelId);
-      });
 
       // Rakip bilgisi
       io.to(p1.socketId).emit('duel_opponent_joined', { username: p2.username, avatarId: p2.avatarId });
@@ -239,7 +242,7 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
         const winner = room.players.find(p => p.userId !== userId);
         if (winner) {
           const prize = room.stake * 2 - Math.floor(room.stake * 0.05); // %5 kesinti
-          await db('users').where('id', winner.userId).update({ coins: db.raw(`coins + ${prize}`) }).catch(() => {});
+          await db('users').where('id', winner.userId).update({ coins: db.raw('coins + ?', [prize]) }).catch(() => {});
           io.to(winner.socketId).emit('duel_match_result', {
             result: 'win',
             reason: 'Rakip ayrıldı',
@@ -325,7 +328,7 @@ async function finishMatch(io: Server, room: DuelRoom) {
   const prize = totalPot - cut;
 
   if (matchWinner !== 'draw') {
-    await db('users').where('id', matchWinner).update({ coins: db.raw(`coins + ${prize}`) }).catch(() => {});
+    await db('users').where('id', matchWinner).update({ coins: db.raw('coins + ?', [prize]) }).catch(() => {});
     // Duel rank güncelle
     const loser = matchWinner === p1.userId ? p2?.userId : p1.userId;
     await db('users').where('id', matchWinner).update({ duel_rank: db.raw('duel_rank + 25') }).catch(() => {});
@@ -333,7 +336,7 @@ async function finishMatch(io: Server, room: DuelRoom) {
   } else {
     // Beraberlikte her ikisine geri öde (kesintisiz)
     for (const p of room.players) {
-      await db('users').where('id', p.userId).update({ coins: db.raw(`coins + ${room.stake}`) }).catch(() => {});
+      await db('users').where('id', p.userId).update({ coins: db.raw('coins + ?', [room.stake]) }).catch(() => {});
     }
   }
 

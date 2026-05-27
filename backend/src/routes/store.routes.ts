@@ -77,7 +77,9 @@ router.post("/buy-joker", authMiddleware, async (req: AuthRequest, res) => {
     const user = await db("users").where("id", req.userId).select("coins").first();
     if (!user || (user.coins ?? 0) < cost)
       return res.status(400).json({ message: "Yetersiz coin." });
-    await db("users").where("id", req.userId).update({ coins: db.raw(`coins - ${cost}`) });
+    const affected = await db("users").where("id", req.userId).andWhere("coins", ">=", cost)
+      .update({ coins: db.raw("coins - ?", [cost]) });
+    if (affected === 0) return res.status(400).json({ message: "Yetersiz coin." });
     const updated = await db("users").where("id", req.userId).select("coins").first();
     res.json({ success: true, coinsRemaining: updated.coins });
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }

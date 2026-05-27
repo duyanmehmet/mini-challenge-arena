@@ -233,6 +233,7 @@ export default function DuelGameScreen() {
   const oppScaleAnim = useRef(new Animated.Value(1)).current;
   const countAnim    = useRef(new Animated.Value(1)).current;
   const started      = useRef(false);
+  const countdownIv  = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const showNotification = useCallback((txt: string) => {
     setNotif(txt);
@@ -319,6 +320,7 @@ export default function DuelGameScreen() {
 
     return () => {
       ['duel_opponent_joined','duel_round_start','duel_opponent_answer','duel_round_end','duel_match_result','duel_opponent_left','duel_emoji','duel_cancelled'].forEach(e => socket.off(e));
+      if (countdownIv.current) { clearInterval(countdownIv.current); countdownIv.current = null; }
     };
   }, []);
 
@@ -344,12 +346,13 @@ export default function DuelGameScreen() {
   const startCountdown = () => {
     setPhase('countdown');
     let c = 3;
-    const iv = setInterval(() => {
+    if (countdownIv.current) clearInterval(countdownIv.current);
+    countdownIv.current = setInterval(() => {
       c--;
       setCountdown(c);
       countAnim.setValue(1.5);
       Animated.spring(countAnim, { toValue: 1, useNativeDriver: true, speed: 30 }).start();
-      if (c === 0) { clearInterval(iv); setPhase('playing'); }
+      if (c === 0) { clearInterval(countdownIv.current!); countdownIv.current = null; setPhase('playing'); }
     }, 1000);
   };
 
