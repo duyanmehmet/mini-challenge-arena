@@ -60,7 +60,20 @@ jobs:
 
       - name: Build Production AAB
         working-directory: mobile
-        run: eas build --platform android --profile production --local --non-interactive
+        run: |
+          eas build --platform android --profile production --local --non-interactive 2>&1 | tee /tmp/eas-build.log
+          EAS_EXIT=${PIPESTATUS[0]}
+          if [ $EAS_EXIT -ne 0 ]; then
+            echo ""
+            echo "=========================================="
+            echo "BUILD FAILED — Last 200 lines of output:"
+            echo "=========================================="
+            tail -200 /tmp/eas-build.log
+            echo ""
+            echo "=== Keyword search (FAILURE / error / killed) ==="
+            grep -iE "FAILURE|BUILD FAILED|error:|exception|killed|signal" /tmp/eas-build.log | grep -v "npm warn" | tail -30 || true
+            exit $EAS_EXIT
+          fi
 
       - name: Locate AAB
         working-directory: mobile
