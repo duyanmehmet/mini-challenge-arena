@@ -12,13 +12,14 @@
 import { Platform } from 'react-native';
 import api from './api';
 
-// Store console'da tanımlanması gereken ürün ID'leri
-const PRODUCT_IDS = {
-  coins_100:  Platform.OS === 'ios' ? 'com.zekameydani.coins100'  : 'coins_100',
-  coins_500:  Platform.OS === 'ios' ? 'com.zekameydani.coins500'  : 'coins_500',
-  coins_1200: Platform.OS === 'ios' ? 'com.zekameydani.coins1200' : 'coins_1200',
-  coins_3000: Platform.OS === 'ios' ? 'com.zekameydani.coins3000' : 'coins_3000',
-  remove_ads: Platform.OS === 'ios' ? 'com.zekameydani.removeads' : 'remove_ads',
+// Play Console'da bu ID'lerle ürün oluşturulmalı (Managed products)
+export const PRODUCT_IDS = {
+  coins_500:  'com.minichallengearena.app.coins500',
+  coins_1200: 'com.minichallengearena.app.coins1200',
+  coins_2500: 'com.minichallengearena.app.coins2500',
+  coins_5500: 'com.minichallengearena.app.coins5500',
+  remove_ads: 'com.minichallengearena.app.noads',
+  vip_30:     'com.minichallengearena.app.vip30',
 };
 
 let purchaseUpdateSub: ReturnType<typeof purchaseUpdatedListener> | null = null;

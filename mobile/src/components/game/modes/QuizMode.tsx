@@ -437,7 +437,6 @@ function JokerBtn({ emoji, label, used, color, count, price, onPress }: {
   emoji: string; label: string; used: boolean; color: string; count: number; price: number; onPress: () => void;
 }) {
   const hasStock = count > 0;
-  const canUse   = !used;
   return (
     <TouchableOpacity
       style={[js.btn, { borderColor: used ? '#e5e7eb' : (hasStock ? color : color + '66') }]}
@@ -445,14 +444,19 @@ function JokerBtn({ emoji, label, used, color, count, price, onPress }: {
       disabled={used}
       activeOpacity={0.75}
     >
+      {/* Stok sayısı — sağ üst köşede badge */}
+      {!used && (
+        <View style={[js.stockBadge, { backgroundColor: hasStock ? color : '#fbbf24' }]}>
+          <Text style={js.stockTxt}>{hasStock ? count : `${price}🪙`}</Text>
+        </View>
+      )}
+      {used && (
+        <View style={[js.stockBadge, { backgroundColor: '#22c55e' }]}>
+          <Text style={js.stockTxt}>✓</Text>
+        </View>
+      )}
       <Text style={[js.emoji, { opacity: used ? 0.3 : 1 }]}>{emoji}</Text>
       <Text style={[js.label, { color: used ? '#9ca3af' : color }]}>{label}</Text>
-      {/* Stok varsa sayı, yoksa fiyat */}
-      <View style={[js.countBadge, { backgroundColor: used ? '#f3f4f6' : (hasStock ? color + '18' : '#fef9c3') }]}>
-        <Text style={[js.countTxt, { color: used ? '#9ca3af' : (hasStock ? color : '#d97706') }]}>
-          {used ? '✓' : hasStock ? `${count}` : `${price}🪙`}
-        </Text>
-      </View>
     </TouchableOpacity>
   );
 }
@@ -461,8 +465,16 @@ const js = StyleSheet.create({
   btn:        { flex: 1, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#e5e7eb', paddingVertical: 10, alignItems: 'center', gap: 3 },
   emoji:      { fontSize: 20 },
   label:      { fontFamily: 'Nunito-Bold', fontSize: 11 },
-  countBadge: { borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
-  countTxt:   { fontFamily: 'Nunito-ExtraBold', fontSize: 11 },
+  stockBadge: {
+    position: 'absolute', top: -7, right: -7,
+    minWidth: 20, height: 20, borderRadius: 10,
+    backgroundColor: '#22c55e',
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5, borderColor: '#fff',
+    zIndex: 1,
+  },
+  stockTxt: { fontFamily: 'Nunito-ExtraBold', fontSize: 10, color: '#fff' },
 });
 
 const s = StyleSheet.create({
@@ -537,7 +549,7 @@ const s = StyleSheet.create({
   optionTxt: { fontFamily: 'Nunito-Bold', fontSize: 15, flex: 1, color: '#111827' },
 
   // Jokerler
-  jokers: { flexDirection: 'row', gap: 10 },
+  jokers: { flexDirection: 'row', gap: 10, paddingTop: 8, overflow: 'visible' },
 
   // Satın alma modal
   buyOverlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 },

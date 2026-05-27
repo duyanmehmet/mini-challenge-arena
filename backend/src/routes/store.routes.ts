@@ -33,11 +33,12 @@ router.post("/verify-iap", authMiddleware, async (req: AuthRequest, res) => {
   if (!productId || !receipt) return res.status(400).json({ message: "Geçersiz istek." });
 
   const PRODUCT_COINS: Record<string, number> = {
-    coins_100: 100, 'com.zekameydani.coins100': 100,
-    coins_500: 500, 'com.zekameydani.coins500': 500,
-    coins_1200: 1200, 'com.zekameydani.coins1200': 1200,
-    coins_3000: 3000, 'com.zekameydani.coins3000': 3000,
-    remove_ads: 0, 'com.zekameydani.removeads': 0,
+    'com.minichallengearena.app.coins500':  500,
+    'com.minichallengearena.app.coins1200': 1200,
+    'com.minichallengearena.app.coins2500': 2500,
+    'com.minichallengearena.app.coins5500': 5500,
+    'com.minichallengearena.app.noads':     0,
+    'com.minichallengearena.app.vip30':     1000,
   };
 
   const coins = PRODUCT_COINS[productId];

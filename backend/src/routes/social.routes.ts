@@ -1,4 +1,5 @@
 ﻿import { Router } from "express";
+import type { Server } from "socket.io";
 import db from "../database";
 import { authMiddleware, type AuthRequest } from "../middleware/auth.middleware";
 import { v4 as uuidv4 } from "uuid";
@@ -48,6 +49,16 @@ router.post("/request", authMiddleware, async (req: AuthRequest, res) => {
       .where({ requester_id: req.userId, receiver_id: receiverId }).first();
     if (exists) return res.status(409).json({ message: "İstek zaten gönderildi." });
     await db("friendships").insert({ id: uuidv4(), requester_id: req.userId, receiver_id: receiverId });
+
+    // Alıcıya anlık socket bildirimi
+    const sender = await db("users").where("id", req.userId).select("username", "avatar_id").first();
+    if (sender) {
+      const io: Server = req.app.get("io");
+      io.to(receiverId).emit("friend_request", {
+        from: { id: req.userId, username: sender.username, avatarId: sender.avatar_id },
+      });
+    }
+
     res.json({ message: "İstek gönderildi." });
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });

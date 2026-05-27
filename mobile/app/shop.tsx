@@ -5,7 +5,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Dimensions, Animated, Alert,
+  ScrollView, Dimensions, Animated, Alert, ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useUserStore } from '../src/store/userStore';
 import api from '../src/services/api';
 import { Colors } from '../src/constants/theme';
+import { iapService, PRODUCT_IDS } from '../src/services/iap.service';
 
 const JOKER_ITEMS = [
   { type: 'fifty'  as const, icon: '✂️', label: '50:50',    desc: '2 yanlış şıkkı kaldır', price: 50,  color: '#ef4444', bg: '#fee2e2' },
@@ -34,19 +35,20 @@ const AVATARS_SHOP = [
 const { width: W } = Dimensions.get('window');
 
 const COIN_PACKAGES = [
-  { id: 'p500',  amount: 500,  price: '₺19,99' },
-  { id: 'p1200', amount: 1200, price: '₺39,99', bonus: '200', highlight: true },
-  { id: 'p2500', amount: 2500, price: '₺79,99', bonus: '500' },
-  { id: 'p5500', amount: 5500, price: '₺159,99', bonus: '1500' },
+  { id: PRODUCT_IDS.coins_500,  amount: 500,  price: '₺19,99' },
+  { id: PRODUCT_IDS.coins_1200, amount: 1200, price: '₺39,99', bonus: '200', highlight: true },
+  { id: PRODUCT_IDS.coins_2500, amount: 2500, price: '₺79,99', bonus: '500' },
+  { id: PRODUCT_IDS.coins_5500, amount: 5500, price: '₺159,99', bonus: '1500' },
 ];
 
-const CoinPackCard: React.FC<{ pkg: typeof COIN_PACKAGES[0]; onPress: () => void }> = ({ pkg, onPress }) => {
+const CoinPackCard: React.FC<{ pkg: typeof COIN_PACKAGES[0]; onPress: () => void; loading?: boolean }> = ({ pkg, onPress, loading }) => {
   const sc = useRef(new Animated.Value(1)).current;
   return (
     <Animated.View style={{ transform: [{ scale: sc }] }}>
       <TouchableOpacity
-        style={[s.packCard, pkg.highlight && s.packCardHL]}
+        style={[s.packCard, pkg.highlight && s.packCardHL, loading && { opacity: 0.7 }]}
         onPress={() => {
+          if (loading) return;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           Animated.sequence([
             Animated.timing(sc, { toValue: 0.95, duration: 100, useNativeDriver: true }),
@@ -55,6 +57,7 @@ const CoinPackCard: React.FC<{ pkg: typeof COIN_PACKAGES[0]; onPress: () => void
           onPress();
         }}
         activeOpacity={1}
+        disabled={loading}
       >
         {pkg.highlight && <View style={s.popularBadge}><Text style={s.popularTxt}>⭐ Popüler</Text></View>}
         <View style={s.packLeft}>
@@ -65,7 +68,10 @@ const CoinPackCard: React.FC<{ pkg: typeof COIN_PACKAGES[0]; onPress: () => void
           </View>
         </View>
         <View style={[s.packPriceBtn, pkg.highlight && { backgroundColor: Colors.gold }]}>
-          <Text style={[s.packPrice, pkg.highlight && { color: '#000' }]}>{pkg.price}</Text>
+          {loading
+            ? <ActivityIndicator size="small" color="#fff" />
+            : <Text style={[s.packPrice, pkg.highlight && { color: '#000' }]}>{pkg.price}</Text>
+          }
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -74,10 +80,11 @@ const CoinPackCard: React.FC<{ pkg: typeof COIN_PACKAGES[0]; onPress: () => void
 
 export default function ShopScreen() {
   const { user, addCoins, addJoker, jokers, updateUser } = useUserStore();
-  const [hearts,    setHearts]    = useState(5);
-  const [maxHearts, setMaxHearts] = useState(5);
-  const [nextHeart, setNextHeart] = useState<number | null>(null);
-  const [adLoading, setAdLoading] = useState(false);
+  const [hearts,      setHearts]      = useState(5);
+  const [maxHearts,   setMaxHearts]   = useState(5);
+  const [nextHeart,   setNextHeart]   = useState<number | null>(null);
+  const [adLoading,   setAdLoading]   = useState(false);
+  const [buyingPkg,   setBuyingPkg]   = useState<string | null>(null);
 
   useEffect(() => {
     api.get('/lig/current').then(r => {
@@ -85,6 +92,9 @@ export default function ShopScreen() {
       setMaxHearts(r.data?.maxHearts ?? 5);
       setNextHeart(r.data?.nextHeartMinutes ?? null);
     }).catch(() => {});
+    // IAP bağlantısını başlat
+    iapService.init().catch(() => {});
+    return () => { iapService.destroy(); };
   }, []);
 
   const handleWatchAdLife = async () => {
@@ -194,11 +204,34 @@ export default function ShopScreen() {
     );
   };
 
-  const handleBuyCoin = (pkg: typeof COIN_PACKAGES[0]) => {
-    Alert.alert('🏪 Satın Al', `${pkg.amount} Coin — ${pkg.price}\n\nGerçek ödeme yakında aktif. Şimdi test olarak ekleniyor.`, [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'Test: Ekle', onPress: () => { addCoins(pkg.amount); Alert.alert('✅ Eklendi', `${pkg.amount} 🪙`); } },
-    ]);
+  const handleBuyCoin = async (pkg: typeof COIN_PACKAGES[0]) => {
+    if (buyingPkg) return;
+    setBuyingPkg(pkg.id);
+    try {
+      const result = await iapService.purchaseProduct(
+        pkg.id as any,
+        (_receipt, _productId) => {
+          // onSuccess — purchaseProduct içinde zaten handle ediliyor
+        },
+        (err) => {
+          if (err.code !== 'E_USER_CANCELLED') {
+            Alert.alert('Satın Alma Hatası', err.message ?? 'İşlem başarısız.');
+          }
+        },
+      );
+      // purchaseProduct void döndürüyor; listener'da işlem tamamlanınca coin güncelle
+      // Kullanıcı profilini yenile
+      const { default: apiClient } = await import('../src/services/api');
+      const res = await apiClient.get('/user/profile').catch(() => null);
+      if (res?.data?.user?.coins !== undefined) {
+        updateUser({ coins: res.data.user.coins });
+        Alert.alert('✅ Satın Alındı!', `${pkg.amount} 🪙 hesabına eklendi.`);
+      }
+    } catch {
+      Alert.alert('Hata', 'Satın alma tamamlanamadı.');
+    } finally {
+      setBuyingPkg(null);
+    }
   };
 
   return (
@@ -372,7 +405,7 @@ export default function ShopScreen() {
         <Text style={[s.sectionTitle, { marginTop: 20 }]}>🪙 Coin Paketleri</Text>
         <View style={s.packsList}>
           {COIN_PACKAGES.map(pkg => (
-            <CoinPackCard key={pkg.id} pkg={pkg} onPress={() => handleBuyCoin(pkg)} />
+            <CoinPackCard key={pkg.id} pkg={pkg} loading={buyingPkg === pkg.id} onPress={() => handleBuyCoin(pkg)} />
           ))}
         </View>
 

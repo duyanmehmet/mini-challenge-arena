@@ -63,8 +63,12 @@ export default function ProfileScreen() {
 
   if (!user) return null;
 
-  const xpNeeded = user.level * 500;
-  const xpPct    = Math.min(user.xp / xpNeeded, 1);
+  const XP_THRESHOLDS = [0,100,250,500,1000,1500,2500,4000,6000,10000,15000,25000,40000,60000,80000,100000];
+  const levelIdx  = Math.min(user.level - 1, XP_THRESHOLDS.length - 1);
+  const curThresh = XP_THRESHOLDS[levelIdx] ?? 0;
+  const nextThresh= XP_THRESHOLDS[levelIdx + 1];
+  const xpPct     = nextThresh ? Math.min((user.xp - curThresh) / (nextThresh - curThresh), 1) : 1;
+  const xpToNext  = nextThresh ? nextThresh - user.xp : 0;
 
   const handleLogout = () => {
     Alert.alert('Çıkış Yap', 'Hesabından çıkmak istediğine emin misin?', [
@@ -144,10 +148,18 @@ export default function ProfileScreen() {
 
           {/* XP Bar */}
           <View style={s.xpWrap}>
+            <View style={s.xpRow}>
+              <Text style={s.xpLvlTxt}>Seviye {user.level}</Text>
+              <Text style={s.xpLvlTxt}>{nextThresh ? `Seviye ${user.level + 1}` : '🏆 Maks'}</Text>
+            </View>
             <View style={s.xpBg}>
               <View style={[s.xpFill, { width: `${xpPct * 100}%` }]} />
             </View>
-            <Text style={s.xpTxt}>{user.xp} / {xpNeeded} XP</Text>
+            <Text style={s.xpTxt}>
+              {nextThresh
+                ? `${user.xp.toLocaleString('tr-TR')} / ${nextThresh.toLocaleString('tr-TR')} XP — ${xpToNext.toLocaleString('tr-TR')} XP daha`
+                : 'Maksimum Seviyeye Ulaştın!'}
+            </Text>
           </View>
 
           {/* Email doğrulama uyarısı */}
@@ -322,9 +334,11 @@ const s = StyleSheet.create({
   username: { fontFamily: 'Nunito-ExtraBold', fontSize: 24, color: TEXT, marginBottom: 4 },
   level:    { fontFamily: 'Nunito-Regular',   fontSize: 14, color: MUTED, marginBottom: 14 },
   xpWrap:   { width: '80%', gap: 4 },
-  xpBg:     { height: 6, backgroundColor: '#e5e7eb', borderRadius: 3, overflow: 'hidden' },
-  xpFill:   { height: 6, borderRadius: 3, backgroundColor: PURP2 },
-  xpTxt:    { fontFamily: 'Nunito-Regular', fontSize: 11, color: MUTED, textAlign: 'right' },
+  xpRow:    { flexDirection: 'row', justifyContent: 'space-between' },
+  xpLvlTxt: { fontFamily: 'Nunito-Bold', fontSize: 11, color: PURP2 },
+  xpBg:     { height: 8, backgroundColor: '#e5e7eb', borderRadius: 4, overflow: 'hidden' },
+  xpFill:   { height: 8, borderRadius: 4, backgroundColor: PURP2 },
+  xpTxt:    { fontFamily: 'Nunito-Regular', fontSize: 11, color: MUTED, textAlign: 'center' },
   verifyBanner: {
     marginTop: 12, backgroundColor: '#78350f22',
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 7,

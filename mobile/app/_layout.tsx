@@ -141,6 +141,17 @@ export default function RootLayout() {
           router.push(`/duel/${data.duelId}?cat=${data.category ?? 'general'}` as any);
         });
 
+        socket.on('friend_request', (data: { from: { id: string; username: string; avatarId: number } }) => {
+          Alert.alert(
+            '👥 Arkadaşlık İsteği!',
+            `${data.from.username} sana arkadaşlık isteği gönderdi.`,
+            [
+              { text: 'Sonra Bak', style: 'cancel' },
+              { text: 'Görüntüle', onPress: () => router.push('/(tabs)/friends' as any) },
+            ]
+          );
+        });
+
         socket.on('live_tournament_soon', (data: { message: string; minutesLeft: number }) => {
           Alert.alert('🏟️ Canlı Yarışma!', data.message, [
             { text: 'Tamam' },

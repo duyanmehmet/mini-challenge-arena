@@ -32,6 +32,7 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*", methods: ["GET", "POST"] } });
 
 setupSocket(io);
+app.set("io", io);
 
 app.set("trust proxy", 1);
 app.use(cors({ origin: "*", methods: ["GET", "POST", "PATCH", "DELETE"] }));
