@@ -104,7 +104,6 @@ export default function RootLayout() {
     const initNotifications = async () => {
       try {
         const token = await notificationService.registerForPushNotificationsAsync();
-        if (token) console.log('[Push] Token kaydedildi');
         await notificationService.scheduleDailyReminder();
       } catch {}
     };
@@ -171,9 +170,6 @@ export default function RootLayout() {
     }
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    if (error) console.error(error);
-  }, [error]);
 
   useEffect(() => {
     if (loaded && authLoaded) {
