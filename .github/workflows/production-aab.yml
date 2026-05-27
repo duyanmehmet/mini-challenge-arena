@@ -42,8 +42,9 @@ jobs:
             "build-tools;36.0.0"
 
       - name: Create swap space
+        continue-on-error: true
         run: |
-          sudo fallocate -l 4G /swapfile
+          sudo fallocate -l 4G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
