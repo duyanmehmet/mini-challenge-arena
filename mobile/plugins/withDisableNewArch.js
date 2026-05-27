@@ -34,11 +34,14 @@ module.exports = function withGradlePerf(config) {
         addOrUpdate('android.enableR8.fullMode', 'false');
       } else {
         // Production on GitHub Actions (7 GB RAM runner)
-        // Kotlin compiles in-process so give the JVM enough room.
+        // workers=1 + parallel=false prevents GradleKotlinCompilerRunnerWithWorkers
+        // from spawning multiple JVMs that crash silently on 7 GB runners.
         addOrUpdate('org.gradle.jvmargs', '-Xmx4096m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError');
-        addOrUpdate('org.gradle.parallel', 'true');
-        addOrUpdate('org.gradle.workers.max', '2');
+        addOrUpdate('org.gradle.parallel', 'false');
+        addOrUpdate('org.gradle.workers.max', '1');
         addOrUpdate('android.enableR8.fullMode', 'true');
+        // Surface actual exception details if a worker action fails
+        addOrUpdate('org.gradle.logging.stacktrace', 'all');
       }
     } catch (e) {
       console.warn('[withGradlePerf] failed:', e);
