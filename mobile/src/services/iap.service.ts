@@ -1,14 +1,3 @@
-import {
-  initConnection,
-  endConnection,
-  getProducts,
-  requestPurchase,
-  purchaseErrorListener,
-  purchaseUpdatedListener,
-  finishTransaction,
-  type Product,
-  type PurchaseError,
-} from 'react-native-iap';
 import { Platform } from 'react-native';
 import api from './api';
 
@@ -24,13 +13,22 @@ export const PRODUCT_IDS = {
 
 export type ProductId = typeof PRODUCT_IDS[keyof typeof PRODUCT_IDS];
 
+// Dynamic require — Expo Go'da modül yoksa gracefully fail
+let iap: any = null;
+let IAP_AVAILABLE = false;
+try {
+  iap = require('react-native-iap');
+  IAP_AVAILABLE = true;
+} catch {}
+
 let connected = false;
 
 export const iapService = {
   async init(): Promise<boolean> {
+    if (!IAP_AVAILABLE) return false;
     if (connected) return true;
     try {
-      await initConnection();
+      await iap.initConnection();
       connected = true;
       return true;
     } catch {
@@ -39,33 +37,26 @@ export const iapService = {
   },
 
   async destroy() {
-    if (connected) {
-      await endConnection().catch(() => {});
-      connected = false;
-    }
+    if (!IAP_AVAILABLE || !connected) return;
+    await iap.endConnection().catch(() => {});
+    connected = false;
   },
 
-  async getProducts(): Promise<Product[]> {
-    if (!connected) await this.init();
-    try {
-      return await getProducts({ skus: Object.values(PRODUCT_IDS) });
-    } catch {
-      return [];
-    }
-  },
-
-  // Promise döner: resolve(başarı/hata), timeout yoktur, kullanıcı iptal ederse resolve({ success: false })
   purchase(productId: ProductId): Promise<{ success: boolean; coinsAdded: number; error?: string }> {
+    if (!IAP_AVAILABLE) {
+      return Promise.resolve({ success: false, coinsAdded: 0, error: 'IAP bu ortamda desteklenmiyor.' });
+    }
+
     return new Promise(async (resolve) => {
       const ok = await this.init();
       if (!ok) return resolve({ success: false, coinsAdded: 0, error: 'IAP bağlantısı kurulamadı.' });
 
-      let updateSub: ReturnType<typeof purchaseUpdatedListener> | null = null;
-      let errorSub:  ReturnType<typeof purchaseErrorListener>  | null = null;
+      let updateSub: any = null;
+      let errorSub:  any = null;
 
       const cleanup = () => { updateSub?.remove(); errorSub?.remove(); };
 
-      updateSub = purchaseUpdatedListener(async (purchase: any) => {
+      updateSub = iap.purchaseUpdatedListener(async (purchase: any) => {
         if (purchase.productId !== productId) return;
         cleanup();
 
@@ -81,16 +72,16 @@ export const iapService = {
             transactionId: purchase.transactionId,
           });
           const isConsumable = !productId.includes('noads') && !productId.includes('vip');
-          await finishTransaction({ purchase, isConsumable }).catch(() => {});
+          await iap.finishTransaction({ purchase, isConsumable }).catch(() => {});
           resolve({ success: true, coinsAdded: res.data.coinsAdded ?? 0 });
         } catch (err: any) {
-          await finishTransaction({ purchase, isConsumable: true }).catch(() => {});
+          await iap.finishTransaction({ purchase, isConsumable: true }).catch(() => {});
           resolve({ success: false, coinsAdded: 0, error: err?.response?.data?.message ?? 'Doğrulama hatası.' });
         }
       });
 
-      errorSub = purchaseErrorListener((err: PurchaseError) => {
-        if ((err as any).productId && (err as any).productId !== productId) return;
+      errorSub = iap.purchaseErrorListener((err: any) => {
+        if (err.productId && err.productId !== productId) return;
         cleanup();
         resolve({
           success: false,
@@ -99,7 +90,7 @@ export const iapService = {
         });
       });
 
-      requestPurchase({ sku: productId } as any).catch((err: any) => {
+      iap.requestPurchase({ sku: productId }).catch((err: any) => {
         cleanup();
         resolve({ success: false, coinsAdded: 0, error: err?.message ?? 'Satın alma başlatılamadı.' });
       });

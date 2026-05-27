@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useUserStore } from '../src/store/userStore';
 import api from '../src/services/api';
 import { Colors } from '../src/constants/theme';
-import { iapService, PRODUCT_IDS, type ProductId } from '../src/services/iap.service';
+import { iapService, PRODUCT_IDS } from '../src/services/iap.service';
 
 const JOKER_ITEMS = [
   { type: 'fifty'  as const, icon: '✂️', label: '50:50',    desc: '2 yanlış şıkkı kaldır', price: 50,  color: '#ef4444', bg: '#fee2e2' },
