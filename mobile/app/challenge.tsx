@@ -8,15 +8,15 @@ import { Avatar } from '../src/components/ui/Avatar';
 import api from '../src/services/api';
 import { HowToPlayModal, useHowToPlay } from '../src/components/ui/HowToPlayModal';
 
-const BG    = '#0d0d1a';
-const CARD  = '#13132a';
+const BG    = '#ffffff';
+const CARD  = '#ffffff';
 const PURP  = '#6c3aed';
 const PURP2 = '#8b5cf6';
-const TEXT  = '#ffffff';
-const MUTED = '#7c7aaa';
+const TEXT  = '#111827';
+const MUTED = '#9ca3af';
 const GOLD  = '#f59e0b';
 const GREEN = '#10b981';
-const BORDER= '#2e2b5a';
+const BORDER= '#f3f4f6';
 
 export default function ChallengeScreen() {
   const { user } = useUserStore();
