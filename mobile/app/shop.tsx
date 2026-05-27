@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useUserStore } from '../src/store/userStore';
 import api from '../src/services/api';
 import { Colors } from '../src/constants/theme';
-import { iapService, PRODUCT_IDS } from '../src/services/iap.service';
+import { iapService, PRODUCT_IDS, type ProductId } from '../src/services/iap.service';
 
 const JOKER_ITEMS = [
   { type: 'fifty'  as const, icon: '✂️', label: '50:50',    desc: '2 yanlış şıkkı kaldır', price: 50,  color: '#ef4444', bg: '#fee2e2' },
@@ -94,7 +94,7 @@ export default function ShopScreen() {
     }).catch(() => {});
     // IAP bağlantısını başlat
     iapService.init().catch(() => {});
-    return () => { iapService.destroy(); };
+    return () => { iapService.destroy().catch(() => {}); };
   }, []);
 
   const handleWatchAdLife = async () => {
@@ -208,24 +208,12 @@ export default function ShopScreen() {
     if (buyingPkg) return;
     setBuyingPkg(pkg.id);
     try {
-      const result = await iapService.purchaseProduct(
-        pkg.id as any,
-        (_receipt, _productId) => {
-          // onSuccess — purchaseProduct içinde zaten handle ediliyor
-        },
-        (err) => {
-          if (err.code !== 'E_USER_CANCELLED') {
-            Alert.alert('Satın Alma Hatası', err.message ?? 'İşlem başarısız.');
-          }
-        },
-      );
-      // purchaseProduct void döndürüyor; listener'da işlem tamamlanınca coin güncelle
-      // Kullanıcı profilini yenile
-      const { default: apiClient } = await import('../src/services/api');
-      const res = await apiClient.get('/user/profile').catch(() => null);
-      if (res?.data?.user?.coins !== undefined) {
-        updateUser({ coins: res.data.user.coins });
+      const result = await iapService.purchase(pkg.id as any);
+      if (result.success) {
+        if (result.coinsAdded > 0) addCoins(result.coinsAdded);
         Alert.alert('✅ Satın Alındı!', `${pkg.amount} 🪙 hesabına eklendi.`);
+      } else if (result.error && result.error !== 'İptal edildi.') {
+        Alert.alert('Satın Alma Hatası', result.error);
       }
     } catch {
       Alert.alert('Hata', 'Satın alma tamamlanamadı.');
