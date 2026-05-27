@@ -51,8 +51,6 @@ jobs:
 
       - name: Build Production AAB
         working-directory: mobile
-        env:
-          GRADLE_OPTS: "-Xmx4096m -XX:MaxMetaspaceSize=512m"
         run: eas build --platform android --profile production --local --non-interactive
 
       - name: Locate AAB

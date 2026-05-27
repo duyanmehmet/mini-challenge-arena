@@ -30,9 +30,10 @@ module.exports = function withGradlePerf(config) {
         addOrUpdate('android.enableR8.fullMode', 'false');
       } else {
         // Production on GitHub Actions (7 GB RAM runner)
-        addOrUpdate('org.gradle.jvmargs', '-Xmx4096m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError');
+        // 3 GB for Gradle JVM, leaving ~4 GB for CMake/NDK C++ compilation (reanimated, worklets)
+        addOrUpdate('org.gradle.jvmargs', '-Xmx3072m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError');
         addOrUpdate('org.gradle.parallel', 'true');
-        addOrUpdate('org.gradle.workers.max', '4');
+        addOrUpdate('org.gradle.workers.max', '2');
         addOrUpdate('android.enableR8.fullMode', 'true');
       }
     } catch (e) {
