@@ -21,6 +21,10 @@ module.exports = function withGradlePerf(config) {
       addOrUpdate('org.gradle.daemon', 'false');
       addOrUpdate('kotlin.incremental', 'false');
       addOrUpdate('kotlin.incremental.java', 'false');
+      // Force Kotlin to compile in the main Gradle JVM instead of spawning
+      // separate worker JVMs (GradleKotlinCompilerRunnerWithWorkers) which
+      // crash silently on memory-constrained CI runners.
+      addOrUpdate('kotlin.compiler.execution.strategy', 'in-process');
 
       if (isPreview) {
         // Aggressive limits for preview (EAS free tier / resource-constrained)
@@ -30,8 +34,8 @@ module.exports = function withGradlePerf(config) {
         addOrUpdate('android.enableR8.fullMode', 'false');
       } else {
         // Production on GitHub Actions (7 GB RAM runner)
-        // 3 GB for Gradle JVM, leaving ~4 GB for CMake/NDK C++ compilation (reanimated, worklets)
-        addOrUpdate('org.gradle.jvmargs', '-Xmx3072m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError');
+        // Kotlin compiles in-process so give the JVM enough room.
+        addOrUpdate('org.gradle.jvmargs', '-Xmx4096m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError');
         addOrUpdate('org.gradle.parallel', 'true');
         addOrUpdate('org.gradle.workers.max', '2');
         addOrUpdate('android.enableR8.fullMode', 'true');
