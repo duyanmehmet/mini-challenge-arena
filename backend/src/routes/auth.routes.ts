@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import db from "../database";
-import { authLimiter } from "../middleware/rateLimit.middleware";
+import { authLimiter, emailLimiter } from "../middleware/rateLimit.middleware";
 
 const router = Router();
 
@@ -97,7 +97,7 @@ router.post("/login", authLimiter, async (req, res) => {
 });
 
 // ── E-posta doğrulama kodu gönder ──
-router.post("/send-verification", authLimiter, async (req, res) => {
+router.post("/send-verification", emailLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "E-posta gerekli." });
 
@@ -105,6 +105,15 @@ router.post("/send-verification", authLimiter, async (req, res) => {
     const user = await db("users").where("email", email.toLowerCase()).first();
     if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
     if (user.email_verified) return res.status(400).json({ message: "E-posta zaten doğrulanmış." });
+
+    // 2 dakika cooldown: önceki kod hâlâ 8+ dakika geçerliyse yeni kod gönderme
+    const existing = await db("email_verifications").where("user_id", user.id).first();
+    if (existing) {
+      const cooldownUntil = new Date(Date.now() + 8 * 60 * 1000).toISOString();
+      if (existing.expires_at > cooldownUntil) {
+        return res.status(429).json({ message: "Lütfen 2 dakika bekleyip tekrar deneyin." });
+      }
+    }
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 dakika
@@ -202,13 +211,20 @@ router.post("/google", authLimiter, async (req, res) => {
 });
 
 // ── Şifre sıfırlama isteği ──
-router.post("/forgot-password", authLimiter, async (req, res) => {
+router.post("/forgot-password", emailLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "E-posta gerekli." });
 
   try {
     const user = await db("users").where("email", email.toLowerCase()).first();
     if (user) {
+      // 5 dakika cooldown: önceki token hâlâ 55+ dakika geçerliyse yeni e-posta gönderme
+      if (user.reset_token_expires) {
+        const cooldownUntil = new Date(Date.now() + 55 * 60 * 1000).toISOString();
+        if (user.reset_token_expires > cooldownUntil) {
+          return res.json({ message: "E-posta gönderildi (eğer hesap mevcutsa)." });
+        }
+      }
       const resetToken = uuidv4();
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 saat
       await db("users").where("id", user.id).update({
