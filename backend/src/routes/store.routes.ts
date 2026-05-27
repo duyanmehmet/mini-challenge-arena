@@ -59,11 +59,27 @@ router.post("/verify-iap", authMiddleware, async (req: AuthRequest, res) => {
     if (coins > 0) {
       await db("users").where("id", req.userId).update({ coins: db.raw("coins + ?", [coins]) });
     }
-    if (productId.includes("removeads") || productId === "remove_ads") {
+    if (productId.includes("noads") || productId.includes("vip")) {
       await db("users").where("id", req.userId).update({ is_premium: true });
     }
 
-    res.json({ success: true, coinsAdded: coins });
+    const updatedUser = await db("users").where("id", req.userId).select("coins").first();
+    res.json({ success: true, coinsAdded: coins, newBalance: updatedUser?.coins ?? 0 });
+  } catch { res.status(500).json({ message: "Sunucu hatası." }); }
+});
+
+router.post("/buy-joker", authMiddleware, async (req: AuthRequest, res) => {
+  const { jokerType } = req.body;
+  const JOKER_COSTS: Record<string, number> = { fifty: 50, change: 70, pass: 50 };
+  const cost = JOKER_COSTS[jokerType];
+  if (cost === undefined) return res.status(400).json({ message: "Geçersiz joker tipi." });
+  try {
+    const user = await db("users").where("id", req.userId).select("coins").first();
+    if (!user || (user.coins ?? 0) < cost)
+      return res.status(400).json({ message: "Yetersiz coin." });
+    await db("users").where("id", req.userId).update({ coins: db.raw(`coins - ${cost}`) });
+    const updated = await db("users").where("id", req.userId).select("coins").first();
+    res.json({ success: true, coinsRemaining: updated.coins });
   } catch { res.status(500).json({ message: "Sunucu hatası." }); }
 });
 

@@ -166,10 +166,15 @@ export default function ShopScreen() {
       [
         { text: 'İptal', style: 'cancel' },
         {
-          text: 'Satın Al', onPress: () => {
-            addCoins(-item.price);
-            addJoker(item.type, 1);
-            Alert.alert('✅ Eklendi!', `+1 ${item.label} joker cüzdanına eklendi.`);
+          text: 'Satın Al', onPress: async () => {
+            try {
+              const res = await api.post('/store/buy-joker', { jokerType: item.type });
+              updateUser({ coins: res.data.coinsRemaining });
+              addJoker(item.type, 1);
+              Alert.alert('✅ Eklendi!', `+1 ${item.label} joker cüzdanına eklendi.`);
+            } catch (e: any) {
+              Alert.alert('Hata', e?.response?.data?.message ?? 'Satın alma başarısız.');
+            }
           },
         },
       ]
@@ -210,7 +215,11 @@ export default function ShopScreen() {
     try {
       const result = await iapService.purchase(pkg.id as any);
       if (result.success) {
-        if (result.coinsAdded > 0) addCoins(result.coinsAdded);
+        if (result.newBalance !== undefined) {
+          updateUser({ coins: result.newBalance });
+        } else if (result.coinsAdded > 0) {
+          addCoins(result.coinsAdded);
+        }
         Alert.alert('✅ Satın Alındı!', `${pkg.amount} 🪙 hesabına eklendi.`);
       } else if (result.error && result.error !== 'İptal edildi.') {
         Alert.alert('Satın Alma Hatası', result.error);

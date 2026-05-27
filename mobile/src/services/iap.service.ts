@@ -42,7 +42,7 @@ export const iapService = {
     connected = false;
   },
 
-  purchase(productId: ProductId): Promise<{ success: boolean; coinsAdded: number; error?: string }> {
+  purchase(productId: ProductId): Promise<{ success: boolean; coinsAdded: number; newBalance?: number; error?: string }> {
     if (!IAP_AVAILABLE) {
       return Promise.resolve({ success: false, coinsAdded: 0, error: 'IAP bu ortamda desteklenmiyor.' });
     }
@@ -73,7 +73,7 @@ export const iapService = {
           });
           const isConsumable = !productId.includes('noads') && !productId.includes('vip');
           await iap.finishTransaction({ purchase, isConsumable }).catch(() => {});
-          resolve({ success: true, coinsAdded: res.data.coinsAdded ?? 0 });
+          resolve({ success: true, coinsAdded: res.data.coinsAdded ?? 0, newBalance: res.data.newBalance });
         } catch (err: any) {
           await iap.finishTransaction({ purchase, isConsumable: true }).catch(() => {});
           resolve({ success: false, coinsAdded: 0, error: err?.response?.data?.message ?? 'Doğrulama hatası.' });

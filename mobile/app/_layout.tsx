@@ -95,7 +95,10 @@ export default function RootLayout() {
     import('../src/services/user.service').then(({ userService }) => {
       userService.getProfile().then(data => {
         const store = useUserStore.getState();
-        store.updateUser(data.user);
+        // Unlocked avatars: server listesiyle cache'deki listeyi birleştir (satın alınan kaybolmasın)
+        const cached = store.user?.unlockedAvatars ?? [1, 2, 3];
+        const merged = [...new Set([...cached, ...(data.user.unlockedAvatars ?? [])])];
+        store.updateUser({ ...data.user, unlockedAvatars: merged });
         store.setBadges(data.badges);
         store.setPersonalBests(data.personalBests);
       }).catch(() => {});
