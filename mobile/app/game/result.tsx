@@ -98,7 +98,8 @@ export default function ResultScreen() {
     challengeId?: string; ligMode?: string; ligFailed?: string; antrenmanMode?: string;
   }>();
   const isAntrenman = antrenmanMode === '1';
-  const { personalBests, setPersonalBests, addXP, addCoins, updateUser, incrementCategoryPlayCount } = useUserStore();
+  const { personalBests, setPersonalBests, addXP, addCoins, updateUser, incrementCategoryPlayCount, streakGoal, user } = useUserStore();
+  const [streakGoalReached, setStreakGoalReached] = useState(false);
 
   const numScore    = parseInt(score    ?? '0');
   const numCombo    = parseInt(maxCombo ?? '0');
@@ -187,6 +188,9 @@ export default function ResultScreen() {
           });
           if (res?.streakCount !== undefined) {
             updateUser({ streakCount: res.streakCount });
+            if (streakGoal && res.streakCount >= streakGoal && (user?.streakCount ?? 0) < streakGoal) {
+              setStreakGoalReached(true);
+            }
             // 2+ günlük seri varsa ertesi gün için uyarı planla
             if (res.streakCount >= 2) {
               import('../../src/services/notification.service').then(({ notificationService }) => {
@@ -395,6 +399,19 @@ export default function ResultScreen() {
   return (
     <SafeAreaView style={s.root}>
       <Animated.View style={[s.inner, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+
+        {/* Seri hedefi kutlama banner'ı */}
+        {streakGoalReached && (
+          <View style={{ backgroundColor: '#f59e0b22', borderRadius: 16, borderWidth: 1.5, borderColor: '#f59e0b', padding: 14, marginBottom: 12, alignItems: 'center' }}>
+            <Text style={{ fontSize: 28, marginBottom: 4 }}>🔥🎉🔥</Text>
+            <Text style={{ color: '#f59e0b', fontFamily: 'Nunito-ExtraBold', fontSize: 16, textAlign: 'center' }}>
+              {streakGoal} Günlük Seri Hedefine Ulaştın!
+            </Text>
+            <Text style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', marginTop: 4 }}>
+              Harika bir kararlılık! Devam et! 🚀
+            </Text>
+          </View>
+        )}
 
         {/* 2x Bonus badge — sadece lig modunda */}
         {isLig && ligResult?.isWeekCat && (

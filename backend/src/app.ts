@@ -53,6 +53,20 @@ app.use("/v1/messages",    messagesRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 
+// ── Günlük görev yenileme — her gece 00:00 TR (UTC 21:00) ────────
+cron.schedule("0 21 * * *", async () => {
+  try {
+    const { DailyTaskService } = await import("./services/DailyTaskService");
+    const activeUsers = await db("users")
+      .whereNotNull("last_played_date")
+      .where("last_played_date", ">=", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
+      .select("id");
+    for (const u of activeUsers) {
+      await DailyTaskService.ensureTasksForToday(u.id).catch(() => {});
+    }
+  } catch (err) { console.error("Günlük görev yenileme hatası:", err); }
+});
+
 // ── Haftalık özet bildirimi — Cumartesi 20:00 TR ─────────────────
 cron.schedule("0 17 * * 6", async () => {
   try {

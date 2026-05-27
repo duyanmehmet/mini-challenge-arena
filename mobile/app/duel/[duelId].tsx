@@ -14,6 +14,7 @@ import type { CategoryId } from '../../src/constants/categories';
 import type { QuizQuestion } from '../../src/types/quiz';
 import { getRank } from './lobby';
 import { assetService } from '../../src/services/asset.service';
+import { admobService } from '../../src/services/admob.service';
 
 const { width } = Dimensions.get('window');
 
@@ -292,6 +293,7 @@ export default function DuelGameScreen() {
       const isWin = data.winnerId === user?.id;
       if (isWin) { setShowConfetti(true); assetService.playSound('hit'); }
       setPhase('match_result');
+      admobService.maybeShowInterstitial('duel').catch(() => {});
     });
 
     socket.on('duel_opponent_left', () => {

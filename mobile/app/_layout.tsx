@@ -16,7 +16,7 @@ import { useSettingsStore } from '../src/store/settingsStore';
 import { useUserStore } from '../src/store/userStore';
 import { Colors } from '../src/constants/colors';
 import { socketService } from '../src/services/socket.service';
-import { Alert, View, Text, StyleSheet } from 'react-native';
+import { Alert, View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { SplashScreenView } from '../src/components/ui/SplashScreenView';
 import { DailyLoginModal } from '../src/components/ui/DailyLoginModal';
 import { CATEGORIES } from '../src/constants/categories';
@@ -37,10 +37,11 @@ export default function RootLayout() {
   });
 
   const { theme } = useSettingsStore();
-  const { isAuthenticated, loadAuth } = useUserStore();
+  const { isAuthenticated, loadAuth, streakGoal, setStreakGoal } = useUserStore();
   const [authLoaded, setAuthLoaded]   = useState(false);
   const [isOffline,  setIsOffline]    = useState(false);
   const [dailyReward, setDailyReward] = useState<{ coins: number; streak: number } | null>(null);
+  const [showStreakGoalModal, setShowStreakGoalModal] = useState(false);
   const segments = useSegments();
   const router = useRouter();
   const notifResponseListener = useRef<Notifications.EventSubscription | null>(null);
@@ -79,6 +80,13 @@ export default function RootLayout() {
     });
     return () => notifResponseListener.current?.remove();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !authLoaded) return;
+    AsyncStorage.getItem('streakGoalAsked').then((asked) => {
+      if (!asked) setShowStreakGoalModal(true);
+    });
+  }, [isAuthenticated, authLoaded]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -214,6 +222,36 @@ export default function RootLayout() {
           newStreak={dailyReward?.streak ?? 1}
           onClose={() => setDailyReward(null)}
         />
+        <Modal visible={showStreakGoalModal} transparent animationType="fade">
+          <View style={s.modalOverlay}>
+            <View style={s.modalBox}>
+              <Text style={s.modalEmoji}>🔥</Text>
+              <Text style={s.modalTitle}>Seri Hedefin Nedir?</Text>
+              <Text style={s.modalSub}>Kaç günlük seri yapmak istiyorsun? Hedefe ulaşınca seni kutlayacağız!</Text>
+              {[7, 14, 30, 60].map(days => (
+                <TouchableOpacity
+                  key={days}
+                  style={s.goalBtn}
+                  onPress={async () => {
+                    await setStreakGoal(days);
+                    await AsyncStorage.setItem('streakGoalAsked', 'true');
+                    setShowStreakGoalModal(false);
+                  }}
+                >
+                  <Text style={s.goalBtnTxt}>{days} Gün 🔥</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                onPress={async () => {
+                  await AsyncStorage.setItem('streakGoalAsked', 'true');
+                  setShowStreakGoalModal(false);
+                }}
+              >
+                <Text style={s.skipTxt}>Şimdilik geç</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
         <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', animationDuration: 280 }}>
           {/* Sekmeler */}
           <Stack.Screen name="(tabs)" options={{ animation: 'fade', animationDuration: 200 }} />
@@ -262,4 +300,12 @@ export default function RootLayout() {
 const s = StyleSheet.create({
   offlineBanner: { paddingVertical: 6, paddingHorizontal: 16, alignItems: 'center', zIndex: 999 },
   offlineText: { color: '#000', fontSize: 12, fontWeight: '600' },
+  modalOverlay: { flex: 1, backgroundColor: '#000000cc', justifyContent: 'center', padding: 24 },
+  modalBox: { backgroundColor: '#13132a', borderRadius: 24, padding: 28, alignItems: 'center' },
+  modalEmoji: { fontSize: 48, marginBottom: 8 },
+  modalTitle: { color: '#fff', fontSize: 20, fontFamily: 'Nunito-ExtraBold', marginBottom: 8, textAlign: 'center' },
+  modalSub: { color: '#9ca3af', fontSize: 14, textAlign: 'center', marginBottom: 20, lineHeight: 20 },
+  goalBtn: { width: '100%', backgroundColor: '#6c3aed', borderRadius: 14, paddingVertical: 14, marginBottom: 10, alignItems: 'center' },
+  goalBtnTxt: { color: '#fff', fontSize: 16, fontFamily: 'Nunito-Bold' },
+  skipTxt: { color: '#6b7280', fontSize: 13, marginTop: 8 },
 });

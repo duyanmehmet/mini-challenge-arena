@@ -75,9 +75,9 @@ export const admobService = {
     });
   },
 
-  async maybeShowInterstitial(mode: 'antrenman' | 'lig', isVip = false): Promise<void> {
+  async maybeShowInterstitial(mode: 'antrenman' | 'lig' | 'duel', isVip = false): Promise<void> {
     if (!ADS_AVAILABLE || isVip) return;
-    const every = mode === 'lig' ? 2 : 3;
+    const every = mode === 'lig' ? 2 : mode === 'duel' ? 2 : 3;
     if (!shouldShowInterstitial(mode, every)) return;
     await this.showInterstitial();
   },

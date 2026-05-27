@@ -9,7 +9,7 @@ import { userService } from '../src/services/user.service';
 import api from '../src/services/api';
 
 export default function SettingsScreen() {
-  const { theme, setTheme, soundEnabled, toggleSound, vibrationEnabled, toggleVibration } = useSettingsStore();
+  const { theme, setTheme, soundEnabled, toggleSound, vibrationEnabled, toggleVibration, notificationsEnabled, toggleNotifications } = useSettingsStore();
   const { user, logout, updateUser } = useUserStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -116,6 +116,10 @@ export default function SettingsScreen() {
           <View style={s.row}>
             <Text style={s.label}>📳 Titreşim</Text>
             <Switch value={vibrationEnabled} onValueChange={toggleVibration} trackColor={{ true: C.accentTeal }} thumbColor="#fff" />
+          </View>
+          <View style={s.row}>
+            <Text style={s.label}>🔔 Bildirimler</Text>
+            <Switch value={notificationsEnabled} onValueChange={toggleNotifications} trackColor={{ true: C.accentTeal }} thumbColor="#fff" />
           </View>
         </View>
 

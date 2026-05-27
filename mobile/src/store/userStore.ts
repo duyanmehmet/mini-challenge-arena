@@ -17,6 +17,7 @@ interface UserState {
   isAuthenticated: boolean;
   categoryPlayCounts: Record<string, number>;
   jokers: JokerInventory;
+  streakGoal: number | null;
   setUser: (user: User, token: string) => Promise<void>;
   updateUser: (partial: Partial<User>) => void;
   logout: () => Promise<void>;
@@ -29,6 +30,7 @@ interface UserState {
   incrementCategoryPlayCount: (categoryId: string) => void;
   addJoker: (type: keyof JokerInventory, count?: number) => void;
   useJoker: (type: keyof JokerInventory) => boolean;
+  setStreakGoal: (goal: number) => Promise<void>;
 }
 
 const XP_THRESHOLDS = [0,100,250,500,1000,1500,2500,4000,6000,10000,15000,25000,40000,60000,80000,100000];
@@ -68,6 +70,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   isAuthenticated: false,
   categoryPlayCounts: {},
   jokers: { fifty: 0, change: 0, pass: 0 },
+  streakGoal: null,
 
   setUser: async (user, token) => {
     const normalized = normalizeUser(user);
@@ -132,6 +135,11 @@ export const useUserStore = create<UserState>((set, get) => ({
     return true;
   },
 
+  setStreakGoal: async (goal) => {
+    set({ streakGoal: goal });
+    await AsyncStorage.setItem('streakGoal', String(goal));
+  },
+
   incrementCategoryPlayCount: (categoryId) => {
     const counts = { ...get().categoryPlayCounts };
     counts[categoryId] = (counts[categoryId] ?? 0) + 1;
@@ -151,6 +159,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     const jokersJson = await AsyncStorage.getItem('jokers');
     if (jokersJson) {
       try { set({ jokers: JSON.parse(jokersJson) }); } catch {}
+    }
+    const streakGoalStr = await AsyncStorage.getItem('streakGoal');
+    if (streakGoalStr !== null) {
+      set({ streakGoal: parseInt(streakGoalStr) });
     }
     if (token && userJson) {
       try {
