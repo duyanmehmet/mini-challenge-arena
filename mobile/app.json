@@ -57,6 +57,7 @@
       "./plugins/withAbiFilters",
       "./plugins/withDisableNewArch",
       "./plugins/withIAPFlavor",
+      "./plugins/withGAdsKotlinFix",
       [
         "expo-notifications",
         {

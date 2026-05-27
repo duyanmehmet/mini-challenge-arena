@@ -73,6 +73,9 @@ jobs:
             echo ""
             echo "=== Keyword search (FAILURE / error / killed) ==="
             grep -iE "FAILURE|BUILD FAILED|error:|exception|killed|signal" /tmp/eas-build.log | grep -v "npm warn" | tail -30 || true
+            echo ""
+            echo "=== Kotlin compiler errors (e: lines) ==="
+            grep -E "\[RUN_GRADLEW\] e:" /tmp/eas-build.log | head -50 || true
             exit $EAS_EXIT
           fi
 
