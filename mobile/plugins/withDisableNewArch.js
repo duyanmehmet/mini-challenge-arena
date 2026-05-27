@@ -1,7 +1,6 @@
 const { withGradleProperties } = require('@expo/config-plugins');
 
 module.exports = function withGradlePerf(config) {
-  if (process.env.PREVIEW_BUILD !== '1') return config;
   return withGradleProperties(config, (cfg) => {
     try {
       const props = cfg.modResults;
@@ -13,16 +12,29 @@ module.exports = function withGradlePerf(config) {
           props.push({ type: 'property', key, value });
         }
       };
+
+      const isPreview = process.env.PREVIEW_BUILD === '1';
+
       // New arch required by reanimated v4
       addOrUpdate('newArchEnabled', 'true');
-      // Aggressive memory limits to prevent OOM on EAS free tier
-      addOrUpdate('org.gradle.jvmargs', '-Xmx2048m -XX:MaxMetaspaceSize=512m -XX:+UseSerialGC -XX:+HeapDumpOnOutOfMemoryError');
-      addOrUpdate('org.gradle.parallel', 'false');
-      addOrUpdate('org.gradle.workers.max', '1');
+      // Daemon off for CI reproducibility
       addOrUpdate('org.gradle.daemon', 'false');
       addOrUpdate('kotlin.incremental', 'false');
       addOrUpdate('kotlin.incremental.java', 'false');
-      addOrUpdate('android.enableR8.fullMode', 'false');
+
+      if (isPreview) {
+        // Aggressive limits for preview (EAS free tier / resource-constrained)
+        addOrUpdate('org.gradle.jvmargs', '-Xmx2048m -XX:MaxMetaspaceSize=512m -XX:+UseSerialGC -XX:+HeapDumpOnOutOfMemoryError');
+        addOrUpdate('org.gradle.parallel', 'false');
+        addOrUpdate('org.gradle.workers.max', '1');
+        addOrUpdate('android.enableR8.fullMode', 'false');
+      } else {
+        // Production on GitHub Actions (7 GB RAM runner)
+        addOrUpdate('org.gradle.jvmargs', '-Xmx4096m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError');
+        addOrUpdate('org.gradle.parallel', 'true');
+        addOrUpdate('org.gradle.workers.max', '4');
+        addOrUpdate('android.enableR8.fullMode', 'true');
+      }
     } catch (e) {
       console.warn('[withGradlePerf] failed:', e);
     }

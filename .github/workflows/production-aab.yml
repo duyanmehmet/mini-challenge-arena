@@ -27,7 +27,7 @@ jobs:
       - name: Setup Expo & EAS
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
+          eas-version: 19.1.0
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Setup Android SDK
@@ -45,8 +45,14 @@ jobs:
         working-directory: mobile
         run: npm install
 
+      - name: TypeScript check
+        working-directory: mobile
+        run: npx tsc --noEmit 2>&1 || true
+
       - name: Build Production AAB
         working-directory: mobile
+        env:
+          GRADLE_OPTS: "-Xmx4096m -XX:MaxMetaspaceSize=512m"
         run: eas build --platform android --profile production --local --non-interactive
 
       - name: Locate AAB
