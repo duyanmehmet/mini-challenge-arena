@@ -21,7 +21,7 @@ import english   from './english';
 import turkey    from './turkey';
 import fun       from './fun';
 
-const QUESTION_BANKS: Record<CategoryId, QuizQuestion[]> = {
+const QUESTION_BANKS: Omit<Record<CategoryId, QuizQuestion[]>, 'mixed'> = {
   history,
   geography,
   science,
@@ -43,6 +43,10 @@ const QUESTION_BANKS: Record<CategoryId, QuizQuestion[]> = {
 };
 
 export function getQuestions(categoryId: CategoryId): QuizQuestion[] {
+  if (categoryId === 'mixed') {
+    return (Object.entries(QUESTION_BANKS) as [CategoryId, QuizQuestion[]][])
+      .flatMap(([, qs]) => qs);
+  }
   return QUESTION_BANKS[categoryId] ?? [];
 }
 

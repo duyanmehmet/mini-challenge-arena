@@ -1,6 +1,6 @@
 export type CategoryId =
   | 'history' | 'geography' | 'science' | 'general' | 'art' | 'cinema' | 'sports'
-  | 'kids' | 'license' | 'medical' | 'economy' | 'turkey' | 'fun'
+  | 'kids' | 'license' | 'medical' | 'economy' | 'turkey' | 'fun' | 'mixed'
   | 'arabic' | 'french' | 'german' | 'spanish' | 'english';
 
 export type GroupId = 'culture' | 'special' | 'language';
@@ -37,6 +37,8 @@ export const CATEGORIES: CategoryConfig[] = [
   { id: 'art',       name: 'Sanat',           shortName: 'Sanat',    icon: '🎨', color: '#e67e22', group: 'culture',  description: 'Resim, müzik, edebiyat ve mimariden sorular.',                       questionCount: 200 },
   { id: 'cinema',    name: 'Sinema & TV',     shortName: 'Sinema',   icon: '🎬', color: '#e91e8c', group: 'culture',  description: 'Türk dizileri, dünya filmleri, Oscar ödülleri ve aktörler.',         questionCount: 500 },
   { id: 'sports',    name: 'Spor',            shortName: 'Spor',     icon: '⚽', color: '#16a085', group: 'culture',  description: 'Futbol, olimpiyatlar, Türk sporcular ve dünya rekorları.',           questionCount: 502 },
+
+  { id: 'mixed',     name: 'Karışık',        shortName: 'Karışık', icon: '🎲', color: '#6c3aed', group: 'special',  description: 'Tüm kategorilerden rastgele sorular — her soru farklı bir konudan!',   questionCount: 3000 },
 
   // Özel Kategoriler
   { id: 'turkey',    name: 'Türkiye',        shortName: 'Türkiye', icon: '🇹🇷', color: '#dc2626', group: 'special',  description: 'Türk tarihi, kültürü, coğrafyası ve güncel Türkiye hakkında.',       questionCount: 232 },

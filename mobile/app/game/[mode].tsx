@@ -12,7 +12,7 @@ import api from '../../src/services/api';
 
 const QUIZ_CATEGORIES: CategoryId[] = [
   'history','geography','science','general','art','cinema','sports','turkey',
-  'kids','license','medical','economy','fun',
+  'kids','license','medical','economy','fun','mixed',
   'arabic','french','german','spanish','english',
 ];
 
