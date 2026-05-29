@@ -98,6 +98,15 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
     io.to(challengerId).emit('duel_rejected', { opponentId: userId });
   });
 
+  // ── Davet iptal et (davet gönderen iptal eder) ────────────────────
+  socket.on('duel_cancel_invite', ({ targetId }: { targetId: string }) => {
+    const invite = pendingInvites.get(targetId);
+    if (invite && invite.challengerId === userId) {
+      pendingInvites.delete(targetId);
+      io.to(targetId).emit('duel_invite_cancelled', { challengerId: userId });
+    }
+  });
+
   // ── Eşleşme kuyruğu ──────────────────────────────────────────────
   socket.on('mm_join', async ({ stake = 50 }: { stake?: number }) => {
     if (!VALID_STAKES.includes(stake)) return socket.emit('error', 'Geçersiz bahis miktarı.');

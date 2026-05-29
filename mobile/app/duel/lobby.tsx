@@ -78,6 +78,11 @@ export default function DuelLobbyScreen() {
       Alert.alert('Reddedildi', 'Arkadaşın düello davetini reddetti.');
     });
 
+    socket.on('duel_invite_cancelled', () => {
+      // Bu cihaz daveti aldı ama challenger iptal etti
+      Alert.alert('İptal', 'Düello daveti iptal edildi.');
+    });
+
     socket.on('mm_matched', (data: { duelId: string; stake: number; opponent: any }) => {
       socket.off('mm_matched');
       router.replace(
@@ -94,6 +99,7 @@ export default function DuelLobbyScreen() {
       socket.off('duel_rejected');
       socket.off('mm_matched');
       socket.off('duel_cancelled');
+      socket.off('duel_invite_cancelled');
     };
   }, [selectedStake]);
 
@@ -103,6 +109,13 @@ export default function DuelLobbyScreen() {
       setFriends(res.data ?? []);
     } catch { setFriends([]); }
     finally   { setLoading(false); }
+  };
+
+  const cancelChallenge = () => {
+    if (!selectedFriend) return;
+    const socket = socketService.getSocket();
+    socket?.emit('duel_cancel_invite', { targetId: selectedFriend.id });
+    setWaiting(false);
   };
 
   const sendChallenge = () => {
@@ -285,21 +298,25 @@ export default function DuelLobbyScreen() {
             <Text style={s.randomSub}>Hızlı eşleşme</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[s.friendBtn, !selectedFriend && { opacity: 0.6 }]}
-            onPress={sendChallenge}
-            disabled={waiting}
-            activeOpacity={0.85}
-          >
-            {waiting
-              ? <ActivityIndicator color={TEXT} />
-              : <>
-                  <Text style={s.randomIcon}>👥</Text>
-                  <Text style={s.randomTitle}>Arkadaşa Davet</Text>
-                  <Text style={s.randomSub}>{selectedFriend ? selectedFriend.username : 'Birini seç'}</Text>
-                </>
-            }
-          </TouchableOpacity>
+          {waiting ? (
+            <View style={[s.friendBtn, { gap: 8 }]}>
+              <ActivityIndicator color={TEXT} size="small" />
+              <Text style={s.randomSub}>Bekleniyor...</Text>
+              <TouchableOpacity onPress={cancelChallenge} style={{ marginTop: 4 }}>
+                <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 13, color: '#ef4444' }}>İptal Et</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[s.friendBtn, !selectedFriend && { opacity: 0.6 }]}
+              onPress={sendChallenge}
+              activeOpacity={0.85}
+            >
+              <Text style={s.randomIcon}>👥</Text>
+              <Text style={s.randomTitle}>Arkadaşa Davet</Text>
+              <Text style={s.randomSub}>{selectedFriend ? selectedFriend.username : 'Birini seç'}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Arkadaş listesi */}
