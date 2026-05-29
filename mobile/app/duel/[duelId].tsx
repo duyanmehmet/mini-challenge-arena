@@ -228,6 +228,7 @@ export default function DuelGameScreen() {
   const [recvEmoji,      setRecvEmoji]     = useState<string | null>(null);
   const [showConfetti,   setShowConfetti]  = useState(false);
   const [notification,   setNotif]         = useState<string | null>(null);
+  const [syncSignal,     setSyncSignal]    = useState<{ key: number; qIdx: number } | null>(null);
 
   const notifAnim    = useRef(new Animated.Value(0)).current;
   const oppScaleAnim = useRef(new Animated.Value(1)).current;
@@ -303,6 +304,10 @@ export default function DuelGameScreen() {
       setPhase('match_result');
     });
 
+    socket.on('duel_question_sync', ({ questionIndex }: { questionIndex: number }) => {
+      setSyncSignal({ key: Date.now(), qIdx: questionIndex });
+    });
+
     socket.on('duel_emoji', ({ emoji }: { emoji: string }) => {
       setRecvEmoji(emoji);
       setTimeout(() => setRecvEmoji(null), 2500);
@@ -319,14 +324,14 @@ export default function DuelGameScreen() {
     }
 
     return () => {
-      ['duel_opponent_joined','duel_round_start','duel_opponent_answer','duel_round_end','duel_match_result','duel_opponent_left','duel_emoji','duel_cancelled'].forEach(e => socket.off(e));
+      ['duel_opponent_joined','duel_round_start','duel_opponent_answer','duel_round_end','duel_match_result','duel_opponent_left','duel_emoji','duel_cancelled','duel_question_sync'].forEach(e => socket.off(e));
       if (countdownIv.current) { clearInterval(countdownIv.current); countdownIv.current = null; }
     };
   }, []);
 
   const handleAnswer = (correct: boolean, pts: number, qIndex: number, answerIdx?: number) => {
     const socket = socketService.getSocket();
-    socket?.emit('duel_round_answer', { duelId, userId: user?.id, correct, answerIdx: answerIdx ?? null });
+    socket?.emit('duel_round_answer', { duelId, userId: user?.id, correct, answerIdx: answerIdx ?? null, questionIndex: qIndex });
   };
 
   const handleRoundEnd = () => {
@@ -557,7 +562,10 @@ export default function DuelGameScreen() {
         <QuizMode
           categoryId={currentRound.category as CategoryId}
           externalPool={currentRound.questions}
-          lives={3}
+          lives={100}
+          hideLives={true}
+          duelWaitSync={true}
+          duelSyncSignal={syncSignal}
           onEnd={handleRoundEnd}
           onAnswer={handleAnswer}
           onTimerTick={setQTimeLeft}

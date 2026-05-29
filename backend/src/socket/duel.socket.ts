@@ -42,6 +42,7 @@ interface Round {
   is2x: boolean;
   questions: unknown[];
   answers: Map<string, { correct: number; total: number }>;
+  questionAnswerCounts: Map<number, number>; // questionIndex → how many players answered
 }
 
 interface DuelRoom {
@@ -158,6 +159,7 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
           ...spin,
           questions: getSeedQuestions(spin.category, Date.now() + Math.floor(Math.random() * 999983), 5),
           answers: new Map(),
+          questionAnswerCounts: new Map(),
         };
       });
       room = { duelId, stake, players: [], currentRound: 0, rounds, coinsDeducted: false, startedAt: Date.now() };
@@ -202,7 +204,7 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
   });
 
   // ── Tur cevabı ───────────────────────────────────────────────────
-  socket.on('duel_round_answer', ({ duelId, correct, answerIdx }: { duelId: string; correct: boolean; answerIdx?: number }) => {
+  socket.on('duel_round_answer', ({ duelId, correct, answerIdx, questionIndex = 0 }: { duelId: string; correct: boolean; answerIdx?: number; questionIndex?: number }) => {
     const room = rooms.get(duelId);
     if (!room) return;
 
@@ -220,6 +222,13 @@ export function handleDuelEvents(io: Server, socket: Socket, userId: string): vo
     const opp = room.players.find(p => p.userId !== userId);
     if (opp) {
       io.to(opp.socketId).emit('duel_opponent_answer', { correct, answered: player.currentRoundAnswers, answerIdx: answerIdx ?? null });
+    }
+
+    // Per-soru senkronizasyon: ikisi de bu soruyu cevapladıysa sync gönder
+    const qCount = (round.questionAnswerCounts.get(questionIndex) ?? 0) + 1;
+    round.questionAnswerCounts.set(questionIndex, qCount);
+    if (qCount >= 2) {
+      io.to(room.duelId).emit('duel_question_sync', { questionIndex });
     }
 
     // İkisi de bu turda tüm soruları bitirdiyse

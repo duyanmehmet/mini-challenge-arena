@@ -44,15 +44,18 @@ export interface Props {
   onEnd: () => void;
   externalPool?: QuizQuestion[];
   lives?: number;
-  questionCount?: number; // Kaç soru sonra bitsin (antrenman modu için)
+  questionCount?: number;
   onLifeLost?: () => void;
   onAnswer?: (correct: boolean, pts: number, qIndex: number, answerIdx?: number) => void;
   onTimerTick?: (secondsLeft: number) => void;
   onPause?: () => void;
   catIcon?: string;
+  hideLives?: boolean;
+  duelWaitSync?: boolean;
+  duelSyncSignal?: { key: number; qIdx: number } | null;
 }
 
-export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, questionCount, onLifeLost, onAnswer, onTimerTick, onPause, catIcon }: Props) {
+export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives, questionCount, onLifeLost, onAnswer, onTimerTick, onPause, catIcon, hideLives, duelWaitSync, duelSyncSignal }: Props) {
   const { addScore, score, combo } = useGameStore();
   const { categoryPlayCounts, jokers, useJoker, addJoker, addCoins, user } = useUserStore();
 
@@ -85,10 +88,13 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const [qTimeLeft, setQTimeLeft]     = useState(QUESTION_TIME);
   const [sessionLeft, setSessionLeft] = useState(SESSION_TIME);
 
-  const qStartRef  = useRef(Date.now());
-  const qTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const sesTimerRef= useRef<ReturnType<typeof setInterval> | null>(null);
-  const endCalled  = useRef(false);
+  const [duelWaiting, setDuelWaiting] = useState(false);
+
+  const qStartRef    = useRef(Date.now());
+  const qTimerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sesTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const endCalled    = useRef(false);
+  const lastSyncKey  = useRef<number | null>(null);
   const cardAnim   = useRef(new Animated.Value(1)).current;
   const cardSlide  = useRef(new Animated.Value(0)).current;
   const timerAnim  = useRef(new Animated.Value(1)).current;
@@ -123,6 +129,26 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
     }, 1000);
     return () => clearInterval(sesTimerRef.current!);
   }, [poolReady]);
+
+  // Düello sync sinyali gelince feedback göster ve geç
+  useEffect(() => {
+    if (!duelWaitSync || !duelSyncSignal || !duelWaiting) return;
+    if (duelSyncSignal.qIdx !== qIndex) return;
+    if (lastSyncKey.current === duelSyncSignal.key) return;
+    lastSyncKey.current = duelSyncSignal.key;
+
+    const isCorrect = selectedIdx === current?.c;
+    setDuelWaiting(false);
+    setFeedback({ correct: isCorrect, explanation: current?.e });
+    setTimeout(() => {
+      setFeedback(null);
+      if (isLiveMode && !isCorrect && lives - 1 <= 0) {
+        finishGame();
+      } else {
+        nextQuestion();
+      }
+    }, 2000);
+  }, [duelSyncSignal]);
 
   // Soru sayacı
   useEffect(() => {
@@ -167,6 +193,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
   const nextQuestion = () => {
     setElim([]);
     setSelectedIdx(null);
+    setDuelWaiting(false);
     cardSlide.setValue(0);
     Animated.sequence([
       Animated.parallel([
@@ -210,16 +237,23 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
       if (isLiveMode) { setLives(newLives); onLifeLost?.(); }
     }
 
-    setFeedback({ correct: isCorrect, explanation: current.e });
     onAnswer?.(isCorrect, pts, qIndex, choiceIdx);
     setAnswered(n => n + 1);
 
+    if (duelWaitSync) {
+      // Düello sync modu: cevabı göster ama doğru/yanlış açıklama bekleniyor
+      setDuelWaiting(true);
+      // Feedback yok — sync gelince gösterilecek
+      return;
+    }
+
+    setFeedback({ correct: isCorrect, explanation: current.e });
     setTimeout(() => {
       setFeedback(null);
       if (isLiveMode && !isCorrect && lives - 1 <= 0) {
         finishGame();
       } else { nextQuestion(); }
-    }, isCorrect ? 1800 : 2500); // Doğru: 1.8sn, Yanlış: 2.5sn
+    }, isCorrect ? 1800 : 2500);
   };
 
   const openBuyOrUse = (type: 'fifty'|'change'|'pass', used: boolean, action: () => void) => {
@@ -309,8 +343,8 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
         <View style={s.topRow}>
           <Text style={s.catIconTxt}>{catIcon ?? '🎮'}</Text>
           <Text style={s.soruTxt}>Soru {qIndex + 1} / {total}</Text>
-          {/* Can ikonları — sadece lig modunda (antrenman 999 can = sonsuz, gösterme) */}
-          {isLiveMode && initialLives !== 999 && (
+          {/* Can ikonları — sadece lig modunda, düello modunda gizli */}
+          {isLiveMode && initialLives !== 999 && !hideLives && (
             <View style={s.livesRow}>
               {Array.from({ length: 5 }).map((_, i) => (
                 <Text key={i} style={{ fontSize: 15, opacity: i < lives ? 1 : 0.18 }}>❤️</Text>
@@ -371,6 +405,10 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
             }
           }
 
+          if (duelWaiting && !feedback && isSelected) {
+            bg = '#e0e7ff'; border = '#6c3aed';
+          }
+
           return (
             <TouchableOpacity
               key={i}
@@ -380,7 +418,7 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
                 opacity: isElim ? 0.4 : 1,
               }]}
               onPress={() => handleChoice(i)}
-              disabled={isElim || !!feedback}
+              disabled={isElim || !!feedback || duelWaiting}
               activeOpacity={0.8}
             >
               <View style={[s.letter, { backgroundColor: letterBg }]}>
@@ -393,6 +431,13 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
           );
         })}
       </View>
+
+      {/* Düello: Rakip bekleniyor göstergesi */}
+      {duelWaiting && (
+        <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+          <Text style={{ fontFamily: 'Nunito-Bold', fontSize: 14, color: '#6c3aed' }}>⏳ Rakip bekleniyor...</Text>
+        </View>
+      )}
 
       {/* ── Jokerler ── */}
       <View style={s.jokers}>
