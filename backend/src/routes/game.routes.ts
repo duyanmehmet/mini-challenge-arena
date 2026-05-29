@@ -3,6 +3,7 @@ import db from "../database";
 import { authMiddleware, type AuthRequest } from "../middleware/auth.middleware";
 import { redis } from "../redis";
 import { v4 as uuidv4 } from "uuid";
+import { pushService } from "../services/push.service";
 
 const router = Router();
 const VALID_MODES = [
@@ -108,8 +109,34 @@ router.post("/result", authMiddleware, async (req: AuthRequest, res) => {
 
     // Redis haftalık liderlik
     const weekKey = `leaderboard:weekly:${getWeekKey()}`;
+
+    // Güncelleme öncesi sıra (kaç kişi üstümde)
+    const rankBefore = await redis.zRevRank(weekKey, userId).catch(() => null);
+
     await redis.zIncrBy(weekKey, score, userId).catch(() => {});
     await redis.expire(weekKey, 60 * 60 * 24 * 8).catch(() => {});
+
+    // Güncelleme sonrası sıra
+    const rankAfter = await redis.zRevRank(weekKey, userId).catch(() => null);
+
+    // Sıra yükseldiyse geçilen kullanıcılara bildir (arka planda, hata önemli değil)
+    if (rankBefore !== null && rankAfter !== null && rankAfter < rankBefore) {
+      const passedIds = await redis.zRevRange(weekKey, rankAfter + 1, rankBefore).catch(() => [] as string[]);
+      const passedUsers = await db("users")
+        .whereIn("id", passedIds.filter(id => id !== userId))
+        .whereNotNull("push_token")
+        .select("push_token", "username")
+        .catch(() => []);
+      const myUsername = user?.username ?? "Bir oyuncu";
+      for (const u of passedUsers) {
+        pushService.sendToUser(
+          u.push_token,
+          "📊 Sıralamada geçildin!",
+          `${myUsername} seni haftalık sıralamada geçti! Geri dön!`,
+          { type: "leaderboard_passed" }
+        ).catch(() => {});
+      }
+    }
 
     // Klan haftalık puanını güncelle
     const freshUser = await db("users").where("id", userId).select("clan_id").first();
