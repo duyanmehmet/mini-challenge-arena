@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  TextInput, ActivityIndicator, Platform, StatusBar, Keyboard, KeyboardAvoidingView,
+  TextInput, ActivityIndicator, Platform, StatusBar, Keyboard, KeyboardAvoidingView, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -61,6 +61,23 @@ export default function ChatScreen() {
       setMessages(msgs);
     } catch { setMessages([]); }
     finally  { setLoading(false); }
+  };
+
+  const deleteMessage = (messageId: string) => {
+    Alert.alert('Mesajı Sil', 'Bu mesaj silinsin mi?', [
+      { text: 'Vazgeç', style: 'cancel' },
+      {
+        text: 'Sil', style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/messages/${messageId}/single`);
+            setMessages(p => p.filter((m: any) => m.id !== messageId));
+          } catch {
+            Alert.alert('Hata', 'Mesaj silinemedi.');
+          }
+        },
+      },
+    ]);
   };
 
   const send = async () => {
@@ -125,9 +142,14 @@ export default function ChatScreen() {
             const isMe = item?.sender_id === myId;
             return (
               <View style={{ alignItems: isMe ? 'flex-end' : 'flex-start', marginBottom: 6 }}>
-                <View style={[s.bubble, isMe ? s.bMe : s.bThem]}>
-                  <Text style={[s.bubbleTxt, { color: isMe ? '#ffffff' : '#111827' }]}>{item?.content}</Text>
-                </View>
+                <TouchableOpacity
+                  onLongPress={() => isMe && deleteMessage(item.id)}
+                  activeOpacity={0.85}
+                >
+                  <View style={[s.bubble, isMe ? s.bMe : s.bThem]}>
+                    <Text style={[s.bubbleTxt, { color: isMe ? '#ffffff' : '#111827' }]}>{item?.content}</Text>
+                  </View>
+                </TouchableOpacity>
                 <Text style={[s.time, isMe ? { textAlign: 'right' } : {}]}>
                   {item?.created_at ? fmt(item.created_at) : ''}
                 </Text>

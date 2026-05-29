@@ -119,6 +119,35 @@ router.post("/:friendId", authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+// ── Tek mesaj sil ───────────────────────────────────────────────────
+router.delete("/:messageId/single", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.userId!;
+    const mid = req.params.messageId;
+    await db("messages").where({ id: mid, sender_id: uid }).delete();
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
+// ── Konuşmayı sil (iki taraf arası tüm mesajlar) ─────────────────────
+router.delete("/conversation/:friendId", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.userId!;
+    const fid = req.params.friendId;
+    await db("messages")
+      .where(function () {
+        this.where({ sender_id: uid, receiver_id: fid })
+          .orWhere({ sender_id: fid, receiver_id: uid });
+      })
+      .delete();
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: "Sunucu hatası." });
+  }
+});
+
 // ── Okunmamış mesaj sayısı ───────────────────────────────────────────
 router.get("/unread/count", authMiddleware, async (req: AuthRequest, res) => {
   try {

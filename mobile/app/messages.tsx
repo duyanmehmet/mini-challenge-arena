@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useUserStore } from '../src/store/userStore';
@@ -42,6 +42,27 @@ export default function MessagesScreen() {
     finally  { setLoading(false); }
   };
 
+  const deleteConvo = (friendId: string, friendName: string) => {
+    Alert.alert(
+      'Sohbeti Sil',
+      `${friendName} ile tüm mesajlar silinsin mi?`,
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'Sil', style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/messages/conversation/${friendId}`);
+              setConvos(p => p.filter((c: any) => c.friend_id !== friendId));
+            } catch {
+              Alert.alert('Hata', 'Sohbet silinemedi.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={s.root}>
       <View style={s.header}>
@@ -71,6 +92,7 @@ export default function MessagesScreen() {
             <TouchableOpacity
               style={[s.row, item.unread > 0 && s.rowUnread]}
               onPress={() => router.push(`/chat/${item.friend_id}?name=${item.friend_username}&avatar=${item.friend_avatar}` as any)}
+              onLongPress={() => deleteConvo(item.friend_id, item.friend_username)}
               activeOpacity={0.8}
             >
               <View style={s.avatarWrap}>

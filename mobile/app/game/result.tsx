@@ -302,10 +302,14 @@ export default function ResultScreen() {
   // ── Lig Başarısız Ekranı ─────────────────────────────────────────────
   if (isLig && isLigFailed) {
     const handleWatchAd = async () => {
-      await admobService.showRewarded(async () => {
+      const earned = await admobService.showRewarded(async () => {
         await api.post('/lig/revive').catch(() => {});
       });
-      router.replace('/lig' as any);
+      if (earned) {
+        router.replace('/lig' as any);
+      } else {
+        Alert.alert('Reklam Yüklenemedi', 'Reklam şu an mevcut değil. Biraz sonra tekrar dene veya altınla kalp doldur.');
+      }
     };
 
     const handleRefillHearts = async () => {
