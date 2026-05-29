@@ -338,11 +338,6 @@ export function QuizMode({ categoryId, onEnd, externalPool, lives: initialLives,
 
       {/* ── Soru ── */}
       <Animated.View style={[s.questionBox, { opacity: cardAnim, transform: [{ translateX: cardSlide }] }]}>
-        {current.vb && (
-          <View style={s.vayBeBadge}>
-            <Text style={s.vayBeTxt}>⚡ Vay Be!</Text>
-          </View>
-        )}
         <Text style={s.questionTxt}>{current.q}</Text>
       </Animated.View>
 

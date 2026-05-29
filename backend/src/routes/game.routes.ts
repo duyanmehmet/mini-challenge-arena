@@ -9,7 +9,7 @@ const VALID_MODES = [
   // Kültür
   "history","geography","science","general","art","cinema","sports","turkey",
   // Özel
-  "kids","license","medical","economy",
+  "kids","license","medical","economy","fun",
   // Dil
   "arabic","french","german","spanish",
   // Eski (geriye dönük uyumluluk)
